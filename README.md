@@ -13,8 +13,8 @@ so the compiler's name is vslc
 The goal is use vslc to compile vsl source code to x86 or riscv assembly, or direct to binary, and let it run on cpu.
 
 
-## the plan is:
-# Project Goal
+
+### Project Goal
 - lexical analysis
 - parsing
 - abstract syntax tree construction
@@ -26,8 +26,7 @@ The goal is use vslc to compile vsl source code to x86 or riscv assembly, or dir
 - register allocation
 - assembly generation
 
-# vsl Language
-# Supported Keywords
+### Supported Keywords
 
 ```
 =
@@ -45,18 +44,14 @@ void
 ;
 ```
 
-
-## Identifier Rules
-same as C
-
-## Current Language Restrictions
+### Language Restrictions
 - only one function: `main` with no parameters
 - no function calls
 - no ABI handling
 - only integer operations
 
-# Compiler Components
-## 1. Lexer
+## Compiler Components
+### 1. Lexer
 
 The lexer converts source code into tokens.
 Example:
@@ -74,7 +69,7 @@ tk_const_num(10)
 tk_semicolon
 ```
 
-## 2. Parser
+### 2. Parser
 The parser converts tokens into an Abstract Syntax Tree (AST).
 
 Example:
@@ -88,11 +83,11 @@ a + b * 2;
 AST:
 
 ```
-        +
-       / \
-      a   *
-         / \
-        b   2
++
+├── a
+└── *
+    ├── b
+    └── 2
 ```
 
 
@@ -101,14 +96,13 @@ The parser handles:
 - expressions
 - statements
 - variable declarations
-- blocks
 - scopes
 
 
 ---
 
 
-## 3. Scope and Semantic Analysis
+### 3. Scope and Semantic Analysis
 
 Semantic analysis performs:
 
@@ -144,7 +138,7 @@ This avoids name conflicts between different scopes.
 ---
 
 
-## 4. Intermediate Representation
+### 4. Intermediate Representation
 
 The compiler generates a simple three-address code IR.
 
@@ -175,19 +169,10 @@ Temporary values use virtual registers:
 ...
 ```
 
-
-The IR is designed to make backend development easier.
-
-
 ---
 
 
-# Backend
-
-
-## Instruction Selection
-
-The IR is translated into target instructions.
+### 5. Instruction Selection
 
 Example:
 
@@ -209,7 +194,7 @@ STORE
 ---
 
 
-## DAG Construction
+### 6. DAG Construction
 
 Expressions are converted into dependency graphs.
 
@@ -236,7 +221,7 @@ The DAG represents instruction dependencies.
 ---
 
 
-## Instruction Scheduling
+### 7. Instruction Scheduling
 
 Each instruction has an estimated latency.
 
@@ -258,15 +243,12 @@ priority = critical_path_length
 ```
 
 
-The goal is to reduce pipeline stalls.
-
 
 ---
 
 
-## Register Allocation
+### 8. Register Allocation
 
-The IR uses unlimited virtual registers:
 
 ```
 %0
@@ -274,10 +256,6 @@ The IR uses unlimited virtual registers:
 %2
 ...
 ```
-
-
-Register allocation maps virtual registers to physical registers.
-
 
 Current target:
 
@@ -295,7 +273,7 @@ Focus:
 ---
 
 
-# Debug Options
+### 9. Debug Options
 
 The compiler provides several debugging stages:
 
@@ -316,17 +294,7 @@ The compiler provides several debugging stages:
 ```
 
 
-Example:
-
-```
-vslc test.vsl --dump-ast
-```
-
-
----
-
-
-# Optimization Level
+### 10. Optimization Level
 
 Currently the compiler targets:
 
@@ -352,26 +320,25 @@ Currently the compiler targets:
 - peephole optimization
 
 
+## Project Status
+Implemented:
+- [x] Lexer
+- [x] Parser
+- [x] AST
+- [x] Scope management
+- [x] Symbol table
+- [x] Semantic analysis
+- [x] Three-address IR
+
+In progress:
+- [ ] Instruction selection
+- [ ] Instruction scheduler
+- [ ] Register allocation
+- [ ] x86 backend
 ---
 
-
-# Build
-
-Example:
-
-```bash
-make
-```
-
-
----
-
-
-# Example
-
-
+### Example
 Input:
-
 ```c
 int a = 0;
 int main()
@@ -410,29 +377,7 @@ return %5
 ---
 
 
-# Project Status
 
-
-Implemented:
-
-- [x] Lexer
-- [x] Parser
-- [x] AST
-- [x] Scope management
-- [x] Symbol table
-- [x] Semantic analysis
-- [x] Three-address IR
-
-
-In progress:
-
-- [ ] Instruction selection
-- [ ] Instruction scheduler
-- [ ] Register allocation
-- [ ] x86 backend
-
-
----
 
 
 
