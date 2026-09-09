@@ -1,16 +1,16 @@
-# VSLC - Very Simple Language Compiler
+# VSC - Very Simple Compiler
 
 after i learned the book *Engineering a Compiler 3E*, i found the compiler is much more simpler than what i suppose **if you do not want to build a 
 real-world compiler**, so i want to make one.
 
-before i start coding i thought it is simple, when i am coding i found it is not that simple even it is a toy compiler, i think i can finish it with the help of AI.
+before i start coding i thought it will be very simple, when i am coding i found it is not that simple even it is a toy compiler, i think i can finish it with the help of AI.
 
-i design and write the code, and sometimes i show the code to AI and ask if it discovered some bug, i ask AI to write some simple and no-interesting code, for example, read a word from file, print the ast, i also ask AI for compiler questions.
+i design and write the code, and sometimes i show the code to AI and ask if it discovered some bug, i ask AI to write some not-interesting code, for example, read a word from file, print the ast, i also ask AI for compiler questions.
 
 i name the language vsl (very simple language)
-so the compiler's name is vslc
+so the compiler's name is vsc
 
-The goal is use vslc to compile vsl source code to x86 or riscv assembly, or direct to binary, and let it run on cpu.
+The goal is use vsc to compile vsl source code to x86 or risc-v assembly, or directly to binary, and let it run on cpu.
 
 
 
@@ -53,7 +53,6 @@ void
 ## Compiler Components
 ### 1. Lexer
 
-The lexer converts source code into tokens.
 Example:
 Input:
 ```c
@@ -70,10 +69,8 @@ tk_semicolon
 ```
 
 ### 2. Parser
-The parser converts tokens into an Abstract Syntax Tree (AST).
 
 Example:
-
 Source:
 
 ```c
@@ -89,17 +86,6 @@ AST:
     ├── b
     └── 2
 ```
-
-
-The parser handles:
-
-- expressions
-- statements
-- variable declarations
-- scopes
-
-
----
 
 
 ### 3. Scope and Semantic Analysis
@@ -132,15 +118,11 @@ block2_a
 ```
 
 
-This avoids name conflicts between different scopes.
-
-
 ---
 
 
 ### 4. Intermediate Representation
 
-The compiler generates a simple three-address code IR.
 
 Example:
 
@@ -196,7 +178,6 @@ STORE
 
 ### 6. DAG Construction
 
-Expressions are converted into dependency graphs.
 
 Example:
 
@@ -214,11 +195,6 @@ DAG:
         b   c
 ```
 
-
-The DAG represents instruction dependencies.
-
-
----
 
 
 ### 7. Instruction Scheduling
@@ -249,22 +225,11 @@ priority = critical_path_length
 
 ### 8. Register Allocation
 
-
-```
-%0
-%1
-%2
-...
-```
-
 Current target:
 
 ```
 -O0
 ```
-
-Focus:
-
 - correctness
 - simple allocation
 - load/store based strategy
@@ -274,8 +239,6 @@ Focus:
 
 
 ### 9. Debug Options
-
-The compiler provides several debugging stages:
 
 ```
 -dump-token
@@ -303,7 +266,7 @@ Currently the compiler targets:
 ```
 
 
--O0 goals:
+#### -O0 goals:
 
 - instruction selection
 - basic scheduling
@@ -311,7 +274,7 @@ Currently the compiler targets:
 - assembly generation
 
 
--o1  goals:
+#### -o1 goals:
 
 - constant folding
 - dead code elimination
