@@ -12,6 +12,8 @@ so the compiler's name is vslc
 
 The goal is use vslc to compile vsl source code to x86 or riscv assembly, or direct to binary, and let it run on cpu.
 
+
+## the plan is:
 ## Compiler Pipeline
 
 ```
