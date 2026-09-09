@@ -4,6 +4,7 @@
 *.exe
 *.a
 *.so
+a
 build/
 *.log
 .vscode/
@@ -12,3 +13,7 @@ build/
 .cproject
 .settings
 .project
+
+
+t1
+t2
