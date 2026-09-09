@@ -3,13 +3,10 @@
 after i learned the book *Engineering a Compiler 3E*, i found the compiler is much more simpler than what i suppose **if you do not want to build a 
 real-world compiler**, so i want to make one, before i start coding i thought it is simple, when i am coding i found it is not that simple even it is a toy compiler, i think i can finish it with the help of AI, i design and write the code, and sometimes i show the code to AI and ask if it discovered some bug, i ask AI to write some simple and no-interesting code,  for example, read a word from file, print the ast, i also ask AI for compiler qustions.
 
+i name the language vsl (very simple language)
+so the compiler's name is vslc
 
-
-vslc (Very Simple Language Compiler) is a learning-oriented compiler project.
-
-The goal of this project is to build a complete compiler pipeline from source code to x86 assembly.
-
-The compiler is implemented from scratch to understand mechanisms of compile.
+The goal is use vslc to compile vsl source code to x86 or riscv assembly, or direct to binary, and let it run on cpu.
 
 ## Compiler Pipeline
 
@@ -62,12 +59,7 @@ The project focuses on:
 - assembly generation
 
 
-## VSLC Language
-
-VSLC is intentionally designed as a very small language.
-
-The goal is not language completeness, but understanding compiler design.
-
+## vsl Language
 
 ## Supported Types
 
