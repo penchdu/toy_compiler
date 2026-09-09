@@ -14,45 +14,7 @@ The goal is use vslc to compile vsl source code to x86 or riscv assembly, or dir
 
 
 ## the plan is:
-## Compiler Pipeline
-
-```
-Source Code
-    |
-    v
-Lexer
-    |
-    v
-Parser
-    |
-    v
-AST
-    |
-    v
-Three-address IR
-    |
-    v
-Instruction Selection
-    |
-    v
-DAG Construction
-    |
-    v
-Instruction Scheduling
-    |
-    v
-Register Allocation
-    |
-    v
-x86 Assembly
-```
-
-## Project Goal
-
-The purpose of this project is learning compiler construction.
-
-The project focuses on:
-
+# Project Goal
 - lexical analysis
 - parsing
 - abstract syntax tree construction
@@ -64,19 +26,8 @@ The project focuses on:
 - register allocation
 - assembly generation
 
-
-## vsl Language
-
-## Supported Types
-
-Currently only:
-
-```
-int
-```
-
-
-## Supported Keywords
+# vsl Language
+# Supported Keywords
 
 ```
 =
@@ -88,6 +39,7 @@ int
 )
 {
 }
+int
 return
 void
 ;
