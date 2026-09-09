@@ -7,6 +7,22 @@
 
 #include "h.h"
 
+string get_var_type_name(Var_type ty)
+{
+	switch(ty)
+	{
+	case INT:
+		return "int";
+	case FLOAT:
+			return "FLOAT";
+	case VOID:
+			return "VOID";
+	case INVALID_TYPE:
+	default:
+		return "INVALID_TYPE";
+	}
+}
+
 void print_blank(int n)
 {
 	n = std::max(n, 0);
@@ -19,20 +35,23 @@ void dump_ast_node(Ast *p, int depth)
 		return;
 
 	print_blank(depth);
-	printf("%s", p->src_name.c_str());
+//	printf("%s", p->src_name.c_str());
 
 	if(p->semty == sem_declare)
-		printf(" [del]\n");
+		printf(" [%s %s]\n", get_var_type_name(p->var_type).c_str(), p->src_name.c_str());
 	else if(p->semty < op_all){
-		printf(" [%s]\n", p->vr_name.c_str());
+		printf("%s [%s]\n", p->sem_name.c_str(), p->vr_name.c_str());
 		print_blank(depth);
 		printf("\n");
 	}
-	else if(p->semty == sem_var)
-		printf(" [%s]\n", p->symb_name.c_str());
-
+	else if(p->semty == sem_var){
+		if(!p->var_symb)
+			printf("%s [ ]\n", p->src_name.c_str());
+		else
+			printf("%s [%s]\n", p->var_symb->unique_name.c_str(), p->var_symb->vr_name.c_str());
+	}
 	else if(p->semty == sem_const_num)
-		printf(" [num=%d]\n", p->value);
+		printf("%d [num]\n", p->const_value);
 
 
 	if(p->left)
@@ -68,7 +87,7 @@ void dump_scope(Scope *s, int depth)
 	for(auto &it : *(s->var_table))
 	{
 		print_blank(depth);
-		printf("symbol: %s\n", it.second.symb_name.c_str());
+		printf("symbol: %s\n", it.second->unique_name.c_str());
 	}
 
 	for(auto ast : s->asts)
@@ -98,6 +117,7 @@ static string trace_ast(Ast *p)
 	string a = trace_ast(p->left);
 	string b = trace_ast(p->right);
 	string c;
+	Symbol_var *symb = 0;
 
 	switch(p->semty)
 	{
@@ -106,16 +126,17 @@ static string trace_ast(Ast *p)
 		break;
 
 	case sem_var:
-		p->vr_name = "%" + std::to_string(p->vr);
-		return p->vr_name;
-		return p->symb_name;
-		return p->resolved_symbol->symb_name;
+		symb = p->var_symb;
+		assert(symb);
+		symb->vr_name = "%" + std::to_string(symb->vr);
+		return symb->vr_name;
+		return symb->unique_name;
 
 	case sem_const_num:
-		return std::to_string(p->value);
+		return std::to_string(p->const_value);
 
 	case op_assign:
-		c = a + " " + p->symb_name + " " + b;
+		c = a + " " + p->src_name + " " + b;
 		ir.push_back(c);
 		return a;
 
@@ -125,12 +146,12 @@ static string trace_ast(Ast *p)
 		case op_div:
 			p->vr = vrid++;
 			p->vr_name = "%" + std::to_string(p->vr);
-			c = p->vr_name + " = " + a + " " + p->symb_name + " " + b;
+			c = p->vr_name + " = " + a + " " + p->src_name + " " + b;
 			ir.push_back(c);
 			return p->vr_name;
 
 	case sem_return:
-		c = p->symb_name + " " + a;
+		c = p->src_name + " " + a;
 		ir.push_back(c);
 		return "";
 
@@ -142,10 +163,10 @@ static string trace_ast(Ast *p)
 }
 void _dump_ir(Scope *scp)
 {
-	printf("%s \n", scp->name.c_str());
+	LOG("scp %s \n", scp->name.c_str());
 
 	for(auto it = scp->asts.begin(); it != scp->asts.end();) {
-		printf("ast %ld\n", it - scp->asts.begin());
+		printf("%s, scp %s, ast %ld\n", __FUNCTION__, scp->name.c_str(), it - scp->asts.begin());
 		Ast *p = *it;
 
 		trace_ast(p);

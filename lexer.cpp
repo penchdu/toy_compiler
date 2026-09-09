@@ -102,11 +102,11 @@ Token get_a_token_from_file(FILE *fp)
 	}
 
 	if(c == EOF)
-		return Token{"EOF", tk_max};
+		return Token{"EOF", tk_EOF};
 
 	// 2. single-character token
     Token t = get_single_op_token(c);
-    if(t.type != tk_max)
+    if(t.type != tk_EOF)
     {
         return t;
     }
@@ -173,7 +173,7 @@ int lexer(FILE *fp)
 {
 	while(1) {
 		Token token = get_a_token_from_file(fp);
-		if(token.type == tk_max)
+		if(token.type == tk_EOF)
 			break;
 
 		tokens.append(token);

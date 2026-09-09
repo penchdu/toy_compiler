@@ -12,7 +12,7 @@ bool dump_token = false;
 Tokens tokens;
 Scope file_scope;
 Scope *scope;
-map<string, Symbol_var> all_var_table;
+map<string, Symbol_var*> global_unique_src_name_table;
 int vrid = 0;
 int scope_id = 0;
 vector<string> ir;
@@ -82,7 +82,7 @@ int gen_ir_from_ast(Ast *p)
 
 	case sem_const_num:
 		ir.ty = INT;
-		ir.value = p->value;
+		ir.value = p->const_value;
 		ir.p = p;
 		ir.str = p->src_name;
 		break;
@@ -148,7 +148,7 @@ int main(int argc, char **argv)
 
 	scope = &file_scope;
 	scope->id = scope_id++;
-	scope->name = "file_b" + std::to_string(scope->id);
+	scope->name = "b" + std::to_string(scope->id);
 	scope->is_virtual_scope = false;
 	scope->parent = 0;
 

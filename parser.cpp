@@ -14,7 +14,6 @@ Ast* new_ast_node(Token t)
 	Ast *p = new Ast (t);
 
 	p->this_scp = scope;
-	p->this_table = scope->var_table;
 	return p;
 }
 bool is_op(Sem_type op)
@@ -95,11 +94,11 @@ int case_tk_func()
 //	scope->name = "b" + std::to_string(scope->id);
 //	parent->clds.push_back(scope);
 
-	Symbol_func sym;
-	sym.return_type = return_type;
-	sym.name = func_name;
-	sym.argc = 0;
-	sym.func_scope = scope;
+	Symbol_func *sym = new Symbol_func;
+	sym->return_type = return_type;
+	sym->name = func_name;
+	sym->argc = 0;
+	sym->func_scope = scope;
 
 	if(parent->func_table->find(func_name) != parent->func_table->end()){
 		assert(0);
@@ -129,12 +128,13 @@ int case_tk_func()
 
 Ast* case_tk_declare()
 {
-	Token type_tk = tokens.get();
-	printf("%s \n", type_tk.src_name.c_str());
+	LOG();
+	Token tk_variable_type = tokens.get();
+	printf("%s \n", tk_variable_type.src_name.c_str());
 
-	Token tk = tokens.get();
+	Token tk_variable = tokens.get();
 
-	if(tk.type == tk_var && tokens.peek().type == tk_lparen){
+	if(tk_variable.type == tk_var && tokens.peek().type == tk_lparen){
 		tokens.unget();
 		tokens.unget();
 
@@ -142,9 +142,11 @@ Ast* case_tk_declare()
 		return 0;
 	}
 
-	Ast *p = new_ast_node(tk);
-	p->semty = sem_declare;
-	p->var_type = get_var_type(type_tk.type);
+	// declare a variable
+	Ast *p = new_ast_node(tk_variable);
+	assert(p->semty == sem_var);
+	p->semty = sem_declare;		// update default semty which have been set to sem_var
+	p->var_type = get_var_type(tk_variable_type.type);
 
 	if(tokens.peek().type == tk_semicolon){
 		tokens.get();
@@ -176,7 +178,7 @@ Ast* case_expr()
 
 		if(tk.type < tk_op_all) {
 			Token t = tokens.peek();
-			if(t.type == tk_max ||
+			if(t.type == tk_EOF ||
 					!(t.type == tk_const_num
 					|| t.type == tk_var
 					|| t.type == tk_lparen))
@@ -207,7 +209,7 @@ Ast* case_expr()
 		}
 		else if(tk.type == tk_var || tk.type == tk_const_num) {
 			Token t = tokens.peek();
-			if(t.type == tk_max)
+			if(t.type == tk_EOF)
 				ERR("unexpect EOF after %s\n", tokens.prew().src_name.c_str());
 
 			if(!(t.type < tk_op_all
@@ -263,7 +265,7 @@ Ast* case_tk_assign()
 	assign->right = case_expr();
 	return assign;
 }
-Ast* case_tk_var()
+Ast* case_tk_variable()
 {
 	Token tk = tokens.get();
 	printf("%s \n", tk.src_name.c_str());
@@ -303,6 +305,7 @@ Ast* case_tk_return()
 }
 Ast* parse_stmt()
 {
+	LOG();
 	while(!tokens.empty())
 	{
 		Token token = tokens.peek();
@@ -313,7 +316,7 @@ Ast* parse_stmt()
 			return case_tk_declare();
 
 		case tk_var:
-			return case_tk_var();
+			return case_tk_variable();
 			break;
 
 		case tk_assign:
@@ -339,7 +342,7 @@ Ast* parse_stmt()
 		case tk_return:
 			return case_tk_return();
 
-		case tk_max:
+		case tk_EOF:
 			return 0;
 
 		case tk_lparen:
@@ -373,8 +376,10 @@ void parser()
 {
 	_parser();
 	dump_ast();
+
 	semantic_analysis(&file_scope);
 	dump_ast();
+
 	dump_ir();
 }
 

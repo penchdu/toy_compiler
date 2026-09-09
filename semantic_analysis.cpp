@@ -76,27 +76,20 @@ int case_sem_op(Ast *p)
 }
 int case_sem_var(Ast *p)
 {
-	Symbol_var symb;
+	Symbol_var *symb;
 	Scope *ps = p->this_scp;
 
-	bool ok = false;
 	while(ps && ps->var_table)
 	{
 		auto r = ps->var_table->find(p->src_name);
 		if(r != ps->var_table->end()) {
-			symb = r->second;
-			p->sem_home_scp = ps;
-			p->sem_home_table = ps->var_table;
-			p->symb_name = r->second.symb_name;
-			p->explicit_name = r->second.explicit_name;
-			p->vr = r->second.vr;	// todo
-			ok = true;
+			p->var_symb = r->second;
 			break;
 		}
 		ps = ps->parent;
 	}
-	if(!ok) {
-		ERR("error: %s not declared\n", p->src_name.c_str());
+	if(!p->var_symb) {
+		ERR("error: %s is undeclared\n", p->src_name.c_str());
 	}
 
 	return 0;
@@ -162,35 +155,38 @@ static int trace_ast(Ast *p)
 int case_sem_declare(Scope *scp, Ast *p)
 {
 	// sem_declare is root node
-	auto vtbl = scp->var_table;
-	if(p->var_type != INT)
-		assert(0);
+	auto tbl = scp->var_table;
+	assert(p->var_type == INT);
 
-	if(vtbl->find(p->src_name) != vtbl->end()) {
-		printf("error: %s is already declared\n", p->src_name.c_str());
-		assert(0);
+	if(tbl->find(p->src_name) != tbl->end()) {
+		ERR("%s is already declared\n", p->src_name.c_str());
 	}
 
-	Symbol_var symb;
-	symb.type = p->var_type;
-	symb.src_name = p->src_name;
-	p->vr = symb.vr = vrid++;
+	Symbol_var *symb = new Symbol_var;
+	// p->semty has been set to sem_declare, but actually it is sem_var
+	symb->semty = sem_var;
+	symb->var_type = p->var_type;
+	symb->src_name = p->src_name;
+	symb->vr = vrid++;
 
-	if(all_var_table.find(p->src_name) == all_var_table.end()) {
-		symb.symb_name = p->symb_name = p->src_name;
-		all_var_table[p->src_name] = symb;
+	// get a unique name
+	if(global_unique_src_name_table.find(p->src_name) == global_unique_src_name_table.end()) {
+		symb->unique_name = p->src_name;
+		global_unique_src_name_table[p->src_name] = symb;
 	}
 	else {
-		symb.symb_name = p->symb_name = scp->name + "_" + p->src_name;
+		// a scope declared p->src_name before this point
+		symb->unique_name = "b" + std::to_string(scp->id) + "_" + p->src_name;
 	}
 
-	symb.explicit_name = p->explicit_name = scp->name + "_" + p->src_name;
-	vtbl->insert({p->src_name, symb});
+	symb->explicit_unique_name = "b" + std::to_string(scp->id) + "_" + p->src_name;
+	tbl->insert({p->src_name, symb});
 
 	return 0;
 }
 int semantic_analysis(Scope *scp)
 {
+	LOG();
 	printf("%s \n", scp->name.c_str());
 
 	for(auto it = scp->asts.begin(); it != scp->asts.end();) {

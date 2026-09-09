@@ -49,6 +49,7 @@ void
 - no function calls
 - no ABI handling
 - only integer operations
+- identifiers follow the same naming rules as in the C language
 
 ## Compiler Components
 ### 1. Lexer
