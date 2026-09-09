@@ -1,0 +1,14 @@
+*.o
+*.d
+*.out
+*.exe
+*.a
+*.so
+build/
+*.log
+.vscode/
+*.swp
+.DS_Store
+.cproject
+.settings
+.project
