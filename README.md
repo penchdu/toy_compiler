@@ -1,6 +1,6 @@
 # VSLC - Very Simple Language Compiler
 
-after i learned the book <<engineering a compiler>>, i found the compiler is much more simpler than what i suppose **if you do not want to build a 
+after i learned the book *Engineering a Compiler 3E*, i found the compiler is much more simpler than what i suppose **if you do not want to build a 
 real-world compiler**, so i want to make one, before i start coding i thought it is simple, when i am coding i found it is not that simple even it is a toy compiler, i think i can finish it with the help of AI, i design and write the code, and sometimes i show the code to AI and ask if it discovered some bug, i ask AI to write some simple and no-interesting code,  for example, read a word from file, print the ast, i also ask AI for compiler qustions.
 
 
