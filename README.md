@@ -76,7 +76,7 @@ int
 ```
 
 
-## Supported Operators
+## Supported Keywords
 
 ```
 =
@@ -88,97 +88,32 @@ int
 )
 {
 }
-```
-
-
-## Keywords
-
-```
 return
 void
-```
-
-
-## Other Tokens
-
-```
 ;
 ```
 
 
 ## Identifier Rules
-
-Identifier format:
-
-```
-(_ | a-z | A-Z)
-followed by
-(_ | a-z | A-Z | 0-9)*
-```
-
-Examples:
-
-Valid:
-
-```c
-abc
-_a
-value1
-test_var
-```
-
-Invalid:
-
-```c
-1abc
-```
-
+same as C
 
 ## Current Language Restrictions
-
-To simplify compiler development:
-
-- only one function: `main`
+- only one function: `main` with no parameters
 - no function calls
-- no parameters
 - no ABI handling
 - only integer operations
 
-
-Example program:
-
-```c
-int a;
-
-int main()
-{
-    int b;
-
-    a = 1;
-    b = 2;
-
-    return a + b;
-}
-```
-
-
 # Compiler Components
-
-
 ## 1. Lexer
 
 The lexer converts source code into tokens.
-
 Example:
-
 Input:
-
 ```c
 int a = 10;
 ```
 
 Output:
-
 ```
 tk_int
 tk_var(a)
@@ -187,20 +122,7 @@ tk_const_num(10)
 tk_semicolon
 ```
 
-
-Responsibilities:
-
-- keyword recognition
-- identifier recognition
-- operator recognition
-- constant recognition
-
-
----
-
-
 ## 2. Parser
-
 The parser converts tokens into an Abstract Syntax Tree (AST).
 
 Example:
