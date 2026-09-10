@@ -78,14 +78,14 @@ Token get_single_op_token(int c)
     	return token;
     }
 
-    token.src_name = c;
+    token.source_code = c;
     return token;
 }
 
 int my_getc(FILE *fp)
 {
 	int c = fgetc(fp);
-//	printf("%c ", c);
+//	LOG("%c ", c);
 	return c;
 }
 Token get_a_token_from_file(FILE *fp)
@@ -110,7 +110,7 @@ Token get_a_token_from_file(FILE *fp)
     {
         return t;
     }
-//    printf("%d \n", type);
+//    LOG("%d \n", type);
 
 	// 3. identifier / keyword
 	if((c >= 'a' && c <= 'z') ||
@@ -140,7 +140,7 @@ Token get_a_token_from_file(FILE *fp)
 		else
 			token.type = tk_var;
 
-		token.src_name = word;
+		token.source_code = word;
 		return token;
 	}
 
@@ -159,13 +159,13 @@ Token get_a_token_from_file(FILE *fp)
 		}
 
 		token.type = tk_const_num;
-		token.src_name = word;
+		token.source_code = word;
 		return token;
 	}
 
 	// 5. unknown character
 	word += static_cast<char>(c);
-	token.src_name = word;
+	token.source_code = word;
 	return token;
 }
 

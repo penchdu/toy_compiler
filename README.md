@@ -4,14 +4,10 @@ after i learned the book *Engineering a Compiler 3E*, i found the compiler is mu
 real-world compiler**, so i want to make one.
 
 before i start coding i thought it will be very simple, when i am coding i found it is not that simple even it is a toy compiler, i think i can finish it with the help of AI.
+i write the code, show it to AI and ask if it have suggestion, i ask AI to write some borring code, for example, read a word from file, print the ast in graphic style, i also ask AI for compiler knowledge.
 
-i design and write the code, and sometimes i show the code to AI and ask if it discovered some bug, i ask AI to write some not-interesting code, for example, read a word from file, print the ast, i also ask AI for compiler questions.
-
-i name the language vsl (very simple language)
-so the compiler's name is vsc
-
+i name the language vsl (very simple language), so the compiler's name is vsc
 The goal is use vsc to compile vsl source code to x86 or risc-v assembly, or directly to binary, and let it run on cpu.
-
 
 
 ### Project Goal
@@ -302,6 +298,11 @@ In progress:
 ---
 
 ### Example
+
+#### $make
+#### $./build/a
+
+
 Input:
 ```c
 int a = 0;

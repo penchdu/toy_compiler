@@ -52,7 +52,7 @@ enum Token_type{
     tk_EOF,
 };
 struct Token {
-	string src_name;
+	string source_code;
 	Token_type type = tk_EOF;
 };
 class Tokens{
@@ -91,7 +91,7 @@ public:
 	void dump() {
 		printf("lexer: \n" );
 		for(auto x : v)
-			printf("%s ", x.src_name.c_str());
+			printf("%s ", x.source_code.c_str());
 		printf("\n");
 	}
 
@@ -101,7 +101,7 @@ private:
 };
 
 
-enum Sem_type{
+enum Semantic_type{
 	op_assign,
 	op_add,
 	op_sub,
@@ -147,17 +147,19 @@ enum Var_type{
 struct Scope;
 
 struct Symbol_var{
-	Sem_type semty;
+	Semantic_type semty;
 	Var_type var_type = INT;
 	int value;
 
-	string src_name;
+	string source_name;
 	string unique_name;		// global unique
-	string explicit_unique_name;	// global unique
+	string explicit_unique_name;	// global explicit unique
 
 	int vr = 0;
 	string vr_name;
 	Scope *scp;
+
+	vector<Symbol_var*> cld;
 };
 struct Symbol_func{
 	Var_type return_type = INT;
@@ -167,9 +169,8 @@ struct Symbol_func{
 };
 struct Ast {
 public:
-	Sem_type semty;
-	string src_name;
-	string sem_name;
+	Semantic_type semty;
+	string source_code;
 
 	// op
 	Op_priority op_prio;
@@ -179,10 +180,11 @@ public:
 
 	// var
 	Var_type var_type;		// var_type in ast or symtable?
-	Symbol_var *var_symb = 0;
+	Symbol_var *symb_var = 0;
 	int const_value;
 
 	Token tk;
+	Ast *parent = 0;
 	Ast *left = 0;
 	Ast *right = 0;
 
@@ -194,7 +196,7 @@ public:
 	Ast(Token &token)
 	{
 		tk = token;
-		src_name = token.src_name;
+		source_code = token.source_code;
 
 		switch(token.type)
 		{
@@ -221,7 +223,6 @@ public:
 
 		case tk_return:
 			semty = sem_return;
-			sem_name = src_name;
 			break;
 
 //		case tk_int:
@@ -238,15 +239,12 @@ public:
 		case tk_const_num:
 			semty = sem_const_num;
 			var_type = INT;
-			const_value = atoi(token.src_name.c_str());
+			const_value = atoi(token.source_code.c_str());
 			break;
 
 		default:
 			break;
 		}
-
-		if(semty < op_all)
-			sem_name = src_name;
 	}
 };
 
@@ -254,7 +252,7 @@ struct Scope{
 public:
 	int id;
 	string name;
-	Sem_type sem = sem_invalid;
+	Semantic_type sem = sem_invalid;
 //	Var_type return_type;
 
 	vector<Ast*> asts;
@@ -287,20 +285,20 @@ public:
 extern Tokens tokens;
 extern Scope file_scope;
 extern Scope *scope;
-extern map<string, Symbol_var*> global_unique_src_name_table;
+extern map<string, Symbol_var*> global_unique_source_code_name_tbl;
 extern int vrid;
 extern int scope_id;
 extern vector<string> ir;
 
 int lexer(FILE *fp);
 Ast* parse_stmt();
-void _parser();
+void make_ast();
 void parser();
 void dump_ast();
-int semantic_analysis(Scope *scp);
+int sem_analysis_var_declare(Scope *scp);
 int gen_ir_from_scope(Scope *scp);
 int gen_ir();
-void dump_ir();
+void gen_vr();
 
 #include <cstdio>
 #include <cstdlib>

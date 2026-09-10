@@ -7,7 +7,7 @@
 
 #include "h.h"
 
-Ast* case_expr();
+Ast* parse_expr();
 
 Ast* new_ast_node(Token t)
 {
@@ -16,7 +16,7 @@ Ast* new_ast_node(Token t)
 	p->this_scp = scope;
 	return p;
 }
-bool is_op(Sem_type op)
+bool is_op(Semantic_type op)
 {
 	return op >= op_assign && op <= op_div;
 }
@@ -45,7 +45,6 @@ Ast* case_tk_left_brace()
 	scope->id = scope_id++;
 	scope->name = "b" + std::to_string(scope->id);
 
-	printf("case_tk_left_curly_bracket \n");
 	return 0;
 }
 Ast* case_tk_right_brace()
@@ -64,7 +63,6 @@ Ast* case_tk_right_brace()
 	scope->var_table = scope->parent->var_table;
 	scope->func_table = scope->parent->func_table;
 
-	printf("case_tk_right_curly_bracket \n");
 	return 0;
 }
 int case_tk_func()
@@ -73,7 +71,7 @@ int case_tk_func()
 	Var_type return_type = get_var_type(tk.type);
 
 	tk = tokens.get();
-	string func_name = tk.src_name;
+	string func_name = tk.source_code;
 
 	// assume no argument
 	tk = tokens.get();
@@ -122,15 +120,14 @@ int case_tk_func()
 //		parser();
 //	}
 
-	_parser();
+	make_ast();
 	return 0;
 }
 
 Ast* case_tk_declare()
 {
-	LOG();
 	Token tk_variable_type = tokens.get();
-	printf("%s \n", tk_variable_type.src_name.c_str());
+	LOG("%s \n", tk_variable_type.source_code.c_str());
 
 	Token tk_variable = tokens.get();
 
@@ -161,9 +158,9 @@ Ast* case_tk_lparen()
 {
 	tokens.get();
 
-	return case_expr();
+	return parse_expr();
 }
-Ast* case_expr()
+Ast* parse_expr()
 {
 	deque<Ast*> op_queue;
 	deque<Ast*> operand_queue;
@@ -171,7 +168,7 @@ Ast* case_expr()
 	while(!tokens.empty())
 	{
 		Token tk = tokens.get();
-		printf("%s \n", tk.src_name.c_str());
+		LOG("%s \n", tk.source_code.c_str());
 
 		if(tk.type == tk_semicolon || tk.type == tk_rparen)
 			break;
@@ -182,7 +179,7 @@ Ast* case_expr()
 					!(t.type == tk_const_num
 					|| t.type == tk_var
 					|| t.type == tk_lparen))
-				ERR("unexpect token %s\n", t.src_name.c_str());
+				ERR("unexpect token %s\n", t.source_code.c_str());
 
 			Ast *p = new_ast_node(tk);
 			while(op_queue.size() > 0 && p->op_prio <= op_queue.back()->op_prio)
@@ -201,7 +198,7 @@ Ast* case_expr()
 				pa->right = r;
 
 				operand_queue.push_back(pa);
-				printf("%s %s %s\n", l->src_name.c_str(), pa->src_name.c_str(), r->src_name.c_str());
+				LOG("%s %s %s\n", l->source_code.c_str(), pa->source_code.c_str(), r->source_code.c_str());
 
 			}
 
@@ -210,12 +207,12 @@ Ast* case_expr()
 		else if(tk.type == tk_var || tk.type == tk_const_num) {
 			Token t = tokens.peek();
 			if(t.type == tk_EOF)
-				ERR("unexpect EOF after %s\n", tokens.prew().src_name.c_str());
+				ERR("unexpect EOF after %s\n", tokens.prew().source_code.c_str());
 
 			if(!(t.type < tk_op_all
 					|| t.type == tk_semicolon
 					|| t.type == tk_rparen))
-				ERR("unexpect token %s \n", t.src_name.c_str());
+				ERR("unexpect token %s \n", t.source_code.c_str());
 
 			Ast *p = new_ast_node(tk);
 			operand_queue.push_back(p);
@@ -259,19 +256,19 @@ Ast* case_tk_assign()
 {
 	Ast *l = new_ast_node(tokens.prew());
 	Ast *assign = new_ast_node(tokens.get());
-	printf("%s \n", assign->src_name.c_str());
+	LOG("%s \n", assign->source_code.c_str());
 
 	assign->left = l;
-	assign->right = case_expr();
+	assign->right = parse_expr();
 	return assign;
 }
 Ast* case_tk_variable()
 {
 	Token tk = tokens.get();
-	printf("%s \n", tk.src_name.c_str());
+	LOG("%s \n", tk.source_code.c_str());
 
 //	if(symble_table.find(tk.str) == symble_table.end()){
-//		printf("%s not declared\n", tk.str.c_str());
+//		LOG("%s not declared\n", tk.str.c_str());
 //		assert(0);
 //	}
 
@@ -283,7 +280,7 @@ Ast* case_tk_variable()
 		return case_tk_assign();
 
 	tokens.unget();
-	return case_expr();
+	return parse_expr();
 }
 Ast* case_tk_const_num()
 {
@@ -294,10 +291,10 @@ Ast* case_tk_const_num()
 Ast* case_tk_return()
 {
 	Token tk = tokens.get();
-	printf("%s \n", tk.src_name.c_str());
+	LOG("%s \n", tk.source_code.c_str());
 
 	Ast *pa = new_ast_node(tk);
-	Ast *l = case_expr();
+	Ast *l = parse_expr();
 	pa->left = l;
 
 	assert(l);
@@ -360,26 +357,20 @@ Ast* parse_stmt()
 	return 0;
 }
 
-void _parser()
+void make_ast()
 {
 	while(!tokens.empty()){
 		Ast *p = parse_stmt();
 		if(p)
 			scope->asts.push_back(p);
 	}
-
-//	for(Ast * p : scope->asts){
-//		check_semantic(p);
-//	}
 }
 void parser()
 {
-	_parser();
-	dump_ast();
+	make_ast();
+//	dump_ast();
 
-	semantic_analysis(&file_scope);
-	dump_ast();
-
-	dump_ir();
+	sem_analysis_var_declare(&file_scope);
+//	dump_ast();
 }
 

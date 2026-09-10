@@ -12,19 +12,21 @@ bool dump_token = false;
 Tokens tokens;
 Scope file_scope;
 Scope *scope;
-map<string, Symbol_var*> global_unique_src_name_table;
+map<string, Symbol_var*> global_unique_source_code_name_tbl;
 int vrid = 0;
 int scope_id = 0;
 vector<string> ir;
 
-struct Vr{
-	Sem_type sem;
-	int t;
-	int s1;
-	int s2;
 
-	Ast *p = 0;
+
+struct Vr{
+	Semantic_type sem;
+	int tar;
+	int src1;
+	int src2;
+
 	Var_type ty;
+	Ast *p = 0;
 	int value;
 	string str;
 };
@@ -33,7 +35,7 @@ static int tid = 0;
 
 int gen_ir_from_ast(Ast *p)
 {
-//	printf("%p\n", p);
+//	LOG("%p\n", p);
 	assert(p);
 	int l = -1;
 	int r = -1;
@@ -54,48 +56,48 @@ int gen_ir_from_ast(Ast *p)
 		assert(l != -1 && r != -1);
 
 		ir.p = p;
-		ir.s1 = l;
-		ir.s2 = r;
+		ir.src1 = l;
+		ir.src2 = r;
 //			ir.expr
 		break;
 
 	case op_assign:
 		assert(l != -1 && r != -1);
 		assert(p->left->semty != sem_const_num);
-		ir.t = l;
+		ir.tar = l;
 		ir.p = p;
-		ir.s1 = l;
-		ir.s2 = r;
+		ir.src1 = l;
+		ir.src2 = r;
 		break;
 
 	case sem_return:
 		assert(r == -1);
 		ir.p = p;
-		ir.s2 = r;
+		ir.src2 = r;
 		break;
 
 	case sem_var:
 		ir.ty = INT;
 		ir.p = p;
-		ir.str = p->src_name;
+		ir.str = p->source_code;
 		break;
 
 	case sem_const_num:
 		ir.ty = INT;
 		ir.value = p->const_value;
 		ir.p = p;
-		ir.str = p->src_name;
+		ir.str = p->source_code;
 		break;
 
 	default:
-		printf("%d\n", p->semty);
+		LOG("%d\n", p->semty);
 		assert(0);
 		return -1;
 	}
 
 	ir.sem = p->semty;
 	irs.push_back(ir);
-	return ir.t;
+	return ir.tar;
 }
 int gen_ir_from_scope(Scope *scp)
 {
@@ -113,17 +115,17 @@ int gen_ir()
 {
 	gen_ir_from_scope(&file_scope);
 
-	printf("%zu\n", irs.size());
+	LOG("%zu\n", irs.size());
 	for(Vr &r : irs){
 //		string s = string("t") + std::to_string(r.id) + " ="
 //		+ " " + string("t") + std::to_string(r.l)
 //		+ " " + r.p->tk.str;
 //		+ " " + string("t") + std::to_string(r.r);
 //
-//		printf("%s\n", s.c_str());
+//		LOG("%s\n", s.c_str());
 
 
-		printf("t%d = t%d %s t%d\n", r.t, r.s1, r.p->src_name.c_str(), r.s2);
+		LOG("t%d = t%d %s t%d\n", r.t, r.s1, r.p->source_code.c_str(), r.s2);
 
 	}
 
@@ -154,6 +156,7 @@ int main(int argc, char **argv)
 
 	lexer(fp);
 	parser();
+	gen_vr();
 
 	return 0;
 }

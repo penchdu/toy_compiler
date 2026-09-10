@@ -5,8 +5,8 @@ CXXFLAGS = -std=c++20 -O0 -g -MMD -MP
 SOURCE = main.cpp \
          lexer.cpp \
          parser.cpp \
-         semantic_analysis.cpp \
-         gen_ir.cpp \
+         semantic_analysis_var_declare.cpp \
+         vr.cpp \
          dump.cpp
 
 BUILD_DIR = build
