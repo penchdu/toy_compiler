@@ -6,7 +6,7 @@ SOURCE = main.cpp \
          lexer.cpp \
          parser.cpp \
          semantic_analysis_var_declare.cpp \
-         vr.cpp \
+         gen_inst.cpp \
          dump.cpp
 
 BUILD_DIR = build

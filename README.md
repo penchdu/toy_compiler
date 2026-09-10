@@ -271,7 +271,7 @@ Currently the compiler targets:
 - assembly generation
 
 
-#### -o1 goals:
+#### -O1 goals:
 
 - constant folding
 - dead code elimination
@@ -294,14 +294,16 @@ In progress:
 - [ ] Instruction selection
 - [ ] Instruction scheduler
 - [ ] Register allocation
+- [ ] SSA IR
 - [ ] x86 backend
 ---
 
 ### Example
 
-#### $make
-#### $./build/a
-
+```c
+$make
+$./build/a
+```
 
 Input:
 ```c

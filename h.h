@@ -52,7 +52,7 @@ enum Token_type{
     tk_EOF,
 };
 struct Token {
-	string source_code;
+	string src;
 	Token_type type = tk_EOF;
 };
 class Tokens{
@@ -91,7 +91,7 @@ public:
 	void dump() {
 		printf("lexer: \n" );
 		for(auto x : v)
-			printf("%s ", x.source_code.c_str());
+			printf("%s ", x.src.c_str());
 		printf("\n");
 	}
 
@@ -109,11 +109,12 @@ enum Semantic_type{
 	op_div,
 	op_all,
 
-	sem_declare,
+	sem_var_declare,
 	sem_var,
 	sem_const_num,
 
-	sem_func,
+	sem_func_declare,
+	sem_func_call,
 	sem_return,
 
 //	sem_if,
@@ -147,16 +148,15 @@ enum Var_type{
 struct Scope;
 
 struct Symbol_var{
-	Semantic_type semty;
+//	Semantic_type semty;
 	Var_type var_type = INT;
-	int value;
+//	int value;
 
-	string source_name;
+	string *src;
 	string unique_name;		// global unique
 	string explicit_unique_name;	// global explicit unique
 
-	int vr = 0;
-	string vr_name;
+	int vr = -1;
 	Scope *scp;
 
 	vector<Symbol_var*> cld;
@@ -170,15 +170,14 @@ struct Symbol_func{
 struct Ast {
 public:
 	Semantic_type semty;
-	string source_code;
 
 	// op
 	Op_priority op_prio;
-	int op_operant_cnt = 2;
+	// for op, vr is temp vr
 	int vr = -1;
-	string vr_name;
 
 	// var
+	// for op, var_type is type of temp vr
 	Var_type var_type;		// var_type in ast or symtable?
 	Symbol_var *symb_var = 0;
 	int const_value;
@@ -190,13 +189,10 @@ public:
 
 	Scope *this_scp = 0;
 	Scope *sem_home_scp = 0;
-//	map<string, Symbol_var*> *this_table = 0;
-//	map<string, Symbol_var*> *sem_home_table = 0;
 
 	Ast(Token &token)
 	{
 		tk = token;
-		source_code = token.source_code;
 
 		switch(token.type)
 		{
@@ -239,7 +235,7 @@ public:
 		case tk_const_num:
 			semty = sem_const_num;
 			var_type = INT;
-			const_value = atoi(token.source_code.c_str());
+			const_value = atoi(token.src.c_str());
 			break;
 
 		default:
@@ -253,7 +249,6 @@ public:
 	int id;
 	string name;
 	Semantic_type sem = sem_invalid;
-//	Var_type return_type;
 
 	vector<Ast*> asts;
 	map<string, Symbol_var*> _var_table;
@@ -265,6 +260,7 @@ public:
 	Scope * parent;
 	vector<Scope*> clds;
 	bool is_virtual_scope;
+	Var_type return_type = INVALID_TYPE;
 
 	Scope* new_cld()
 	{
@@ -282,23 +278,46 @@ public:
 	}
 };
 
+struct Instruction{
+	Instruction(Ast *p){
+		ast = p;
+	}
+
+	int latency = 0;
+
+	int dst = -1;		// result vr id
+	int src1 = -1;		// src vr id
+	int src2 = -1;		// src vr id
+
+//	Var_type ty = INT;
+//	int value = 0;
+
+	Ast *ast = 0;
+	string str;
+};
+
+
 extern Tokens tokens;
 extern Scope file_scope;
 extern Scope *scope;
-extern map<string, Symbol_var*> global_unique_source_code_name_tbl;
-extern int vrid;
+extern map<string, Symbol_var*> global_unique_src_name_tbl;
+extern vector<Ast*> global_unique_vrid_tbl;
+extern map<int, int> const_num_vr_tbl;
 extern int scope_id;
-extern vector<string> ir;
+extern vector<Instruction*> insts;
 
+bool is_math_op(Semantic_type t);
 int lexer(FILE *fp);
 Ast* parse_stmt();
-void make_ast();
+void gen_ast();
 void parser();
 void dump_ast();
 int sem_analysis_var_declare(Scope *scp);
 int gen_ir_from_scope(Scope *scp);
 int gen_ir();
-void gen_vr();
+void gen_inst();
+int get_vr(Ast *p);
+
 
 #include <cstdio>
 #include <cstdlib>

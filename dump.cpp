@@ -37,28 +37,28 @@ void dump_ast_node(Ast *p, int depth)
 	print_blank(depth);
 //	printf("%s", p->src_name.c_str());
 
-	if(p->semty == sem_declare){
-		printf(" [%s %s]\n", get_var_type_name(p->var_type).c_str(), p->source_code.c_str());
+	if(p->semty == sem_var_declare){
+		printf(" [%s %s]\n", get_var_type_name(p->var_type).c_str(), p->tk.src.c_str());
 	}
 	else if(p->semty < op_all){
-		printf("%s [%s]\n", p->source_code.c_str(), p->vr_name.c_str());
+		printf("%s [%%%d]\n", p->tk.src.c_str(), p->vr);
 		print_blank(depth);
 		printf("\n");
 	}
 	else if(p->semty == sem_var){
 		if(!p->symb_var)
-			printf("%s [ ]\n", p->source_code.c_str());
+			printf("%s [ ]\n", p->tk.src.c_str());
 		else
-			printf("%s [%s]\n", p->symb_var->unique_name.c_str(), p->symb_var->vr_name.c_str());
+			printf("%s [%%%d]\n", p->symb_var->unique_name.c_str(), p->symb_var->vr);
 	}
 	else if(p->semty == sem_const_num){
 		printf("%d [num]\n", p->const_value);
 	}
-	else if(p->semty == sem_func){
-			printf("func [%s]\n", p->source_code.c_str());
+	else if(p->semty == sem_func_call){
+			printf("func [%s]\n", p->tk.src.c_str());
 	}
 	else if(p->semty == sem_return){
-		printf("%s \n", p->source_code.c_str());
+		printf("%s \n", p->tk.src.c_str());
 	}
 	else{
 		ERR();

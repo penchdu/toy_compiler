@@ -78,7 +78,7 @@ Token get_single_op_token(int c)
     	return token;
     }
 
-    token.source_code = c;
+    token.src = c;
     return token;
 }
 
@@ -101,7 +101,7 @@ Token get_a_token_from_file(FILE *fp)
 		}
 	}
 
-	if(c == EOF)
+	if(c == EOF || c == '#')
 		return Token{"EOF", tk_EOF};
 
 	// 2. single-character token
@@ -140,7 +140,7 @@ Token get_a_token_from_file(FILE *fp)
 		else
 			token.type = tk_var;
 
-		token.source_code = word;
+		token.src = word;
 		return token;
 	}
 
@@ -159,13 +159,13 @@ Token get_a_token_from_file(FILE *fp)
 		}
 
 		token.type = tk_const_num;
-		token.source_code = word;
+		token.src = word;
 		return token;
 	}
 
 	// 5. unknown character
 	word += static_cast<char>(c);
-	token.source_code = word;
+	token.src = word;
 	return token;
 }
 

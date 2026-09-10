@@ -3,6 +3,8 @@
 
 int a = 1;
 
+
+
 int main()
 {
 	int a = 2;
@@ -12,6 +14,8 @@ int main()
 		int a = 4;
 		a = 5;
 		int b = a + 6;
+		b = a = 7;
+		
 	}
 	
 	
