@@ -7,7 +7,7 @@
 
 #include "h.h"
 
-int get_vr(Ast *p)
+static int get_vr(Ast *p)
 {
 	static int id = -1;
 	id++;
@@ -24,13 +24,13 @@ int get_vr(Ast *p)
 //
 //}
 
-static int trace_ast_down_up_gen_inst(Ast *p)
+static int trace_ast_down_up_gen_3_address_code(Ast *p)
 {
 	if(!p)
 		return -1;
 
-	int b = trace_ast_down_up_gen_inst(p->right);
-	int a = trace_ast_down_up_gen_inst(p->left);
+	int b = trace_ast_down_up_gen_3_address_code(p->right);
+	int a = trace_ast_down_up_gen_3_address_code(p->left);
 	string c;
 	Symbol_var *symb = 0;
 	Instruction *inst = 0;
@@ -101,7 +101,7 @@ static int trace_ast_down_up_gen_inst(Ast *p)
 
 	return -1;
 }
-void _gen_inst(Scope *scp)
+static void _gen_three_address_code(Scope *scp)
 {
 	LOG("scp %s \n", scp->name.c_str());
 
@@ -109,16 +109,16 @@ void _gen_inst(Scope *scp)
 		LOG("%s, scp %s, ast %ld\n", __FUNCTION__, scp->name.c_str(), it - scp->asts.begin());
 		Ast *p = *it;
 
-		trace_ast_down_up_gen_inst(p);
+		trace_ast_down_up_gen_3_address_code(p);
 		it++;
 	}
 
 	for(Scope *p : scp->clds) {
-		_gen_inst(p);
+		_gen_three_address_code(p);
 	}
 	return;
 }
-void dump_inst()
+static void dump()
 {
 	printf("\n========== inst ==========\n");
 	for(auto &r : insts) {
@@ -128,34 +128,34 @@ void dump_inst()
 		switch(p->semty)
 		{
 		case op_assign:
-			printf("assign[%%%d]:\t %%%d %s %%%d\n", r->dst, r->dst, p->tk.src.c_str(), r->src1);
+			printf("assign:\t %%%d %s %%%d\n", r->dst, p->tk.src.c_str(), r->src1);
 			break;
 
 		case op_add:
 		case op_sub:
 		case op_mul:
 		case op_div:
-			printf("op:\t\t %%%d = %%%d %s %%%d\n", r->dst, r->src1, p->tk.src.c_str(), r->src2);
+			printf("op:\t %%%d = %%%d %s %%%d\n", r->dst, r->src1, p->tk.src.c_str(), r->src2);
 			break;
 
 		case sem_var_declare:
-			printf("del:\t\t %s[%s] %%%d\n", p->tk.src.c_str(), p->symb_var->unique_name.c_str(),p->symb_var->vr);
+			printf("del:\t %s[%s] %%%d\n", p->tk.src.c_str(), p->symb_var->unique_name.c_str(),p->symb_var->vr);
 			break;
 
 		case sem_var:
-			printf("var:\t\t %%%d %s\n", r->dst, p->tk.src.c_str());
+			printf("var:\t %%%d %s\n", r->dst, p->tk.src.c_str());
 			break;
 
 		case sem_const_num:
-			printf("const:\t\t %%%d num %d\n", r->dst, p->const_value);
+			printf("const:\t %%%d num %d\n", r->dst, p->const_value);
 			break;
 
 		case sem_func_call:
-			printf("func call:\t\t %s\n", p->tk.src.c_str());
+			printf("func call:\t %s\n", p->tk.src.c_str());
 			break;
 
 		case sem_return:
-			printf("return:\t\t %s %%%d\n", p->tk.src.c_str(), r->src1);
+			printf("return:\t %s %%%d\n", p->tk.src.c_str(), r->src1);
 			break;
 
 		default:
@@ -164,9 +164,9 @@ void dump_inst()
 		}
 	}
 }
-void gen_inst()
+void gen_three_address_code()
 {
-	_gen_inst(&file_scope);
+	_gen_three_address_code(&file_scope);
 	dump_ast();
-	dump_inst();
+	dump();
 }

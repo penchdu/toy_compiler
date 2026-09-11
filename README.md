@@ -7,7 +7,7 @@ before i start coding i thought it will be very simple, when i am coding i found
 i write the code, show it to AI and ask if it have suggestion, i ask AI to write some borring code, for example, read a word from file, print the ast in graphic style, i also ask AI for compiler knowledge.
 
 i name the language vsl (very simple language), so the compiler's name is vsc
-The goal is use vsc to compile vsl source code to x86 or risc-v assembly, or directly to binary, and let it run on cpu.
+The goal is use vsc to compile vsl source code to x86-64 or risc-v assembly, or directly to binary, and let it run on cpu.
 
 
 ### Project Goal
@@ -34,10 +34,9 @@ The goal is use vsc to compile vsl source code to x86 or risc-v assembly, or dir
 )
 {
 }
+;
 int
 return
-void
-;
 ```
 
 ### Language Restrictions
@@ -275,13 +274,12 @@ Currently the compiler targets:
 
 - constant folding
 - dead code elimination
-- SSA form
+- SSA
 - better register allocation
 - peephole optimization
 
 
 ## Project Status
-Implemented:
 - [x] Lexer
 - [x] Parser
 - [x] AST
@@ -289,12 +287,11 @@ Implemented:
 - [x] Symbol table
 - [x] Semantic analysis
 - [x] Three-address IR
-
-In progress:
-- [ ] Instruction selection
+- [ ] SSA
+- [ ] SSA based optimize
+- [x] Instruction selection
 - [ ] Instruction scheduler
 - [ ] Register allocation
-- [ ] SSA IR
 - [ ] x86 backend
 ---
 

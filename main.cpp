@@ -43,7 +43,8 @@ int main(int argc, char **argv)
 
 	lexer(fp);
 	parser();
-	gen_inst();
+	sem_analysis();
+	gen_three_address_code();
 
 	return 0;
 }

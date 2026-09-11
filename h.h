@@ -25,7 +25,22 @@ using std::string;
 using std::map;
 using std::deque;
 
-extern bool dump_token;
+#include <cstdio>
+#include <cstdlib>
+
+#define ERR(fmt, ...) do{ \
+    printf("%s:%d: error:  " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
+    exit(1);	\
+}while(0)
+
+//#define DEBUG
+#ifdef DEBUG
+	#define LOG(fmt, ...) do{ \
+		printf("LOG %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
+	}while(0)
+#else
+	#define LOG(fmt, ...)
+#endif
 
 enum Token_type{
 	tk_assign,
@@ -79,7 +94,7 @@ public:
 		return v[i];
 	}
 
-	Token prew(){
+	Token prev(){
 		if(i <= 0){
 			return {"", tk_EOF};
 		}
@@ -114,6 +129,7 @@ enum Semantic_type{
 	sem_const_num,
 
 	sem_func_declare,
+	sem_func_define,
 	sem_func_call,
 	sem_return,
 
@@ -239,6 +255,7 @@ public:
 			break;
 
 		default:
+			ERR("unexpect token %s\n", token.src.c_str());
 			break;
 		}
 	}
@@ -297,6 +314,8 @@ struct Instruction{
 };
 
 
+extern bool dump_token;
+
 extern Tokens tokens;
 extern Scope file_scope;
 extern Scope *scope;
@@ -307,33 +326,12 @@ extern int scope_id;
 extern vector<Instruction*> insts;
 
 bool is_math_op(Semantic_type t);
-int lexer(FILE *fp);
-Ast* parse_stmt();
-void gen_ast();
-void parser();
 void dump_ast();
-int sem_analysis_var_declare(Scope *scp);
-int gen_ir_from_scope(Scope *scp);
-int gen_ir();
-void gen_inst();
-int get_vr(Ast *p);
 
+int lexer(FILE *fp);
+void parser();
+void sem_analysis();
+void gen_three_address_code();
 
-#include <cstdio>
-#include <cstdlib>
-
-#define ERR(fmt, ...) do{ \
-    printf("%s:%d: error:  " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
-    exit(1);	\
-}while(0)
-
-//#define DEBUG
-#ifdef DEBUG
-	#define LOG(fmt, ...) do{ \
-		printf("LOG %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
-	}while(0)
-#else
-	#define LOG(fmt, ...)
-#endif
 
 #endif /* H_H_ */

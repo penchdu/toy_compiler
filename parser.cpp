@@ -7,20 +7,18 @@
 
 #include "h.h"
 
-Ast* parse_expr();
+static Ast* parse_stmt();
+static Ast* parse_expr();
+static void gen_ast();
 
-Ast* new_ast_node(Token t)
+static Ast* new_ast_node(Token t)
 {
 	Ast *p = new Ast (t);
 
 	p->this_scp = scope;
 	return p;
 }
-bool is_op(Semantic_type op)
-{
-	return op >= op_assign && op <= op_div;
-}
-enum Var_type get_var_type(enum Token_type ty)
+static enum Var_type get_var_type(enum Token_type ty)
 {
 	switch(ty)
 	{
@@ -33,7 +31,7 @@ enum Var_type get_var_type(enum Token_type ty)
 	}
 }
 
-Ast* case_tk_left_brace()
+static Ast* case_tk_left_brace()
 {
 	if(scope->is_virtual_scope)
 		scope = scope->parent;
@@ -47,7 +45,7 @@ Ast* case_tk_left_brace()
 
 	return 0;
 }
-Ast* case_tk_right_brace()
+static Ast* case_tk_right_brace()
 {
 	tokens.get();
 	if(scope->is_virtual_scope)
@@ -65,7 +63,7 @@ Ast* case_tk_right_brace()
 
 	return 0;
 }
-int case_tk_func()
+static int case_tk_func()
 {
 	Token tk = tokens.get();
 	Var_type return_type = get_var_type(tk.type);
@@ -86,12 +84,11 @@ int case_tk_func()
 	Scope *parent = scope;
 	scope = scope->new_cld();
 	scope->is_virtual_scope = false;
-	scope->sem = sem_func_declare;
+	scope->sem = sem_func_define;
 	scope->name = func_name;
 	scope->id = scope_id++;
 	scope->return_type = return_type;
 //	scope->name = "b" + std::to_string(scope->id);
-//	parent->clds.push_back(scope);
 
 	Symbol_func *sym = new Symbol_func;
 	sym->return_type = return_type;
@@ -121,7 +118,7 @@ int case_tk_func()
 	return 0;
 }
 
-Ast* case_tk_declare()
+static Ast* case_tk_declare()
 {
 	Token tk_variable_type = tokens.get();
 	LOG("%s \n", tk_variable_type.src.c_str());
@@ -151,13 +148,13 @@ Ast* case_tk_declare()
 	return p;
 }
 
-Ast* case_tk_lparen()
+static Ast* case_tk_lparen()
 {
 	tokens.get();
 
 	return parse_expr();
 }
-Ast* parse_expr()
+static Ast* parse_expr()
 {
 	deque<Ast*> op_queue;
 	deque<Ast*> operand_queue;
@@ -204,7 +201,7 @@ Ast* parse_expr()
 		else if(tk.type == tk_var || tk.type == tk_const_num) {
 			Token t = tokens.peek();
 			if(t.type == tk_EOF)
-				ERR("unexpect EOF after %s\n", tokens.prew().src.c_str());
+				ERR("unexpect EOF after %s\n", tokens.prev().src.c_str());
 
 			if(!(t.type < tk_op_all
 					|| t.type == tk_semicolon
@@ -224,8 +221,8 @@ Ast* parse_expr()
 		}
 	}
 
-	Token prew = tokens.prew();
-	if(!(prew.type == tk_semicolon || prew.type == tk_rparen))
+	Token prev = tokens.prev();
+	if(!(prev.type == tk_semicolon || prev.type == tk_rparen))
 		ERR("expect semicolon or tk_rparen\n");
 
 	while(!op_queue.empty())
@@ -249,9 +246,9 @@ Ast* parse_expr()
 	assert(operand_queue.size() == 1);
 	return operand_queue.back();
 }
-Ast* case_tk_assign()
+static Ast* case_tk_assign()
 {
-	Ast *left = new_ast_node(tokens.prew());
+	Ast *left = new_ast_node(tokens.prev());
 	Ast *assign = new_ast_node(tokens.get());
 	LOG("%s \n", assign->src.c_str());
 
@@ -259,7 +256,7 @@ Ast* case_tk_assign()
 	assign->right = parse_expr();
 	return assign;
 }
-Ast* case_tk_variable()
+static Ast* case_tk_variable()
 {
 	Token tk = tokens.get();
 	LOG("%s \n", tk.src.c_str());
@@ -279,13 +276,13 @@ Ast* case_tk_variable()
 	tokens.unget();
 	return parse_expr();
 }
-Ast* case_tk_const_num()
+static Ast* case_tk_const_num()
 {
 	Token tk = tokens.get();
 	Ast *p = new_ast_node(tk);
 	return p;
 }
-Ast* case_tk_return()
+static Ast* case_tk_return()
 {
 	Token tk = tokens.get();
 	LOG("%s \n", tk.src.c_str());
@@ -297,7 +294,7 @@ Ast* case_tk_return()
 	assert(left);
 	return pa;
 }
-Ast* parse_stmt()
+static Ast* parse_stmt()
 {
 	LOG();
 	while(!tokens.empty())
@@ -317,6 +314,7 @@ Ast* parse_stmt()
 			assert(0);
 			break;
 
+			// todo a = 0 + b ? parse_expr ?
 		case tk_const_num:
 			case_tk_const_num();
 			break;
@@ -354,7 +352,7 @@ Ast* parse_stmt()
 	return 0;
 }
 
-void gen_ast()
+static void gen_ast()
 {
 	while(!tokens.empty()){
 		Ast *p = parse_stmt();
@@ -367,7 +365,5 @@ void parser()
 	gen_ast();
 //	dump_ast();
 
-	sem_analysis_var_declare(&file_scope);
-//	dump_ast();
 }
 

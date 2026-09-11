@@ -35,7 +35,7 @@
 
 // get a word from fp, read until =+-*/(){};
 //stripe blank char like blank '\t' '\n'...
-Token get_single_op_token(int c)
+static Token get_single_op_token(int c)
 {
 	Token token;
     switch(c) {
@@ -82,13 +82,13 @@ Token get_single_op_token(int c)
     return token;
 }
 
-int my_getc(FILE *fp)
+static int my_getc(FILE *fp)
 {
 	int c = fgetc(fp);
 //	LOG("%c ", c);
 	return c;
 }
-Token get_a_token_from_file(FILE *fp)
+static Token get_a_token_from_file(FILE *fp)
 {
 	Token token;
 	string word;

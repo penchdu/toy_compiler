@@ -7,7 +7,6 @@ int a = 1;
 
 int main()
 {
-	int a = 2;
 	
 	{
 		a = 3;
@@ -17,7 +16,7 @@ int main()
 		b = a = 7;
 		
 	}
-	
+	int a = 8;
 	
 	return a;
 }

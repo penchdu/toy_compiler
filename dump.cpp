@@ -12,7 +12,7 @@ string get_var_type_name(Var_type ty)
 	switch(ty)
 	{
 	case INT:
-		return "int";
+		return "INT";
 	case FLOAT:
 			return "FLOAT";
 	case VOID:
@@ -23,13 +23,13 @@ string get_var_type_name(Var_type ty)
 	}
 }
 
-void print_blank(int n)
+static void print_blank(int n)
 {
 	n = std::max(n, 0);
 	for(int i = 0; i < n; i++)
 		printf("    ");
 }
-void dump_ast_node(Ast *p, int depth)
+static void dump_ast_node(Ast *p, int depth)
 {
 	if(p == nullptr)
 		return;
@@ -79,7 +79,7 @@ void dump_ast_node(Ast *p, int depth)
 	}
 }
 
-void dump_scope(Scope *s, int depth)
+static void dump_scope(Scope *s, int depth)
 {
 	if(!s)
 		return;
