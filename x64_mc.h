@@ -89,9 +89,10 @@ enum Machine_code_type{
 	mc_sub,
 	mc_imul,
 
-	mc_div_mov_eax_s1_and_cdq,
-	mc_idiv,
-	mc_div_mov_s1_eax,
+	mc_div,
+//	mc_div_mov_eax_s1_and_cdq,
+//	mc_idiv,
+//	mc_div_mov_s1_eax,
 
 //	mc_push,
 //	mc_pop,
@@ -118,9 +119,10 @@ static const Mc_info mc_info[] = {
 		[mc_sub] = {1, "sub"},
 		[mc_imul] = {3, "imul"},
 
-		[mc_div_mov_eax_s1_and_cdq] = {1, "mc_div_mov_eax_s1_and_cdq"},
-		[mc_idiv] = {10, "idiv"},
-		[mc_div_mov_s1_eax] = {1, "move"},
+		[mc_div] = {10, "div"},
+//		[mc_div_mov_eax_s1_and_cdq] = {1, "mc_div_mov_eax_s1_and_cdq"},
+//		[mc_idiv] = {10, "idiv"},
+//		[mc_div_mov_s1_eax] = {1, "move"},
 };
 
 struct X64_mc{
@@ -142,7 +144,6 @@ struct X64_mc{
 	}
 	X64_mc(){
 		mcty = mc_invalid;
-//		const_num = num;
 	}
 	Machine_code_type mcty = mc_invalid;
 	int latency = 0;
