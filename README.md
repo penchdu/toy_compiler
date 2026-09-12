@@ -1,10 +1,9 @@
 # VSC - Very Simple Compiler
 
-after i learned the book *Engineering a Compiler 3E*, i found the compiler is much more simpler than what i suppose **if you do not want to build a 
-real-world compiler**, so i want to make one.
+after i studied the book *Engineering a Compiler 3E*, i found the compiler theory is much simpler than what i supposed, (**if you do not want to build a real-world compiler**). so i want to make a toy compiler to kill the dragon.
 
 before i start coding i thought it will be very simple, when i am coding i found it is not that simple even it is a toy compiler, i think i can finish it with the help of AI.
-i write the code, show it to AI and ask if it have suggestion, i ask AI to write some borring code, for example, read a word from file, print the ast in graphic style, i also ask AI for compiler knowledge.
+i write the code, show it to AI to debug, i ask AI to write some borring code, for example, read a word from file, print the ast in graphic style, i also ask AI for compiler knowledge.
 
 i name the language vsl (very simple language), so the compiler's name is vsc
 The goal is use vsc to compile vsl source code to x86-64 or risc-v assembly, or directly to binary, and let it run on cpu.

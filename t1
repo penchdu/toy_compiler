@@ -1,12 +1,16 @@
 
 
 
-int a = 1;
 
 
+
+int a = 0;
 
 int main()
 {
+	int a = 1;
+	a = 10 * 11;
+	a = 12 / 13;
 	
 	{
 		a = 3;
@@ -14,10 +18,8 @@ int main()
 		a = 5;
 		int b = a + 6;
 		b = a = 7;
-		
 	}
-	int a = 8;
-	
+		
 	return a;
 }
 

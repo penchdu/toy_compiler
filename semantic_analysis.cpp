@@ -240,22 +240,22 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 		symb = p->symb_var;
 		assert(symb);
 		if(symb->vr < 0)
-			symb->vr = get_vr(p);
+			symb->vr = vreg.new_vr(p);
 
 		// todo symb->vr to be defined in "new =" to gen ssa
 		return symb->vr;
 
 	case sem_const_num:
-		p->vr = get_vr(p);
-		return p->vr;
+		p->vr_id = vreg.new_vr(p);
+		return p->vr_id;
 
 		// x = y : return x
 	case op_assign:
 		if(p->left->var_type != p->right->var_type)
 			ERR("assign type mismatch %d %d", p->left->var_type, p->right->var_type);
 
-		p->vr = a;
 		p->var_type = p->left->var_type;
+		p->vr_id = a;
 		return a;
 
 		// todo gen a assign inst
@@ -266,9 +266,9 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 			if(p->left->var_type != p->right->var_type)
 				ERR("op type mismatch %d %d", p->left->var_type, p->right->var_type);
 
-			p->vr = get_vr(p);
 			p->var_type = p->left->var_type;
-			return p->vr;
+			p->vr_id = vreg.new_vr(p);
+			return p->vr_id;
 
 	case sem_return:
 		if(p->sem_home_scp->return_type != p->left->var_type)

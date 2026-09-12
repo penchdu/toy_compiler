@@ -41,7 +41,7 @@ static void dump_ast_node(Ast *p, int depth)
 		printf(" [%s %s]\n", get_var_type_name(p->var_type).c_str(), p->tk.src.c_str());
 	}
 	else if(p->semty < op_all){
-		printf("%s [%%%d]\n", p->tk.src.c_str(), p->vr);
+		printf("%s [%%%d]\n", p->tk.src.c_str(), p->vr_id);
 		print_blank(depth);
 		printf("\n");
 	}

@@ -50,19 +50,19 @@ enum Token_type{
 	tk_div,
 	tk_op_all,
 
-	tk_var,
 	tk_const_num,
+	tk_return,
 
 	tk_int,
 	tk_float,
+	tk_var,
 
 	tk_lparen,
 	tk_rparen,
 	tk_lbrace,
 	tk_rbrace,
-
     tk_semicolon,         // ;
-    tk_return,
+
     tk_invalid,
     tk_EOF,
 };
@@ -153,7 +153,6 @@ enum Op_priority{
 
 	op_invalid_priority = -1,
 };
-
 enum Var_type{
 	INT,
 	FLOAT,
@@ -190,7 +189,7 @@ public:
 	// op
 	Op_priority op_prio;
 	// for op, vr is temp vr
-	int vr = -1;
+	int vr_id = -1;
 
 	// var
 	// for op, var_type is type of temp vr
@@ -295,24 +294,112 @@ public:
 	}
 };
 
+
 struct Instruction{
 	Instruction(Ast *p){
 		ast = p;
 	}
-
-	int latency = 0;
-
-	int dst = -1;		// result vr id
-	int src1 = -1;		// src vr id
-	int src2 = -1;		// src vr id
-
-//	Var_type ty = INT;
-//	int value = 0;
-
 	Ast *ast = 0;
-	string str;
+
+	int dst = -1;
+	int s1 = -1;
+	int s2 = -1;
+
+//	const int mem_size = 4;
+//	int dst_off = 0;
+//	int src1_off = 0;
+//	int src2_off = 0;
+//	int alloc_mem(int size){
+//		static int offset = 0;
+//		int a = offset;
+//		offset += size;
+//		return a;
+//	}
+//	Var_type ty = INT;
+	int const_num_value = 0;
 };
 
+struct Virtual_reg{
+	int new_vr(Ast *p, int size = 4)
+	{
+		id++;
+		vr_off.push_back(offset);
+		offset += size;
+		return id;
+	}
+
+	int get_vr_off(unsigned int id){
+		if(id >= vr_off.size() || vr_off[id] < 0){
+//			ERR("id %d, %zu\n", id, vr_off.size());
+			return -1;
+		}
+		return vr_off[id];
+	}
+
+	int id = -1;
+	int offset = 0;
+	vector<int> vr_off;
+};
+//struct Virtual_reg2{
+//	struct vr_off{
+//		int vr;
+//		int off;
+//		int size;
+//		int live = true;
+//	};
+//
+//	int new_vr(Ast *p)
+//	{
+//		id++;
+//
+//		int size = 4;
+//		if(p->var_type == INT)
+//			size = 4;
+//
+//		vr_off t{id, offset, size, true};
+//		vr_tbl.push_back(t);
+//		offset += size;
+//		return id;
+//	}
+//	void rm_vr(unsigned int id){
+//		if(id >= vr_tbl.size())
+//			ERR();
+//		if(!vr_tbl[id].live)
+//			ERR();
+//
+//		vr_tbl[id].live = false;
+//	}
+//	int get_vr(unsigned int id){
+//		if(id >= vr_tbl.size() || !vr_tbl[id].live)
+//			ERR();
+//
+//		return vr_tbl[id].vr;
+//	}
+//	int get_vr_off(unsigned int id){
+//		if(id >= vr_tbl.size() || !vr_tbl[id].live || vr_tbl[id].off < 0)
+//			ERR("id %d, %zu\n", id, vr_tbl.size());
+//
+//		return vr_tbl[id].off;
+//	}
+//	void rebuild()
+//	{
+//		id = 0;
+//		offset = 0;
+//		for(auto &r : vr_tbl)
+//		{
+//			if(!r.live)
+//				continue;
+//
+//			r.vr = id++;
+//			r.off = offset;
+//			offset += r.size;
+//		}
+//	}
+//
+//	int id = -1;
+//	int offset = 0;
+//	vector<vr_off> vr_tbl;
+//};
 
 extern bool dump_token;
 
@@ -320,10 +407,11 @@ extern Tokens tokens;
 extern Scope file_scope;
 extern Scope *scope;
 extern map<string, Symbol_var*> global_unique_src_name_tbl;
-extern vector<Ast*> global_unique_vrid_tbl;
 extern map<int, int> const_num_vr_tbl;
 extern int scope_id;
-extern vector<Instruction*> insts;
+extern vector<Instruction*> three_addr_code;
+extern vector<Instruction*> machine_code;
+extern Virtual_reg vreg;
 
 bool is_math_op(Semantic_type t);
 void dump_ast();
@@ -332,6 +420,6 @@ int lexer(FILE *fp);
 void parser();
 void sem_analysis();
 void gen_three_address_code();
-
+void gen_machine_code();
 
 #endif /* H_H_ */

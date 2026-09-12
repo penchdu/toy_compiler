@@ -7,15 +7,7 @@
 
 #include "h.h"
 
-static int get_vr(Ast *p)
-{
-	static int id = -1;
-	id++;
-	return id;
 
-//	global_unique_vrid_tbl.push_back(p);
-//	return global_unique_vrid_tbl.size() - 1;
-}
 //int get_const_vr(int v)
 //{
 //	if (const_num_vr_tbl.find(v) == const_num_vr_tbl.end()){
@@ -41,29 +33,23 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 	case sem_var:
 		symb = p->symb_var;
 		assert(symb);
-		if(symb->vr < 0)
-			symb->vr = get_vr(p);
 
 		// todo symb->vr to be defined in "new =" to gen ssa
 		return symb->vr;
 
 	case sem_const_num:
-		p->vr = get_vr(p);
 		inst = new Instruction(p);
-		inst->dst = p->vr;
-		insts.push_back(inst);
-		return p->vr;
+		inst->dst = p->vr_id;
+		inst->const_num_value = p->const_value;
+		three_addr_code.push_back(inst);
+		return p->vr_id;
 
 		// x = y : return x
 	case op_assign:
 		inst = new Instruction(p);
 		inst->dst = a;
-		inst->src1 = b;
-		insts.push_back(inst);
-
-		p->vr = a;
-		p->var_type = p->left->var_type;
-		assert(p->left->var_type == p->right->var_type);
+		inst->s1 = b;
+		three_addr_code.push_back(inst);
 		return a;
 
 		// todo gen a assign inst
@@ -71,29 +57,30 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 		case op_sub:
 		case op_mul:
 		case op_div:
-			p->vr = get_vr(p);
-			inst = new Instruction(p);
-			inst->dst = p->vr;
-			inst->src1 = a;
-			inst->src2 = b;
-			insts.push_back(inst);
 
-			p->var_type = p->left->var_type;
-			assert(p->left->var_type == p->right->var_type);
-			return p->vr;
+			inst = new Instruction(p);
+			inst->dst = p->vr_id;
+			inst->s1 = a;
+			inst->s2 = b;
+			three_addr_code.push_back(inst);
+			return p->vr_id;
 
 	case sem_return:
 		inst = new Instruction(p);
-		inst->src1 = a;
-		insts.push_back(inst);
-
-		assert(p->sem_home_scp->return_type == p->left->var_type);
+		inst->s1 = a;
+		three_addr_code.push_back(inst);
 		return -1;
 
 	case sem_var_declare:
 		return -1;
 
-	case sem_func_call:		// todo
+		// todo
+	case sem_func_declare:
+	case sem_func_define:
+	case sem_func_call:
+		printf("todo sem_func* semty %d \n", p->semty);
+		return -1;
+
 	default:
 		ERR("%d \n", p->semty);
 		break;
@@ -121,21 +108,25 @@ static void _gen_three_address_code(Scope *scp)
 static void dump()
 {
 	printf("\n========== inst ==========\n");
-	for(auto &r : insts) {
+	for(auto &r : three_addr_code) {
 //		Ast *p = global_unique_vrid_tbl[r->dst];
 		Ast *p = r->ast;
 
 		switch(p->semty)
 		{
+		case sem_const_num:
+			printf("const:\t %%%d num %d\n", r->dst, p->const_value);
+			break;
+
 		case op_assign:
-			printf("assign:\t %%%d %s %%%d\n", r->dst, p->tk.src.c_str(), r->src1);
+			printf("assign:\t %%%d %s %%%d\n", r->dst, p->tk.src.c_str(), r->s1);
 			break;
 
 		case op_add:
 		case op_sub:
 		case op_mul:
 		case op_div:
-			printf("op:\t %%%d = %%%d %s %%%d\n", r->dst, r->src1, p->tk.src.c_str(), r->src2);
+			printf("op:\t %%%d = %%%d %s %%%d\n", r->dst, r->s1, p->tk.src.c_str(), r->s2);
 			break;
 
 		case sem_var_declare:
@@ -146,16 +137,12 @@ static void dump()
 			printf("var:\t %%%d %s\n", r->dst, p->tk.src.c_str());
 			break;
 
-		case sem_const_num:
-			printf("const:\t %%%d num %d\n", r->dst, p->const_value);
-			break;
-
 		case sem_func_call:
 			printf("func call:\t %s\n", p->tk.src.c_str());
 			break;
 
 		case sem_return:
-			printf("return:\t %s %%%d\n", p->tk.src.c_str(), r->src1);
+			printf("return:\t %s %%%d\n", p->tk.src.c_str(), r->s1);
 			break;
 
 		default:

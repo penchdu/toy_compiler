@@ -14,9 +14,12 @@ Scope file_scope;
 Scope *scope;
 map<string, Symbol_var*> global_unique_src_name_tbl;
 map<int, int> const_num_vr_tbl;
-vector<Ast*> global_unique_vrid_tbl;
 int scope_id = 0;
-vector<Instruction*> insts;
+vector<Instruction*> three_addr_code;
+vector<Instruction*> machine_code;
+Virtual_reg vreg;
+
+
 
 
 
@@ -45,6 +48,11 @@ int main(int argc, char **argv)
 	parser();
 	sem_analysis();
 	gen_three_address_code();
+	gen_machine_code();
+
+
+
+
 
 	return 0;
 }

@@ -1,35 +1,26 @@
 
 
-CXXFLAGS = -std=c++20 -O0 -g -MMD -MP
 
-SOURCE = main.cpp \
-         lexer.cpp \
-         parser.cpp \
-         semantic_analysis_var_declare.cpp \
-         gen_inst.cpp \
-         dump.cpp
+CXXFLAGS = -std=c++20 -O0 -g -MMD -MP -Wno-c99-designator
+
+SOURCE = $(wildcard *.cpp)
 
 BUILD_DIR = build
-
 TARGET = $(BUILD_DIR)/a
 
 OBJECTS = $(SOURCE:%.cpp=$(BUILD_DIR)/%.o)
 
 all: $(TARGET)
 
-
 $(TARGET): $(OBJECTS)
-	clang++ $(OBJECTS) -o $(TARGET)
-
+	@mkdir -p $(dir $@)
+	clang++ $(OBJECTS) -o $@
 
 $(BUILD_DIR)/%.o: %.cpp
 	@mkdir -p $(dir $@)
 	clang++ $(CXXFLAGS) -c $< -o $@
 
-
 -include $(OBJECTS:.o=.d)
-
 
 clean:
 	rm -rf $(BUILD_DIR)
-	
