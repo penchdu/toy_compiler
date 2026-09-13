@@ -51,9 +51,6 @@ int main(int argc, char **argv)
 	gen_machine_code();
 
 
-
-
-
 	return 0;
 }
 

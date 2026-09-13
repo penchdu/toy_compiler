@@ -180,7 +180,7 @@ int lexer(FILE *fp)
 	}
 
 	if(dump_token) {
-		tokens.dump();
+//		tokens.dump();
 	}
 
 	return 0;

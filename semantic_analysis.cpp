@@ -8,13 +8,6 @@
 #include "h.h"
 
 
-bool is_math_op(Semantic_type t)
-{
-	return t == op_add
-	        || t == op_sub
-	        || t == op_mul
-	        || t == op_div;
-}
 static int case_sem_var(Ast *p)
 {
 	Symbol_var *symb;
@@ -50,8 +43,7 @@ static int case_sem_assign(Ast *p)
 
 	if(!(ty == sem_var
 	        || ty == sem_const_num
-	        || ty == op_assign
-	        || is_math_op(ty)
+	        || ty < op_all
 	        || ty == sem_func_call)) {
 
 		ERR("semty %d, %s %s %s ", ty,
@@ -70,14 +62,14 @@ static int case_sem_op(Ast *p)
 	Semantic_type ty = p->left->semty;
 	assert(ty == sem_var
 	        || ty == sem_const_num
-	        || is_math_op(ty)
+	        || ty < op_all
 	        || ty == sem_func_call);
 
 	assert(p->right);
 	ty = p->right->semty;
 	assert(ty == sem_var
 	        || ty == sem_const_num
-	        || is_math_op(ty)
+	        || ty < op_all
 	        || ty == sem_func_call);
 
 //	p->vr = vrid++;
@@ -94,7 +86,7 @@ static int case_sem_return(Ast *p)
 	Semantic_type ty = p->left->semty;
 	if(!(ty == sem_var
 	        || ty == sem_const_num
-	        || is_math_op(ty)
+	        || ty < op_all
 	        || ty == sem_func_call)) {
 		ERR("semty %d, %s %s ", ty,
 		    p->tk.src.c_str(),
@@ -316,7 +308,7 @@ void sem_analysis()
 //	dump_ast();
 
 	sem_analysis_gen_vr(&file_scope);
-	dump_ast();
+//	dump_ast();
 }
 
 
