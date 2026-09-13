@@ -88,10 +88,10 @@ enum Machine_code_type{
 	mc_invalid,
 };
 struct Mc_info{
-	int mc_latency;
+	int mc_latency = -1;
 	string mc_code;	// just for print
 };
-static const Mc_info mc_info[] = {
+static const Mc_info mc_info[mc_invalid] = {
 		[mc_li] = {1, "mov"},
 		[mc_ld] = {3, "mov"},
 		[mc_st] = {3, "mov"},
@@ -101,6 +101,7 @@ static const Mc_info mc_info[] = {
 		[mc_sub] = {1, "sub"},
 		[mc_imul] = {3, "imul"},
 		[mc_div] = {10, "div"},
+		[mc_ret] = {1, "ret"},
 };
 
 struct X64_mc{
@@ -112,19 +113,24 @@ struct X64_mc{
 
 		of1 = vreg.get_vr_off(s1);
 		of2 = vreg.get_vr_off(s2);
+
+		mc_code = mc_info[ty].mc_code;
+		latency = mc_info[ty].mc_latency;
 	}
 	X64_mc(Machine_code_type ty, int _s1)
 	{
 		mcty = ty;
 		s1 = _s1;
 		of1 = vreg.get_vr_off(_s1);
+
+		mc_code = mc_info[ty].mc_code;
+		latency = mc_info[ty].mc_latency;
 	}
 	X64_mc(){
 		mcty = mc_invalid;
 	}
 
 	Machine_code_type mcty = mc_invalid;
-	int latency = -1;
 
 	int s1 = -1;
 	int s2 = -1;
@@ -132,21 +138,27 @@ struct X64_mc{
 	int of2 = -1;
 
 	int const_num = 0;
-//	string mc_code;
+
+	// put them here to easy dump
+	string mc_code;
 	string ori_sem;
+	int latency = -1;
+	int chain_latency = -1;
+	int start_cycle = -1;
 };
 
 struct Mc_dep
 {
-	vector<int> mc_idx;
-	int node_latency = -1;
-	int chain_latency = -1;
+	vector<int> mcs;
+	int edges = 0;
 };
 
 extern vector<X64_mc> x64mc;
 extern vector<Mc_dep> mc_dep;
-extern vector<Mc_dep> schedule_train;
+extern vector<Mc_dep> mc_bdep;
 
 int get_slot(int len = 4);
+void dump_mc(vector<X64_mc> &v);
+void mc_schedule();
 
 #endif /* X64_MC_H_ */

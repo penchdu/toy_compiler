@@ -19,6 +19,7 @@
 #include <map>
 #include <list>
 #include <stack>
+#include <algorithm>
 
 using std::vector;
 using std::string;

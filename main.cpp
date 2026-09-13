@@ -6,6 +6,7 @@
  */
 
 #include "h.h"
+#include "x64_mc.h"
 
 bool dump_token = false;
 
@@ -18,10 +19,6 @@ int scope_id = 0;
 vector<Instruction*> three_addr_code;
 vector<Instruction*> machine_code;
 Virtual_reg vreg;
-
-
-
-
 
 int main(int argc, char **argv)
 {
@@ -49,7 +46,7 @@ int main(int argc, char **argv)
 	sem_analysis();
 	gen_three_address_code();
 	gen_machine_code();
-
+	mc_schedule();
 
 	return 0;
 }
