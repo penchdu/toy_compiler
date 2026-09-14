@@ -5,13 +5,14 @@
  *      Author: x
  */
 
+#include "x64_machine_code.h"
+
 #include "h.h"
-#include "x64_mc.h"
 
 vector<X64_mc> x64mc;
-vector<X64_mc> x64mc_scheduled;
-vector<Mc_dep> mc_dep;
-vector<Mc_dep> mc_bdep;
+vector<X64_mc> x64mc_scheded;
+vector<Mc_dep> mcs_pred;
+vector<Mc_dep> mcs_succ;
 
 static void gen_add_sub_mul_div_mc(Machine_code_type mc, string ori_sem, int tac_dst, int tac_s1, int tac_s2)
 {
@@ -34,7 +35,6 @@ static void _gen_machine_code()
 
 		switch (ty)
 		{
-		// for const_num, mc.s2 == mc.const_num
 		case sem_const_num:
 			inst = X64_mc(mc_li, tac->dst);
 			inst.const_num = tac->const_num_value;
@@ -84,7 +84,6 @@ static void _gen_machine_code()
 void dump_mc(vector<X64_mc> &v)
 {
 	printf("\n========== mc ==========\n");
-	X64_mc inst;
 
 	// push rbp
 	// mov rbp, rsp
@@ -100,29 +99,40 @@ void dump_mc(vector<X64_mc> &v)
 		switch (ty)
 		{
 		case mc_li:
-			printf("%s %%%d, num %d ", mc.mc_code.c_str(),
-					mc.s1, mc.const_num);
-			printf("\t%s, %d\n", mc.ori_sem.c_str(), mc.of1);
+			printf("%s %%%d, num %d ", mc.asm_code.c_str(), mc.s1, mc.const_num);
+			PRINT_MORE
+			break;
+
+		case mc_ld:
+			printf("%s %%%d, dword ptr [%d] ", mc.asm_code.c_str(), mc.s1, mc.of1);
+			PRINT_MORE
+			break;
+
+		case mc_st:
+			printf("%s dword ptr [%d], %%%d ", mc.asm_code.c_str(), mc.of1 ,mc.s1);
+			PRINT_MORE
 			break;
 
 		case mc_assign:
-		case mc_add:
-		case mc_sub:
-		case mc_imul:
-			printf("%s %%%d, %%%d ", mc.mc_code.c_str(), mc.s1, mc.s2);
-			printf("\t%s, %d %d\n", mc.ori_sem.c_str(), mc.of1, mc.of2);
+			case mc_add:
+			case mc_sub:
+			case mc_imul:
+			printf("%s %%%d, %%%d ", mc.asm_code.c_str(), mc.s1, mc.s2);
+			PRINT_MORE
 			break;
 
 		case mc_div:
-			printf("mov eax, %%%d \t %s \n", mc.s1,
-					mc.ori_sem.c_str());
+			printf("mov eax, %%%d", mc.s1);
+			PRINT_MORE
+
 			printf("cdq \n");
 			printf("idiv %%%d \t div \n", mc.s2);
 			printf("mov %%%d, eax \t div \n", mc.s1);
 			break;
 
 		case mc_ret:
-			printf("mov eax, %%%d \t%s\n", mc.s1, mc.ori_sem.c_str());
+			printf("mov eax, %%%d", mc.s1);
+			PRINT_MORE
 			break;
 
 		default:
@@ -139,5 +149,5 @@ void dump_mc(vector<X64_mc> &v)
 void gen_machine_code()
 {
 	_gen_machine_code();
-	dump_mc(x64mc);
+//	dump_mc(x64mc);
 }

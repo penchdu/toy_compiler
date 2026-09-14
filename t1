@@ -5,23 +5,22 @@
 
 
 
-
 int main()
 {
-	int a = 1;
+	int a = 10;
 	int b = 2;
-	
-	{
-		a = a + 3;
-		int b = a * a;
-	}
 
-	return b;
+	int c = a + b;
+	c = a - b;
+	c = a * b;
+
+	int d = a / b;
+	d = d + 0;
+	d = d + d;
+	d = d * 3;
+	
+	return d;
 }
 
 
 
-#
-
-		b = a = 7;
-		b = a / 2;

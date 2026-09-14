@@ -5,7 +5,7 @@
  *      Author: x
  */
 
-// i am learning compiler these days , after i read
+//
 /*
  * Module
  └── Function

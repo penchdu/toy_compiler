@@ -6,40 +6,39 @@
  */
 
 #include "h.h"
-#include "x64_mc.h"
+#include "x64_machine_code.h"
 
 extern vector<X64_mc> x64mc;
-extern vector<Mc_dep> mc_dep;
-extern vector<Mc_dep> mc_bdep;
-extern vector<X64_mc> x64mc_scheduled;
+extern vector<Mc_dep> mcs_pred;
+extern vector<Mc_dep> mcs_succ;
+extern vector<X64_mc> x64mc_scheded;
 
-void create_dependcy__a_wait_b(int use, int def)
+void create_dependcy(int a, int b)
 {
-	mc_dep[use].mcs.push_back(def);
-	mc_bdep[def].mcs.push_back(use);
+	// a depend on b, data flow: b -> a
+	mcs_pred[a].mcs.push_back(b);
+	mcs_succ[b].mcs.push_back(a);
 }
 static void dump_chain()
 {
-
 	printf("dep\n");
-	for (int i = 0; i < mc_dep.size(); i++)
+	for (int i = 0; i < mcs_pred.size(); i++)
 	{
-		auto &v = mc_dep[i].mcs;
+		auto &v = mcs_pred[i].mcs;
 
 		std::sort(v.begin(), v.end());
 		auto it = std::adjacent_find(v.begin(), v.end());
 		if (it != v.end())
 			ERR();
 
-		mc_dep[i].edges = v.size();
 		for (auto r : v)
 			printf("%d %d\n", i, r);
 	}
 
 	printf("\nbdep\n");
-	for (int i = 0; i < mc_bdep.size(); i++)
+	for (int i = 0; i < mcs_succ.size(); i++)
 	{
-		auto &v = mc_bdep[i].mcs;
+		auto &v = mcs_succ[i].mcs;
 
 		std::sort(v.begin(), v.end());
 		auto it = std::adjacent_find(v.begin(), v.end());
@@ -55,10 +54,10 @@ void gen_use_def_chain()
 {
 	vector<int> prev_w_mc_of_vr(vreg.id + 1, -1);
 	vector<int> prev_r_mc_of_vr(vreg.id + 1, -1);
-	mc_dep.resize(x64mc.size());
-	mc_bdep.resize(x64mc.size());
+	mcs_pred.resize(x64mc.size());
+	mcs_succ.resize(x64mc.size());
 
-	printf("%zu, %zu\n", x64mc.size(), prev_w_mc_of_vr.size());
+	LOG("%zu, %zu\n", x64mc.size(), prev_w_mc_of_vr.size());
 	int prev_ret = -1;
 
 	for (int i = 0; i < x64mc.size(); i++)
@@ -86,15 +85,15 @@ void gen_use_def_chain()
 
 		case mc_assign:
 			if (w1 >= 0)
-				create_dependcy__a_wait_b(i, w1);
+				create_dependcy(i, w1);
 
 			if (r1 >= 0)
-				create_dependcy__a_wait_b(i, r1);
+				create_dependcy(i, r1);
 
 			prev_w_mc_of_vr[s1] = i;
 
 			if (w2 >= 0)
-				create_dependcy__a_wait_b(i, w2);
+				create_dependcy(i, w2);
 
 			prev_r_mc_of_vr[s2] = i;
 			break;
@@ -104,23 +103,23 @@ void gen_use_def_chain()
 			case mc_imul:
 			case mc_div:
 			if (w1 >= 0)
-				create_dependcy__a_wait_b(i, w1);
+				create_dependcy(i, w1);
 
 			if (r1 >= 0)
-				create_dependcy__a_wait_b(i, r1);
+				create_dependcy(i, r1);
 
 			prev_w_mc_of_vr[s1] = i;
 			prev_r_mc_of_vr[s1] = i;
 
 			if (w2 >= 0)
-				create_dependcy__a_wait_b(i, w2);
+				create_dependcy(i, w2);
 
 			prev_r_mc_of_vr[s2] = i;
 			break;
 
 		case mc_ret:
 			if (w1 >= 0)
-				create_dependcy__a_wait_b(i, w1);
+				create_dependcy(i, w1);
 
 			prev_r_mc_of_vr[s1] = i;
 
@@ -128,7 +127,7 @@ void gen_use_def_chain()
 			{
 				if (j == w1)
 					continue;
-				create_dependcy__a_wait_b(i, j);
+				create_dependcy(i, j);
 			}
 			prev_ret = i;
 			break;
@@ -138,6 +137,12 @@ void gen_use_def_chain()
 			break;
 		}
 	}
+
+	for (auto &r : mcs_pred)
+		r.edges = r.mcs.size();
+	for (auto &r : mcs_succ)
+		r.edges = r.mcs.size();
+
 }
 int get_mc_latency(int mc_id)
 {
@@ -149,7 +154,7 @@ int get_mc_latency(int mc_id)
 	assert(n >= 0);
 	c = n;
 
-	auto &mcs = mc_bdep[mc_id].mcs;
+	auto &mcs = mcs_succ[mc_id].mcs;
 	int mx = 0;
 	for (int i = 0; i < mcs.size(); i++)
 	{
@@ -163,7 +168,7 @@ int get_mc_latency(int mc_id)
 }
 void gen_schedule_chain_latency()
 {
-	for (int i = 0; i < mc_bdep.size(); i++)
+	for (int i = 0; i < mcs_succ.size(); i++)
 	{
 		get_mc_latency(i);
 	}
@@ -172,9 +177,14 @@ void gen_schedule_chain_latency()
 using std::multimap;
 multimap<int, int> ready;
 vector<int> running;
-int free_add_sub_unit = 2;
-int free_imul_unit = 1;
-int free_div_unit = 1;
+
+const int add_sub_unit = 2;
+const int imul_unit = 1;
+const int div_unit = 1;
+
+int free_add_sub_unit = add_sub_unit;
+int free_imul_unit = imul_unit;
+int free_div_unit = div_unit;
 
 bool get_function_unit(int mc)
 {
@@ -251,7 +261,12 @@ void free_function_unit(int mc)
 		ERR("%d \n", ty);
 		break;
 	}
+
+	assert(free_add_sub_unit <= add_sub_unit);
+	assert(free_imul_unit <= imul_unit);
+	assert(free_div_unit <= div_unit);
 }
+
 int mc_select()
 {
 	bool ok = false;
@@ -267,11 +282,12 @@ int mc_select()
 	}
 	return -1;
 }
+
 void init_ready_queue()
 {
-	for (int i = 0; i < mc_dep.size(); i++)
+	for (int i = 0; i < mcs_pred.size(); i++)
 	{
-		if (mc_dep[i].edges == 0)
+		if (mcs_pred[i].edges == 0)
 			ready.insert(
 					{ x64mc[i].chain_latency, i });
 	}
@@ -279,19 +295,20 @@ void init_ready_queue()
 	if (ready.size() == 0)
 		ERR();
 }
-
-void update_ready_queue(int mc)
+void finish_mc__update_ready_queue(int mc)
 {
-	auto &mcs = mc_bdep[mc].mcs;
-	for (int i = 0; i < mcs.size(); i++)
+	auto &v = mcs_succ[mc].mcs;
+	for (auto mc : v)
 	{
-		int k = mcs[i];
-		mc_dep[k].edges--;
-		if (mc_dep[k].edges == 0)
+		mcs_pred[mc].edges--;
+		assert(mcs_pred[mc].edges >= 0);
+
+		if (mcs_pred[mc].edges == 0)
 			ready.insert(
-					{ x64mc[k].chain_latency, k });
+					{ x64mc[mc].chain_latency, mc });
 	}
 }
+
 void _mc_schedule()
 {
 	/*
@@ -324,10 +341,13 @@ void _mc_schedule()
 		for (auto it = running.begin(); it != running.end();)
 		{
 			int mc = *it;
+			assert(x64mc[mc].start_cycle >= 0);
+			assert(x64mc[mc].latency > 0);
+
 			if (cycle >= x64mc[mc].start_cycle + x64mc[mc].latency)
 			{
 				free_function_unit(mc);
-				update_ready_queue(mc);
+				finish_mc__update_ready_queue(mc);
 
 				it = running.erase(it);
 				continue;
@@ -335,24 +355,32 @@ void _mc_schedule()
 			it++;
 		}
 
-		int mc = 0;
-		while ((mc = mc_select()) >= 0)
+		// select from ready[]
+		while (1)
 		{
+			int mc = mc_select();
+			if (mc < 0)
+				break;
+
 			x64mc[mc].start_cycle = cycle;
-			x64mc_scheduled.push_back(x64mc[mc]);
+			x64mc_scheded.push_back(x64mc[mc]);
 			running.push_back(mc);
+
+			assert(x64mc[mc].start_cycle >= 0);
+			assert(x64mc[mc].latency > 0);
 		}
 
 //		if (x64mc_scheduled.size() == x64mc.size())
 //			break;
 		cycle++;
 	}
+//	printf("max cycle: %d \n", cycle);
 
-	auto &t = *x64mc_scheduled.rbegin();
+	auto &t = *x64mc_scheded.rbegin();
 	if (t.mcty != mc_ret)
 	{
 		printf("x64mc_scheduled last: %s %s, s1 %%%d, s2 %%%d, cycle: %d-%d\n",
-				t.mc_code.c_str(), t.ori_sem.c_str(),
+				t.asm_code.c_str(), t.ori_sem.c_str(),
 				t.s1, t.s2,
 				t.start_cycle, t.chain_latency);
 	}
@@ -361,11 +389,10 @@ void _mc_schedule()
 void mc_schedule()
 {
 	gen_use_def_chain();
-	dump_chain();
-
+//	dump_chain();
 	gen_schedule_chain_latency();
 
 	_mc_schedule();
-	dump_mc(x64mc_scheduled);
+//	dump_mc(x64mc_scheded);
 }
 

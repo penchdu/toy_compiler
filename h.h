@@ -324,8 +324,8 @@ struct Virtual_reg{
 	int new_vr(Ast *p, int size = 4)
 	{
 		id++;
-		vr_off.push_back(offset);
 		offset += size;
+		vr_off.push_back(offset);
 		return id;
 	}
 

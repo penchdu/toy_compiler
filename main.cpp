@@ -6,7 +6,7 @@
  */
 
 #include "h.h"
-#include "x64_mc.h"
+#include "x64_machine_code.h"
 
 bool dump_token = false;
 
@@ -47,6 +47,9 @@ int main(int argc, char **argv)
 	gen_three_address_code();
 	gen_machine_code();
 	mc_schedule();
+
+
+	gen_x64_asm();
 
 	return 0;
 }

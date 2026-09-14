@@ -155,5 +155,5 @@ void gen_three_address_code()
 {
 	_gen_three_address_code(&file_scope);
 //	dump_ast();
-	dump();
+//	dump();
 }

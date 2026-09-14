@@ -289,7 +289,7 @@ Currently the compiler targets:
 - [ ] SSA
 - [ ] SSA based optimize
 - [x] Instruction selection
-- [ ] Instruction scheduler
+- [x] Instruction scheduler
 - [ ] Register allocation
 - [ ] x86 backend
 ---

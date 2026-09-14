@@ -5,8 +5,8 @@
  *      Author: x
  */
 
-#ifndef X64_MC_H_
-#define X64_MC_H_
+#ifndef X64_MACHINE_CODE_H_
+#define X64_MACHINE_CODE_H_
 
 #include "h.h"
 
@@ -16,75 +16,74 @@ st[n] = dword ptr [n]
 
 push rbp
 mov rbp, rsp
-sub rsp N			sub rsp, <num>
+sub rsp, N
 
+
+li
 sem_const_num,
 					load %s1, st[s1]
 					mov %dst, <num>
 
-sem_var (load),		mov %dst, st[dst]
-sem_var (store),	mov st[dst], %dst
+load,
+					mov %dst, st[dst]
+
+store,
+					mov st[dst], %dst
 
 op_assign,
-%dst = %s1			load %s1, st[s1]
+%dst = %s1
 					mov %dst, %s1
-					store st[dst], %dst
-
 
 op_+-*,
-%dst = %s1 + %s2	load %s1, st[s1]
-					load %s2, st[s2]
+%dst = %s1 + %s2
 					mov %dst, %s1
 					add %dst, %s2
-					store st[dst], %dst
-
-op_+-*,
-%dst = %s1 + %s2	mov %dst, st[s1]
-					mov %s2, st[s2]
-					add %dst, %s2
-					store st[dst], %dst
 
 op_+-*,
 %dst = %s1 + %s2	mov %dst, st[s1]
 					add %dst, st[s2]
-					store st[dst], %dst
-
-op_+-*,
-%dst = %s1 + %s2	mov %dst, %s1
-					add %dst, %s2
-
 
 op_div,
 %dst = %s1 / %s2
-					load %s1, st[s1]
-					mov eax, %s1
+					mov %dst, %s1
+					mov eax, %dst
 					cdq
-					load %s2, st[s2]
 					idiv %s2
 					mov %dst, eax
-					store st[dst], %dst
 
 sem_return
-					load %dst, st[dst]
 					mov eax, %dst
 					mov rsp, rbp
 					pop rbp
 					ret
-
  */
 
-enum Machine_code_type{
-	mc_li,
-	mc_ld,
-	mc_st,
 
-	mc_assign,
-	mc_add,
+#if 0
+	#define PRINT_MORE	\
+			printf("\t%s", mc.ori_sem.c_str());	\
+			printf(", cyc %d", mc.start_cycle);	\
+//			printf(", off %d\n", mc.of1);
+#else
+	#define PRINT_MORE	\
+//		printf("\n\t");
+#endif
+
+
+enum Machine_code_type{
+	mc_li,	// reg-num
+
+	mc_ld,	// reg <- ptr
+//	mc_spill,	// reg -> ptr, lost pr
+	mc_st,	// reg -> ptr
+
+	mc_assign,	// reg-reg
+	mc_add,	// reg-reg
 	mc_sub,
 	mc_imul,
 	mc_div,
 
-	mc_ret,
+	mc_ret,	// reg-reg
 	mc_invalid,
 };
 struct Mc_info{
@@ -105,25 +104,25 @@ static const Mc_info mc_info[mc_invalid] = {
 };
 
 struct X64_mc{
-	X64_mc(Machine_code_type ty, int tac_s1, int tac_s2)
+	X64_mc(Machine_code_type ty, int three_addr_code_dst, int three_addr_code_s2)
 	{
 		mcty = ty;
-		s1 = tac_s1;
-		s2 = tac_s2;
+		s1 = three_addr_code_dst;
+		s2 = three_addr_code_s2;
 
 		of1 = vreg.get_vr_off(s1);
 		of2 = vreg.get_vr_off(s2);
 
-		mc_code = mc_info[ty].mc_code;
+		asm_code = mc_info[ty].mc_code;
 		latency = mc_info[ty].mc_latency;
 	}
-	X64_mc(Machine_code_type ty, int _s1)
+	X64_mc(Machine_code_type ty, int three_addr_code_s1)
 	{
 		mcty = ty;
-		s1 = _s1;
-		of1 = vreg.get_vr_off(_s1);
+		s1 = three_addr_code_s1;
+		of1 = vreg.get_vr_off(three_addr_code_s1);
 
-		mc_code = mc_info[ty].mc_code;
+		asm_code = mc_info[ty].mc_code;
 		latency = mc_info[ty].mc_latency;
 	}
 	X64_mc(){
@@ -134,13 +133,18 @@ struct X64_mc{
 
 	int s1 = -1;
 	int s2 = -1;
+
 	int of1 = -1;
 	int of2 = -1;
+
+	// alloced for vr
+	int pr1 = -1;	//todo rename
+	int pr2 = -1;
 
 	int const_num = 0;
 
 	// put them here to easy dump
-	string mc_code;
+	string asm_code;
 	string ori_sem;
 	int latency = -1;
 	int chain_latency = -1;
@@ -154,11 +158,14 @@ struct Mc_dep
 };
 
 extern vector<X64_mc> x64mc;
-extern vector<Mc_dep> mc_dep;
-extern vector<Mc_dep> mc_bdep;
+extern vector<X64_mc> x64mc_scheded;
+extern vector<X64_mc> x64mc_alloced;
+extern vector<Mc_dep> mcs_pred;
+extern vector<Mc_dep> mcs_succ;
 
 int get_slot(int len = 4);
 void dump_mc(vector<X64_mc> &v);
 void mc_schedule();
+void gen_x64_asm();
 
-#endif /* X64_MC_H_ */
+#endif /* X64_MACHINE_CODE_H_ */
