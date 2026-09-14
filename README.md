@@ -11,6 +11,7 @@ The goal is use vsc to compile vsl source code to x86-64 or risc-v assembly, or 
 ### process
 
 2026.9.15 
+
 from simple language to asm finished, whole chain except assembler, the implent of all module is simple, but not too simple, didn't work out block, jump, SSA, optimize. reg alloc is -O0 style, load/spill every instruction.
 plan to go on with SSA, -O1, risc-v backend, also simple implment.
 
