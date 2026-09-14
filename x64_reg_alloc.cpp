@@ -218,6 +218,8 @@ int align16(int &n)
 	int align = 16;
 	n = ((n / align) + (bool)(n % align)) * align;
 	return n;
+
+//	return (n + 15) & ~15;
 }
 
 void dump_asm(vector<X64_mc> &v)
@@ -313,15 +315,15 @@ void dump_asm(vector<X64_mc> &v)
 	fclose(fp);
 }
 
-void gen_x64_asm()
+void x64_pr_alloc_and_dump_asm()
 {
 	x64_pr_alloc_O0();
 //	dump_mc(x64mc_alloced);
 
 	dump_asm(x64mc_alloced);
 
-	system("gcc a.s -o a");
-	system("./a");
+//	system("gcc a.s -o a");
+//	system("./a");
 }
 
 

@@ -166,6 +166,6 @@ extern vector<Mc_dep> mcs_succ;
 int get_slot(int len = 4);
 void dump_mc(vector<X64_mc> &v);
 void mc_schedule();
-void gen_x64_asm();
+void x64_pr_alloc_and_dump_asm();
 
 #endif /* X64_MACHINE_CODE_H_ */

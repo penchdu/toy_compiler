@@ -8,6 +8,9 @@ i write the code, show it to AI to debug, i ask AI to write some borring code, f
 i name the language vsl (very simple language), so the compiler's name is vsc
 The goal is use vsc to compile vsl source code to x86-64 or risc-v assembly, or directly to binary, and let it run on cpu.
 
+### process
+2026.9.15 from simple language to asm finished, whole chain except assembler, the implent of all module is simple, but not too simple, didn't work out block, jump, SSA, optimize. reg alloc is -O0 style, load/spill every instruction.
+plan to go on with SSA, -O1, risc-v backend, also simple implment.
 
 ### Project Goal
 - lexical analysis
@@ -44,6 +47,9 @@ return
 - no ABI handling
 - only integer operations
 - identifiers follow the same naming rules as in the C language
+
+
+
 
 ## Compiler Components
 ### 1. Lexer
@@ -291,7 +297,7 @@ Currently the compiler targets:
 - [x] Instruction selection
 - [x] Instruction scheduler
 - [ ] Register allocation
-- [ ] x86 backend
+- [ ] x64 backend
 ---
 
 ### Example

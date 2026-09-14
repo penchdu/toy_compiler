@@ -48,9 +48,10 @@ int main(int argc, char **argv)
 	gen_machine_code();
 	mc_schedule();
 
+	x64_pr_alloc_and_dump_asm();		// create a.s in current location
 
-	gen_x64_asm();
-
+	system("gcc a.s -o a");
+	system("./a");
 	return 0;
 }
 
