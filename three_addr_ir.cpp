@@ -7,6 +7,8 @@
 
 #include "h.h"
 
+extern Scope file_scope;
+vector<Three_addr_code*> three_addr_code;
 
 //int get_const_vr(int v)
 //{
@@ -25,7 +27,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 	int a = trace_ast_down_up_gen_3_address_code(p->left);
 	string c;
 	Symbol_var *symb = 0;
-	Three_addr_ir *inst = 0;
+	Three_addr_code *inst = 0;
 
 	switch(p->semty)
 	{
@@ -38,7 +40,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 		return symb->vr;
 
 	case sem_const_num:
-		inst = new Three_addr_ir(p);
+		inst = new Three_addr_code(p);
 		inst->dst = p->vr_id;
 		inst->const_num_value = p->const_value;
 		three_addr_code.push_back(inst);
@@ -46,7 +48,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 
 		// x = y : return x
 	case op_assign:
-		inst = new Three_addr_ir(p);
+		inst = new Three_addr_code(p);
 		inst->dst = a;
 		inst->s1 = b;
 		three_addr_code.push_back(inst);
@@ -58,7 +60,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 		case op_mul:
 		case op_div:
 
-			inst = new Three_addr_ir(p);
+			inst = new Three_addr_code(p);
 			inst->dst = p->vr_id;
 			inst->s1 = a;
 			inst->s2 = b;
@@ -66,7 +68,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 			return p->vr_id;
 
 	case sem_return:
-		inst = new Three_addr_ir(p);
+		inst = new Three_addr_code(p);
 		inst->s1 = a;
 		three_addr_code.push_back(inst);
 		return -1;

@@ -8,8 +8,10 @@
 #include "h.h"
 #include "x64_back_end.h"
 
+extern vector<Three_addr_code*> three_addr_code;
+
 vector<X64_mc> x64mc;
-vector<X64_mc> x64mc_scheded;
+vector<X64_mc> x64mc_schedued;
 vector<Mc_dep> mcs_pred;
 vector<Mc_dep> mcs_succ;
 
@@ -145,7 +147,7 @@ void dump_mc(vector<X64_mc> &v)
 	printf("ret \n\n");
 }
 
-void gen_machine_code()
+void gen_mc()
 {
 	_gen_machine_code();
 //	dump_mc(x64mc);

@@ -11,7 +11,7 @@
 extern vector<X64_mc> x64mc;
 extern vector<Mc_dep> mcs_pred;
 extern vector<Mc_dep> mcs_succ;
-extern vector<X64_mc> x64mc_scheded;
+extern vector<X64_mc> x64mc_schedued;
 
 void create_dependcy(int a, int b)
 {
@@ -363,7 +363,7 @@ void _mc_schedule()
 				break;
 
 			x64mc[mc].start_cycle = cycle;
-			x64mc_scheded.push_back(x64mc[mc]);
+			x64mc_schedued.push_back(x64mc[mc]);
 			running.push_back(mc);
 
 			assert(x64mc[mc].start_cycle >= 0);
@@ -376,7 +376,7 @@ void _mc_schedule()
 	}
 //	printf("max cycle: %d \n", cycle);
 
-	auto &t = *x64mc_scheded.rbegin();
+	auto &t = *x64mc_schedued.rbegin();
 	if (t.mcty != mc_ret)
 	{
 		printf("x64mc_scheduled last: %s %s, s1 %%%d, s2 %%%d, cycle: %d-%d\n",

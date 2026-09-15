@@ -8,7 +8,7 @@
 #include "h.h"
 #include "x64_back_end.h"
 
-extern vector<X64_mc> x64mc_scheded;
+extern vector<X64_mc> x64mc_schedued;
 vector<X64_mc> x64mc_alloced;
 
 enum X64_pr
@@ -136,7 +136,7 @@ void x64_pr_alloc_o0()
 {
 	vr_pr.resize(vreg.id + 1);
 
-	for (auto &r : x64mc_scheded)
+	for (auto &r : x64mc_schedued)
 	{
 		X64_mc mc = r;
 		Machine_code_type ty = mc.mcty;
@@ -196,27 +196,25 @@ void dump_asm(vector<X64_mc> &v)
 	FILE *fp = fopen("a.s", "w");
 	assert(fp);
 
-//	align16(vreg.offset);
-
 	fprintf(fp, "\n#========== asm ==========#\n");
-	fprintf(fp, ".intel_syntax noprefix\n");		// rsp -= 8 for return addr
+	fprintf(fp, ".intel_syntax noprefix \n");		// rsp -= 8 for return addr
 	fprintf(fp, ".extern printf \n");
 	fprintf(fp, ".section .rodata \n");
 	fprintf(fp, "fmt: \n\t");
 	fprintf(fp, ".string \"Result: %%d\\n\" \n\n");
 
-	fprintf(fp, ".section .text\n");
-	fprintf(fp, ".global main\n\n");
+	fprintf(fp, ".section .text \n");
+	fprintf(fp, ".global main \n\n");
 	fprintf(fp, "main: \n\t");
 
-	fprintf(fp, "push rbp\n\t");	// rsp -= 8  (rsp -= 16)
-	fprintf(fp, "mov rbp, rsp\n\t");	// rbp = rsp  (same -= 16)
+	fprintf(fp, "push rbp \n\t");	// rsp -= 8  (rsp -= 16)
+	fprintf(fp, "mov rbp, rsp \n\t");	// rbp = rsp  (same -= 16)
 
 	int rsp_of = vreg.offset;
 	align16(rsp_of);
 //	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 
-	fprintf(fp, "sub rsp, %d\n\n\t", rsp_of);
+	fprintf(fp, "sub rsp, %d \n\n\t", rsp_of);
 
 	for (auto &mc : v)
 	{
@@ -225,17 +223,17 @@ void dump_asm(vector<X64_mc> &v)
 		switch (ty)
 		{
 		case mc_ld:
-			fprintf(fp, "%s %s, dword ptr [rbp - %d]\n\t",mc.asm_code.c_str(), pr_name[mc.pr1], mc.of1);
+			fprintf(fp, "%s %s, dword ptr [rbp - %d] \n\t",mc.asm_code.c_str(), pr_name[mc.pr1], mc.of1);
 			PRINT_MORE
 			break;
 
 		case mc_st:
-			fprintf(fp, "%s dword ptr [rbp - %d], %s\n\t", mc.asm_code.c_str(), mc.of1, pr_name[mc.pr1]);
+			fprintf(fp, "%s dword ptr [rbp - %d], %s \n\t", mc.asm_code.c_str(), mc.of1, pr_name[mc.pr1]);
 			PRINT_MORE
 			break;
 
 		case mc_li:
-			fprintf(fp, "%s %s, %d\n\t", mc.asm_code.c_str(), pr_name[mc.pr1], mc.const_num);
+			fprintf(fp, "%s %s, %d \n\t", mc.asm_code.c_str(), pr_name[mc.pr1], mc.const_num);
 			PRINT_MORE
 			break;
 
@@ -243,7 +241,7 @@ void dump_asm(vector<X64_mc> &v)
 			case mc_add:
 			case mc_sub:
 			case mc_imul:
-			fprintf(fp, "%s %s, %s\n\t", mc.asm_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2]);
+			fprintf(fp, "%s %s, %s \n\t", mc.asm_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2]);
 			PRINT_MORE
 			break;
 
@@ -251,39 +249,38 @@ void dump_asm(vector<X64_mc> &v)
 			fprintf(fp, "mov eax, %s\n\t", pr_name[mc.pr1]);
 			PRINT_MORE
 
-			fprintf(fp, "cdq\n\t");
-			fprintf(fp, "idiv %s\n\t", pr_name[mc.pr2]);
-			fprintf(fp, "mov %s, eax\n\t", pr_name[mc.pr1]);
+			fprintf(fp, "cdq \n\t");
+			fprintf(fp, "idiv %s \n\t", pr_name[mc.pr2]);
+			fprintf(fp, "mov %s, eax \n\t", pr_name[mc.pr1]);
 			break;
 
 		case mc_ret:
-			fprintf(fp, "# ---------------- 打印结果 ----------------\n\t");
-			fprintf(fp, "mov esi, %s		# 第 2 个参数：要打印的整数 (放在 %%esi / %%rsi)\n\t", pr_name[mc.pr1]);
-			fprintf(fp, "lea rdi, [rip + fmt]		# 第 1 个参数：格式化字符串地址 (放在 %%rdi)\n\t");
+			fprintf(fp, "# ---------------- print return value ----------------\n\t");
+			fprintf(fp, "mov esi, %s		# 第 2 个参数：要打印的整数\n\t", pr_name[mc.pr1]);
+			fprintf(fp, "lea rdi, [rip + fmt]		# 第 1 个参数：格式化字符串地址\n\t");
 			fprintf(fp, "mov eax, 0		# x86-64 ABI 规定：变长参数调用前将 eax 清零\n\t");
-			fprintf(fp, "call printf@PLT		# 调用 C 语言的 printf\n\t");
+			fprintf(fp, "call printf@PLT \n\t");
 			fprintf(fp, "# ------------------------------------------\n\t");
 
-			fprintf(fp, "mov eax, %s\n\t", pr_name[mc.pr1]);
+			fprintf(fp, "mov eax, %s \n\t", pr_name[mc.pr1]);
 			PRINT_MORE
 			break;
 
 		default:
-			ERR("%d \n", ty);
+			ERR("%d", ty);
 			break;
 		}
 	}
 
-	fprintf(fp, "mov rsp, rbp\n\t");
-	fprintf(fp, "pop rbp\n\t");
+	fprintf(fp, "mov rsp, rbp \n\t");
+	fprintf(fp, "pop rbp \n\t");
 	fprintf(fp, "ret \n\n");
-	fprintf(fp, ".section .note.GNU-stack,\"\",@progbits\n");
-
+	fprintf(fp, ".section .note.GNU-stack,\"\",@progbits \n");
 
 	fclose(fp);
 }
 
-void x64_pr_alloc_and_dump_asm()
+void x64_pr_alloc()
 {
 	x64_pr_alloc_o0();
 //	dump_mc(x64mc_alloced);

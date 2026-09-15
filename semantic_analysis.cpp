@@ -7,6 +7,8 @@
 
 #include "h.h"
 
+extern Scope file_scope;
+map<string, Symbol_var*> global_unique_src_name_tbl;
 
 static int case_sem_var(Ast *p)
 {
@@ -223,7 +225,7 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	int a = trace_ast_down_up_gen_vr(p->left);
 	string c;
 	Symbol_var *symb = 0;
-	Three_addr_ir *inst = 0;
+	Three_addr_code *inst = 0;
 
 	switch(p->semty)
 	{

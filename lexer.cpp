@@ -7,6 +7,8 @@
 
 #include "h.h"
 
+Tokens tokens;
+
 //enum Op_priority get_op_priority(enum Token_type type)
 //{
 //	switch(type)
@@ -179,8 +181,9 @@ int lexer(FILE *fp)
 		tokens.append(token);
 	}
 
+	bool dump_token = 0;
 	if(dump_token) {
-//		tokens.dump();
+		tokens.dump();
 	}
 
 	return 0;

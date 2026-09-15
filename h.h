@@ -295,9 +295,8 @@ public:
 	}
 };
 
-
-struct Three_addr_ir{
-	Three_addr_ir(Ast *p){
+struct Three_addr_code{
+	Three_addr_code(Ast *p){
 		ast = p;
 	}
 	Ast *ast = 0;
@@ -392,25 +391,12 @@ struct VReg{
 //	vector<vr_off> vr_tbl;
 //};
 
-extern bool dump_token;
-
-extern Tokens tokens;
-extern Scope file_scope;
-extern Scope *scope;
-extern map<string, Symbol_var*> global_unique_src_name_tbl;
-extern map<int, int> const_num_vr_tbl;
-extern int scope_id;
-extern vector<Three_addr_ir*> three_addr_code;
-extern vector<Three_addr_ir*> machine_code;
 extern VReg vreg;
-
-bool is_math_op(Semantic_type t);
-void dump_ast();
 
 int lexer(FILE *fp);
 void parser();
 void sem_analysis();
 void gen_three_address_code();
-void gen_machine_code();
+
 
 #endif /* H_H_ */

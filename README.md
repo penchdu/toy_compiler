@@ -1,10 +1,9 @@
 # VSC - Very Simple Compiler
 
-After I studied the book *Engineering a Compiler 3E*, I found the compiler theory is much simpler than what I supposed, (**if you do not want to build a real-world compiler**).
-I started this personal experimental "toy" compiler project to practice end‑to‑end compiler implementation.
+After I studied the book *Engineering a Compiler 3E*, I found the compiler theory is much simpler than what I supposed, (**if you do not want to build a real-world compiler**), so I decide to write a toy compiler to kill some time and have fun.
 
 before I start coding I thought it will be very simple, when I am coding I found it is not that simple even it is a toy compiler.
-I used AI for auxiliary work: debugging code snippets, implementing boring utility routines (e.g. token reading, AST dump helpers), and looking up compiler‑related knowledge.
+I used AI for auxiliary work: debugging code snippets, implementing boring utility routines (e.g. token reading, dump AST as graph, makefile), and looking up compiler‑related knowledge.
 
 I named the language **vsl (very simple language)**, so the compiler's name is **vsc**.
 Project original goal: compile VSL source to x86‑64 / RISC‑V assembly (or binary), which can execute on real CPU hardware.
@@ -15,11 +14,11 @@ Project original goal: compile VSL source to x86‑64 / RISC‑V assembly (or bi
 
 Full VSL‑to‑x86‑64 compiler chain except assembler, outputs x86‑64 assembly; uses GCC for assembling/linking;  the finally executable binary can run on a real x86‑64 CPU.
 
-The implement of all module is simple and straightforward, but not too simple, reg-alloc is -O0 style, load/spill every use.
+The implement of all module is simple and straightforward, but not too simple, reg-alloc is -O0 style, load/spill every virtual-register use.
 
-Didn't implement block, jump, SSA, optimize, and many thing.
+Didn't implement block, control flow, jump, SSA, optimize, and many thing.
 
-Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything is simple and self‑designed.
+Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything simple and self‑designed.
 
 
 ## Project Status
@@ -33,12 +32,12 @@ Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything 
 - [ ] Liveness analysis
 - [ ] SSA
 - [ ] SSA based optimize
-- [x] simple Semantic analysis
+- [x] basic Semantic analysis
 - [x] Three-address IR
-- [x] x64 Instruction selection
-- [x] x64 Instruction scheduler
-- [x] x64 -O0 Register allocation
-- [ ] x64 -O1 Register allocation
+- [x] x64 Instruction select
+- [x] x64 Instruction schedule
+- [x] x64 -O0 Register allocate
+- [ ] x64 -O1 Register allocate
 - [x] x64 asm
 
 
@@ -55,7 +54,6 @@ int, return
 - no ABI handling
 - only integer operations
 - identifiers follow the same naming rules as in the C language
-
 
 
 
@@ -147,7 +145,7 @@ $make
 $./build/a
 ```
 
-Input(the file "t1"):
+Input (the file "t1"):
 ```c
 int a = 0;
 int main()
@@ -167,7 +165,7 @@ int main()
 }
 ```
 
-the **vsc** reads the test-file "t1" in current location and generate a assembly-file: a.s
+the **vsc** reads the test-file "**t1**" in current location and generate a assembly-file: **a.s**
 
 ```
 
@@ -246,7 +244,7 @@ main:
 
 ```
 
-An executable file named "a" will be produced in current location.
+An executable file named "**a**" will be produced in current location.
 It can run on Linux‑x86‑64 and print the return int-value of the program.
 
 ---

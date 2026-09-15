@@ -157,13 +157,14 @@ struct Mc_dep
 };
 
 extern vector<X64_mc> x64mc;
-extern vector<X64_mc> x64mc_scheded;
+extern vector<X64_mc> x64mc_schedued;
 extern vector<X64_mc> x64mc_alloced;
 extern vector<Mc_dep> mcs_pred;
 extern vector<Mc_dep> mcs_succ;
 
 void dump_mc(vector<X64_mc> &v);
+void gen_mc();
 void mc_schedule();
-void x64_pr_alloc_and_dump_asm();
+void x64_pr_alloc();
 
 #endif /* X64_BACK_END_H_ */
