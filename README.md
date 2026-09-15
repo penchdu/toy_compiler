@@ -58,9 +58,13 @@ int, return
 
 #### Lexer
 ...
+
 #### Parser
 ...
+
 #### DAG Construction
+...
+
 #### Scope and Semantic Analysis
 
 Semantic analysis performs:
@@ -95,8 +99,10 @@ block2_a
 
 #### Intermediate Representation
 ...
+
 #### Instruction Select
 ...
+
 #### Instruction Schedule
 
 Schedule priority:
