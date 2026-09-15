@@ -198,7 +198,7 @@ void dump_asm(vector<X64_mc> &v)
 
 //	align16(vreg.offset);
 
-	fprintf(fp, "\n#========== asm ==========\n");
+	fprintf(fp, "\n#========== asm ==========#\n");
 	fprintf(fp, ".intel_syntax noprefix\n");		// rsp -= 8 for return addr
 	fprintf(fp, ".extern printf \n");
 	fprintf(fp, ".section .rodata \n");

@@ -11,11 +11,14 @@ Project original goal: compile VSL source to x86‑64 / RISC‑V assembly (or bi
 
 ### Process
 
-2026.9.15 
+**2026.9.15**
 
 Full VSL‑to‑x86‑64 compiler chain except assembler, outputs x86‑64 assembly; uses GCC for assembling/linking;  the finally executable binary can run on a real x86‑64 CPU.
+
 The implement of all module is simple and straightforward, but not too simple, reg-alloc is -O0 style, load/spill every use.
+
 Didn't implement block, jump, SSA, optimize, and many thing.
+
 Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything is simple and self‑designed.
 
 
