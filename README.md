@@ -9,7 +9,7 @@ I used AI for auxiliary work: debugging code snippets, implementing boring utili
 I named the language **vsl (very simple language)**, so the compiler's name is **vsc**.
 Project original goal: compile VSL source to x86‑64 / RISC‑V assembly (or binary), which can execute on real CPU hardware.
 
-### process
+### Process
 
 2026.9.15 
 
@@ -54,10 +54,12 @@ int, return
 
 
 
-### compiler components detail
+### Compiler components detail
 
 #### Lexer
+...
 #### Parser
+...
 #### DAG Construction
 #### Scope and Semantic Analysis
 
@@ -92,7 +94,9 @@ block2_a
 
 
 #### Intermediate Representation
+...
 #### Instruction Select
+...
 #### Instruction Schedule
 
 Schedule priority:
@@ -109,7 +113,7 @@ Schedule priority:
 - ...
 
 
-### goal Optimization Level
+### Goal Optimization Level
 
 -O0:
 - instruction selection
@@ -235,10 +239,4 @@ An executable file named "a" will be produced in current location.
 It can run on Linux‑x86‑64 and print the return int-value of the program.
 
 ---
-
-
-
-
-
-
 
