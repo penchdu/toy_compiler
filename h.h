@@ -296,8 +296,8 @@ public:
 };
 
 
-struct Instruction{
-	Instruction(Ast *p){
+struct Three_addr_ir{
+	Three_addr_ir(Ast *p){
 		ast = p;
 	}
 	Ast *ast = 0;
@@ -306,21 +306,11 @@ struct Instruction{
 	int s1 = -1;
 	int s2 = -1;
 
-//	const int mem_size = 4;
-//	int dst_off = 0;
-//	int src1_off = 0;
-//	int src2_off = 0;
-//	int alloc_mem(int size){
-//		static int offset = 0;
-//		int a = offset;
-//		offset += size;
-//		return a;
-//	}
-//	Var_type ty = INT;
 	int const_num_value = 0;
 };
 
-struct Virtual_reg{
+// virtual register
+struct VReg{
 	int new_vr(Ast *p, int size = 4)
 	{
 		id++;
@@ -331,7 +321,7 @@ struct Virtual_reg{
 
 	int get_vr_off(unsigned int id){
 		if(id >= vr_off.size() || vr_off[id] < 0){
-//			ERR("id %d, %zu\n", id, vr_off.size());
+			ERR("id %d, %zu\n", id, vr_off.size());
 			return -1;
 		}
 		return vr_off[id];
@@ -410,9 +400,9 @@ extern Scope *scope;
 extern map<string, Symbol_var*> global_unique_src_name_tbl;
 extern map<int, int> const_num_vr_tbl;
 extern int scope_id;
-extern vector<Instruction*> three_addr_code;
-extern vector<Instruction*> machine_code;
-extern Virtual_reg vreg;
+extern vector<Three_addr_ir*> three_addr_code;
+extern vector<Three_addr_ir*> machine_code;
+extern VReg vreg;
 
 bool is_math_op(Semantic_type t);
 void dump_ast();

@@ -6,7 +6,7 @@
  */
 
 #include "h.h"
-#include "x64_machine_code.h"
+#include "x64_back_end.h"
 
 bool dump_token = false;
 
@@ -16,9 +16,9 @@ Scope *scope;
 map<string, Symbol_var*> global_unique_src_name_tbl;
 map<int, int> const_num_vr_tbl;
 int scope_id = 0;
-vector<Instruction*> three_addr_code;
-vector<Instruction*> machine_code;
-Virtual_reg vreg;
+vector<Three_addr_ir*> three_addr_code;
+vector<Three_addr_ir*> machine_code;
+VReg vreg;
 
 int main(int argc, char **argv)
 {

@@ -30,6 +30,7 @@ Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything 
 - [x] namespace Scope manage
 - [ ] Control Flow Scope manage
 - [x] Symbol table
+- [ ] Liveness analysis
 - [ ] SSA
 - [ ] SSA based optimize
 - [x] simple Semantic analysis
@@ -39,6 +40,7 @@ Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything 
 - [x] x64 -O0 Register allocation
 - [ ] x64 -O1 Register allocation
 - [x] x64 asm
+
 
 ## Supported Keywords
 

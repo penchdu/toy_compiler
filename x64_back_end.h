@@ -5,8 +5,8 @@
  *      Author: x
  */
 
-#ifndef X64_MACHINE_CODE_H_
-#define X64_MACHINE_CODE_H_
+#ifndef X64_BACK_END_H_
+#define X64_BACK_END_H_
 
 #include "h.h"
 
@@ -74,7 +74,6 @@ enum Machine_code_type{
 	mc_li,	// reg-num
 
 	mc_ld,	// reg <- ptr
-//	mc_spill,	// reg -> ptr, lost pr
 	mc_st,	// reg -> ptr
 
 	mc_assign,	// reg-reg
@@ -163,9 +162,8 @@ extern vector<X64_mc> x64mc_alloced;
 extern vector<Mc_dep> mcs_pred;
 extern vector<Mc_dep> mcs_succ;
 
-int get_slot(int len = 4);
 void dump_mc(vector<X64_mc> &v);
 void mc_schedule();
 void x64_pr_alloc_and_dump_asm();
 
-#endif /* X64_MACHINE_CODE_H_ */
+#endif /* X64_BACK_END_H_ */

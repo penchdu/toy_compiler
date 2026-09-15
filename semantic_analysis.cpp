@@ -223,7 +223,7 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	int a = trace_ast_down_up_gen_vr(p->left);
 	string c;
 	Symbol_var *symb = 0;
-	Instruction *inst = 0;
+	Three_addr_ir *inst = 0;
 
 	switch(p->semty)
 	{
