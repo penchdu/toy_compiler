@@ -12,6 +12,7 @@ extern Scope file_scope;
 extern Scope *scope;
 extern int scope_id;
 
+
 static Ast* parse_stmt();
 static Ast* parse_expr();
 static void gen_ast();

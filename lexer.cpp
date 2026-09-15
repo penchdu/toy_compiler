@@ -8,6 +8,9 @@
 #include "h.h"
 
 Tokens tokens;
+Scope file_scope;
+Scope *scope;
+int scope_id = 0;
 
 //enum Op_priority get_op_priority(enum Token_type type)
 //{
@@ -173,6 +176,12 @@ static Token get_a_token_from_file(FILE *fp)
 
 int lexer(FILE *fp)
 {
+	scope = &file_scope;
+	scope->id = scope_id++;
+	scope->name = "b" + std::to_string(scope->id);
+	scope->is_virtual_scope = false;
+	scope->parent = 0;
+
 	while(1) {
 		Token token = get_a_token_from_file(fp);
 		if(token.type == tk_EOF)
