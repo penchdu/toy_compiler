@@ -19,17 +19,23 @@ Didn't implement block, jump, SSA, optimize, and many thing.
 Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything is simple and self‑designed.
 
 
-### Project Goal
-- lexical analysis
-- parsing
-- abstract syntax tree construction
-- scope management
-- semantic analysis
-- intermediate representation
-- instruction selection
-- instruction scheduling
-- register allocation
-- assembly generation
+### Project Status
+- [x] Lexer
+- [x] two-stack Parser
+- [ ] Pratt Parser
+- [x] AST
+- [x] namespace Scope manage
+- [ ] Control Flow Scope manage
+- [x] Symbol table
+- [ ] SSA
+- [ ] SSA based optimize
+- [x] simple Semantic analysis
+- [x] Three-address IR
+- [x] x64 Instruction selection
+- [x] x64 Instruction scheduler
+- [x] x64 -O0 Register allocation
+- [ ] x64 -O1 Register allocation
+- [x] x64 asm
 
 ### Supported Keywords
 
@@ -48,15 +54,12 @@ int, return
 
 
 
-## Compiler Components
+### compiler components detail
 
-### Lexer
-
-### Parser
-
-### DAG Construction
-
-### Scope and Semantic Analysis
+#### Lexer
+#### Parser
+#### DAG Construction
+#### Scope and Semantic Analysis
 
 Semantic analysis performs:
 
@@ -88,17 +91,14 @@ block2_a
 ---
 
 
-### Intermediate Representation
-
-### Instruction Select
-
-### Instruction Schedule
+#### Intermediate Representation
+#### Instruction Select
+#### Instruction Schedule
 
 Schedule priority:
 - critical_path_length
 
-
-### Register Allocation
+#### Register Allocation
 
 -O0:
 - correctness
@@ -109,7 +109,7 @@ Schedule priority:
 - ...
 
 
-### Optimization Level
+### goal Optimization Level
 
 -O0:
 - instruction selection
@@ -125,25 +125,6 @@ Schedule priority:
 - peephole optimization
 
 
-## Project Status
-- [x] Lexer
-- [x] two-stack Parser
-- [ ] Pratt Parser
-- [x] AST
-- [x] namespace Scope manage
-- [ ] Control Flow Scope manage
-- [x] Symbol table
-- [ ] SSA
-- [ ] SSA based optimize
-- [x] simple Semantic analysis
-- [x] Three-address IR
-- [x] x64 Instruction selection
-- [x] x64 Instruction scheduler
-- [x] x64 -O0 Register allocation
-- [ ] x64 -O1 Register allocation
-- [x] x64 asm
-
-
 ### Example
 
 ```c
@@ -151,7 +132,7 @@ $make
 $./build/a
 ```
 
-Input:
+Input(the file "t1"):
 ```c
 int a = 0;
 int main()
@@ -171,8 +152,7 @@ int main()
 }
 ```
 
-
-Generated assembly: a.s
+the **vsc** reads the test-file "t1" in current location and generate a assembly-file: a.s
 
 ```
 
@@ -251,8 +231,8 @@ main:
 
 ```
 
-An executable file named a will be produced.
-It runs on Linux‑x86‑64 and prints the return value of the program.
+An executable file named "a" will be produced in current location.
+It can run on Linux‑x86‑64 and print the return int-value of the program.
 
 ---
 
