@@ -14,7 +14,7 @@ vector<X64_mc> x64mc_scheded;
 vector<Mc_dep> mcs_pred;
 vector<Mc_dep> mcs_succ;
 
-static void gen_add_sub_mul_div_mc(Machine_code_type mc, string ori_sem, int tac_dst, int tac_s1, int tac_s2)
+static void gen__add_sub_mul_div_mc(Machine_code_type mc, string ori_sem, int tac_dst, int tac_s1, int tac_s2)
 {
 	X64_mc inst;
 
@@ -49,19 +49,19 @@ static void _gen_machine_code()
 			break;
 
 		case op_add:
-			gen_add_sub_mul_div_mc(mc_add, "add", tac->dst, tac->s1, tac->s2);
+			gen__add_sub_mul_div_mc(mc_add, "add", tac->dst, tac->s1, tac->s2);
 			break;
 
 		case op_sub:
-			gen_add_sub_mul_div_mc(mc_sub, "sub", tac->dst, tac->s1, tac->s2);
+			gen__add_sub_mul_div_mc(mc_sub, "sub", tac->dst, tac->s1, tac->s2);
 			break;
 
 		case op_mul:
-			gen_add_sub_mul_div_mc(mc_imul, "imul", tac->dst, tac->s1, tac->s2);
+			gen__add_sub_mul_div_mc(mc_imul, "imul", tac->dst, tac->s1, tac->s2);
 			break;
 
 		case op_div:
-			gen_add_sub_mul_div_mc(mc_div, "div", tac->dst, tac->s1, tac->s2);
+			gen__add_sub_mul_div_mc(mc_div, "div", tac->dst, tac->s1, tac->s2);
 			break;
 
 		case sem_return:

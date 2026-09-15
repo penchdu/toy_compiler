@@ -1,19 +1,22 @@
 # VSC - Very Simple Compiler
 
-after i studied the book *Engineering a Compiler 3E*, i found the compiler theory is much simpler than what i supposed, (**if you do not want to build a real-world compiler**). so i want to make a toy compiler to kill the dragon.
+After I studied the book *Engineering a Compiler 3E*, I found the compiler theory is much simpler than what I supposed, (**if you do not want to build a real-world compiler**).
+I started this personal experimental "toy" compiler project to practice end‑to‑end compiler implementation.
 
-before i start coding i thought it will be very simple, when i am coding i found it is not that simple even it is a toy compiler, i think i can finish it with the help of AI.
-i write the code, show it to AI to debug, i ask AI to write some borring code, for example, read a word from file, print the ast in graphic style, i also ask AI for compiler knowledge.
+before I start coding I thought it will be very simple, when I am coding I found it is not that simple even it is a toy compiler.
+I used AI for auxiliary work: debugging code snippets, implementing boring utility routines (e.g. token reading, AST dump helpers), and looking up compiler‑related knowledge.
 
-i name the language vsl (very simple language), so the compiler's name is vsc
-The goal is use vsc to compile vsl source code to x86-64 or risc-v assembly, or directly to binary, and let it run on cpu.
+I named the language **vsl (very simple language)**, so the compiler's name is **vsc**.
+Project original goal: compile VSL source to x86‑64 / RISC‑V assembly (or binary), which can execute on real CPU hardware.
 
 ### process
 
 2026.9.15 
 
-from simple language to asm finished, whole chain except assembler, the implent of all module is simple, but not too simple, didn't work out block, jump, SSA, optimize. reg alloc is -O0 style, load/spill every instruction.
-plan to go on with SSA, -O1, risc-v backend, also simple implment.
+Full VSL‑to‑x86‑64 compiler chain except assembler, outputs x86‑64 assembly; uses GCC for assembling/linking;  the finally executable binary can run on a real x86‑64 CPU.
+The implement of all module is simple and straightforward, but not too simple, reg-alloc is -O0 style, load/spill every use.
+Didn't implement block, jump, SSA, optimize, and many thing.
+Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything is simple and self‑designed.
 
 
 ### Project Goal
@@ -31,18 +34,8 @@ plan to go on with SSA, -O1, risc-v backend, also simple implment.
 ### Supported Keywords
 
 ```
-=
-+
--
-*
-/
-(
-)
-{
-}
-;
-int
-return
+=+-*/(){};
+int, return
 ```
 
 ### Language Restrictions
@@ -56,44 +49,14 @@ return
 
 
 ## Compiler Components
-### 1. Lexer
 
-Example:
-Input:
-```c
-int a = 10;
-```
+### Lexer
 
-Output:
-```
-tk_int
-tk_var(a)
-tk_assign
-tk_const_num(10)
-tk_semicolon
-```
+### Parser
 
-### 2. Parser
+### DAG Construction
 
-Example:
-Source:
-
-```c
-a + b * 2;
-```
-
-AST:
-
-```
-+
-├── a
-└── *
-    ├── b
-    └── 2
-```
-
-
-### 3. Scope and Semantic Analysis
+### Scope and Semantic Analysis
 
 Semantic analysis performs:
 
@@ -101,7 +64,6 @@ Semantic analysis performs:
 - symbol table construction
 - scope resolution
 - variable renaming
-
 
 Example:
 
@@ -126,161 +88,36 @@ block2_a
 ---
 
 
-### 4. Intermediate Representation
+### Intermediate Representation
+
+### Instruction Select
+
+### Instruction Schedule
+
+Schedule priority:
+- critical_path_length
 
 
-Example:
+### Register Allocation
 
-Source:
-
-```c
-c = a + b * 2;
-```
-
-
-IR:
-
-```
-%0 = b * 2
-%1 = a + %0
-c = %1
-```
-
-
-Temporary values use virtual registers:
-
-```
-%0
-%1
-%2
-...
-```
-
----
-
-
-### 5. Instruction Selection
-
-Example:
-
-IR:
-
-```
-%1 = a + b
-```
-
-Possible machine instructions:
-
-```
-LOAD
-ADD
-STORE
-```
-
-
----
-
-
-### 6. DAG Construction
-
-
-Example:
-
-```
-a + b * c
-```
-
-DAG:
-
-```
-        +
-       / \
-      a   *
-         / \
-        b   c
-```
-
-
-
-### 7. Instruction Scheduling
-
-Each instruction has an estimated latency.
-
-| Instruction | Latency |
-|-------------|---------|
-| ADD | 1 |
-| SUB | 1 |
-| MUL | 2 |
-| DIV | 10 |
-| MOVE | 1 |
-| LOAD | 3 |
-| STORE | 3 |
-
-
-Scheduling priority:
-
-```
-priority = critical_path_length
-```
-
-
-
----
-
-
-### 8. Register Allocation
-
-Current target:
-
-```
--O0
-```
+-O0:
 - correctness
 - simple allocation
 - load/store based strategy
 
-
----
-
-
-### 9. Debug Options
-
-```
--dump-token
-
--dump-ast
-
--dump-llvm
-
--dump-dag
-
--dump-schedule
-
--dump-regalloc
-
--emit-asm
-```
+-O1:
+- ...
 
 
-### 10. Optimization Level
+### Optimization Level
 
-Currently the compiler targets:
-
-```
--O0
-```
-
-
-#### -O0 goals:
-
+-O0:
 - instruction selection
 - basic scheduling
 - simple register allocation
 - assembly generation
 
-
-#### -O1 goals:
-
+-O1:
 - constant folding
 - dead code elimination
 - SSA
@@ -290,19 +127,22 @@ Currently the compiler targets:
 
 ## Project Status
 - [x] Lexer
-- [x] Parser
+- [x] two-stack Parser
+- [ ] Pratt Parser
 - [x] AST
-- [x] Scope management
+- [x] namespace Scope manage
+- [ ] Control Flow Scope manage
 - [x] Symbol table
-- [x] Semantic analysis
-- [x] Three-address IR
 - [ ] SSA
 - [ ] SSA based optimize
-- [x] Instruction selection
-- [x] Instruction scheduler
-- [ ] Register allocation
-- [ ] x64 backend
----
+- [x] simple Semantic analysis
+- [x] Three-address IR
+- [x] x64 Instruction selection
+- [x] x64 Instruction scheduler
+- [x] x64 -O0 Register allocation
+- [ ] x64 -O1 Register allocation
+- [x] x64 asm
+
 
 ### Example
 
@@ -332,20 +172,87 @@ int main()
 ```
 
 
-Generated IR:
+Generated assembly: a.s
 
 ```
-%0 = 0
-%1 = 1
-%3 = 0
-%4 = %3 + 2
-%2 = %4
-%1 = 1
-%2 = 2
-%5 = %1 + %2
-return %5
+
+#========== asm ==========
+.intel_syntax noprefix
+.extern printf 
+.section .rodata 
+fmt: 
+	.string "Result: %d\n" 
+
+.section .text
+.global main
+
+main: 
+	push rbp
+	mov rbp, rsp
+	sub rsp, 48
+
+	mov r10d, 0
+	mov dword ptr [rbp - 20], r10d
+	mov r10d, 2
+	mov dword ptr [rbp - 28], r10d
+	mov r10d, 1
+	mov dword ptr [rbp - 12], r10d
+	mov r10d, 1
+	mov dword ptr [rbp - 40], r10d
+	mov r10d, 2
+	mov dword ptr [rbp - 44], r10d
+	mov r10d, 0
+	mov dword ptr [rbp - 4], r10d
+	mov r11d, dword ptr [rbp - 20]
+	mov r10d, r11d
+	mov dword ptr [rbp - 24], r10d
+	mov r11d, dword ptr [rbp - 12]
+	mov r10d, r11d
+	mov dword ptr [rbp - 16], r10d
+	mov r11d, dword ptr [rbp - 4]
+	mov r10d, r11d
+	mov dword ptr [rbp - 8], r10d
+	mov r11d, dword ptr [rbp - 24]
+	mov r10d, r11d
+	mov dword ptr [rbp - 32], r10d
+	mov r11d, dword ptr [rbp - 40]
+	mov r10d, r11d
+	mov dword ptr [rbp - 16], r10d
+	mov r10d, dword ptr [rbp - 32]
+	mov r11d, dword ptr [rbp - 28]
+	add r10d, r11d
+	mov dword ptr [rbp - 32], r10d
+	mov r11d, dword ptr [rbp - 16]
+	mov r10d, r11d
+	mov dword ptr [rbp - 48], r10d
+	mov r11d, dword ptr [rbp - 32]
+	mov r10d, r11d
+	mov dword ptr [rbp - 36], r10d
+	mov r11d, dword ptr [rbp - 44]
+	mov r10d, r11d
+	mov dword ptr [rbp - 36], r10d
+	mov r10d, dword ptr [rbp - 48]
+	mov r11d, dword ptr [rbp - 36]
+	add r10d, r11d
+	mov dword ptr [rbp - 48], r10d
+	mov r10d, dword ptr [rbp - 48]
+	# ---------------- 打印结果 ----------------
+	mov esi, r10d		# 第 2 个参数：要打印的整数 (放在 %esi / %rsi)
+	lea rdi, [rip + fmt]		# 第 1 个参数：格式化字符串地址 (放在 %rdi)
+	mov eax, 0		# x86-64 ABI 规定：变长参数调用前将 eax 清零
+	call printf@PLT		# 调用 C 语言的 printf
+	# ------------------------------------------
+	mov eax, r10d
+	mov rsp, rbp
+	pop rbp
+	ret 
+
+.section .note.GNU-stack,"",@progbits
+
 ```
 
+An executable file named a will be produced.
+It runs on Linux‑x86‑64 and prints the return value of the program.
 
 ---
 

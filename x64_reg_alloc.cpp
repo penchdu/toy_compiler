@@ -11,21 +11,6 @@
 extern vector<X64_mc> x64mc_scheded;
 vector<X64_mc> x64mc_alloced;
 
-/*
- * struct X64_pr{
-	X64_pr_ id = x64_pr_max;
-	char *pr_name = "";
-
-	int vr = -1;
-	bool free = 1;
-};
-vector<X64_pr> x64_pr_state =
-		{
-				{ r10d, "r10d", 1 },
-				{ r11d, "r11d", 1 },
-				{ r12d, "r12d", 1 },
-		};
- */
 enum X64_pr
 {
 	r10d,
@@ -113,16 +98,7 @@ X64_pr get_pr__load_vr(int vr, int u)
 
 	return vr_pr[vr].pr;
 }
-//X64_pr get_2_pr__load_2_vr(int vr1, Vr_useage u1, int vr2, Vr_useage u2)
-//{
-//	assert(u1 & vr_useage_write);
-//	assert(u2 & vr_useage_read);
-//	if(vr1 == vr2)
-//	{
-//		return get_pr__load_vr(vr1, (u1 | u2));
-//	}
-//	return x64_pr_max;
-//}
+
 void spill_pr(int vr)
 {
 	X64_pr pr = vr_pr[vr].pr;
@@ -130,9 +106,6 @@ void spill_pr(int vr)
 
 	assert(pr != x64_pr_max);
 	assert(u != vr_useage_invalid);
-
-//	mov %dst, dword ptr [n]
-//	int off = vreg.get_vr_off(vr);
 
 	if (u & vr_useage_write)
 	{
@@ -150,14 +123,16 @@ void spill_pr(int vr)
 }
 void spill_pr(int vr1, int vr2)
 {
-	if(vr1 == vr2){
+	if(vr1 == vr2)
+	{
 		spill_pr(vr1);
 		return;
 	}
 	spill_pr(vr1);
 	spill_pr(vr2);
 }
-void x64_pr_alloc_O0()
+
+void x64_pr_alloc_o0()
 {
 	vr_pr.resize(vreg.id + 1);
 
@@ -186,14 +161,8 @@ void x64_pr_alloc_O0()
 		case mc_add:
 			case mc_sub:
 			case mc_imul:
+			case mc_div:
 
-			mc.pr1 = get_pr__load_vr(mc.s1, vr_useage_read_write);
-			mc.pr2 = get_pr__load_vr(mc.s2, vr_useage_read);
-			x64mc_alloced.push_back(mc);
-			spill_pr(mc.s1, mc.s2);
-			break;
-
-		case mc_div:
 			mc.pr1 = get_pr__load_vr(mc.s1, vr_useage_read_write);
 			mc.pr2 = get_pr__load_vr(mc.s2, vr_useage_read);
 			x64mc_alloced.push_back(mc);
@@ -230,23 +199,22 @@ void dump_asm(vector<X64_mc> &v)
 //	align16(vreg.offset);
 
 	fprintf(fp, "\n#========== asm ==========\n");
-	fprintf(fp, ".intel_syntax noprefix\n");
+	fprintf(fp, ".intel_syntax noprefix\n");		// rsp -= 8 for return addr
 	fprintf(fp, ".extern printf \n");
 	fprintf(fp, ".section .rodata \n");
 	fprintf(fp, "fmt: \n\t");
-	fprintf(fp, ".string \"Result: %%d\\n\"        \n\n");
+	fprintf(fp, ".string \"Result: %%d\\n\" \n\n");
 
 	fprintf(fp, ".section .text\n");
 	fprintf(fp, ".global main\n\n");
 	fprintf(fp, "main: \n\t");
 
-	fprintf(fp, "push rbp\n\t");	// rsp -= 8
-	fprintf(fp, "mov rbp, rsp\n\t");	// rbp = rsp  (same -= 8)
-//	fprintf(fp, "sub rsp, %d\n\n\t", 8);	// rsp -= 16, align 16
+	fprintf(fp, "push rbp\n\t");	// rsp -= 8  (rsp -= 16)
+	fprintf(fp, "mov rbp, rsp\n\t");	// rbp = rsp  (same -= 16)
 
 	int rsp_of = vreg.offset;
 	align16(rsp_of);
-	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
+//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 
 	fprintf(fp, "sub rsp, %d\n\n\t", rsp_of);
 
@@ -317,7 +285,7 @@ void dump_asm(vector<X64_mc> &v)
 
 void x64_pr_alloc_and_dump_asm()
 {
-	x64_pr_alloc_O0();
+	x64_pr_alloc_o0();
 //	dump_mc(x64mc_alloced);
 
 	dump_asm(x64mc_alloced);
