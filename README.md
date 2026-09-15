@@ -9,7 +9,7 @@ I used AI for auxiliary work: debugging code snippets, implementing boring utili
 I named the language **vsl (very simple language)**, so the compiler's name is **vsc**.
 Project original goal: compile VSL source to x86‑64 / RISC‑V assembly (or binary), which can execute on real CPU hardware.
 
-### Process
+## Process
 
 **2026.9.15**
 
@@ -22,7 +22,7 @@ Didn't implement block, jump, SSA, optimize, and many thing.
 Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything is simple and self‑designed.
 
 
-### Project Status
+## Project Status
 - [x] Lexer
 - [x] two-stack Parser
 - [ ] Pratt Parser
@@ -40,14 +40,14 @@ Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything 
 - [ ] x64 -O1 Register allocation
 - [x] x64 asm
 
-### Supported Keywords
+## Supported Keywords
 
 ```
 =+-*/(){};
 int, return
 ```
 
-### Language Restrictions
+## Language Restrictions
 - only one function: `main` with no parameters
 - no function calls
 - no ABI handling
@@ -57,18 +57,18 @@ int, return
 
 
 
-### Compiler components detail
+## Compiler components detail
 
-#### Lexer
+### Lexer
 ...
 
-#### Parser
+### Parser
 ...
 
-#### DAG Construction
+### DAG Construction
 ...
 
-#### Scope and Semantic Analysis
+### Scope and Semantic Analysis
 
 Semantic analysis performs:
 
@@ -100,18 +100,18 @@ block2_a
 ---
 
 
-#### Intermediate Representation
+### Intermediate Representation
 ...
 
-#### Instruction Select
+### Instruction Select
 ...
 
-#### Instruction Schedule
+### Instruction Schedule
 
 Schedule priority:
 - critical_path_length
 
-#### Register Allocation
+### Register Allocation
 
 -O0:
 - correctness
@@ -138,7 +138,7 @@ Schedule priority:
 - peephole optimization
 
 
-### Example
+## Example
 
 ```c
 $make
