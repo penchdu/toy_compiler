@@ -39,7 +39,7 @@ Plan to go on: SSA, -O1 reg-alloc, maybe a riscv backend, also keep everything s
 - [x] Symbol table
 - [ ] Liveness analysis
 - [ ] SSA
-- [ ] SSA based optimize
+- [ ] base optimize
 - [x] basic Semantic analysis
 - [x] Three-address IR
 - [x] x64 Inst-select
@@ -52,8 +52,8 @@ Plan to go on: SSA, -O1 reg-alloc, maybe a riscv backend, also keep everything s
 ## Supported Keywords
 
 ```
-=+-*/(){};
-int, return
+- =, +, -, *, /, (, ), {, }, ;
+- int, return
 ```
 
 ## Language Restrictions
@@ -122,9 +122,7 @@ Schedule priority:
 ### Register Allocation
 
 -O0:
-- correctness
-- simple allocation
-- load/store based strategy
+- simple allocation, load/store based strategy
 
 -O1:
 - ...
@@ -133,17 +131,12 @@ Schedule priority:
 ### Goal Optimization Level
 
 -O0:
-- instruction selection
-- basic scheduling
-- simple register allocation
-- assembly generation
+- no optimize
+
 
 -O1:
-- constant folding
-- dead code elimination
-- SSA
-- better register allocation
-- peephole optimization
+- constant fold
+- dead code eliminate
 
 
 ## Example
