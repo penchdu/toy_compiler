@@ -51,10 +51,10 @@ Plan to go on: SSA, -O1 reg-alloc, maybe a riscv backend, also keep everything s
 
 ## Supported Keywords
 
-```
+
 - =, +, -, *, /, (, ), {, }, ;
 - int, return
-```
+
 
 ## Language Restrictions
 - only one function: `main` with no parameters
