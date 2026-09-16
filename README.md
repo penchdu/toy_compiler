@@ -12,7 +12,7 @@ Project original goal: compile vsl source to x86‑64 or RISC‑V assembly, uses
 
 ## Process
 
-**2026.9.15**
+### 2026.9.15
 
 The original goal is reached.
 
