@@ -18,7 +18,9 @@ The original goal is reached.
 
 Full vsl‑to‑x86‑64 compiler chain except assembler & linker, outputs x86‑64 assembly; gcc assembler & link; the final binary can run on Linux-x86‑64.
 
-Namespace management works good! **vsc** does not support function call but **Gemini** wrote a piece of assembly code to call **printf**, I put it in my assembly dump and works, that is fantastic!
+Namespace management works good! **vsc** does not support function call but **Gemini** wrote a piece of assembly code to call **printf**, I put it in my assembly dump to print the return value, it works, that is cool! 
+
+I did a few tests, the outputs of the vsc‑generated executable and the gcc‑generated executable are the same.
 
 The implement of all module is straightforward and simple, reg-alloc is -O0 style, load/spill every virtual-register use.
 
