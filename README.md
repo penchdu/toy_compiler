@@ -16,12 +16,12 @@ Project original goal: compile vsl source to x86‑64 or RISC‑V assembly, uses
 
 The original goal is reached.
 
-Full vsl‑to‑x86‑64 compiler chain except assembler/linker, outputs x86‑64 assembly; gcc assembler & link; the final binary can on Linux-x86‑64.
-Namespace management works good! **vsc** does not support function call but **Gemini** wrote a piece of assembly code to call **printf**, I put it in my assembly dump, it works, that is fantastic!
+Full vsl‑to‑x86‑64 compiler chain except assembler & linker, outputs x86‑64 assembly; gcc assembler & link; the final binary can run on Linux-x86‑64.
+Namespace management works good! **vsc** does not support function call but **Gemini** wrote a piece of assembly code to call **printf**, I put it in my assembly dump and works, that is fantastic!
 
 The implement of all module is straightforward and simple, reg-alloc is -O0 style, load/spill every virtual-register use.
 
-Did not implement block, control flow, jump, SSA, optimize, and many thing.
+Did not implement block, control flow, jump, SSA, optimize, and many other thing.
 
 Plan to go on: SSA, -O1 reg-alloc, maybe a riscv backend, also keep everything simple and self‑designed.
 
