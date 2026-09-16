@@ -1,24 +1,22 @@
 # VSC - Very Simple Compiler
 
-After I studied the book *Engineering a Compiler 3E*, I found the compiler theory is much simpler than what I supposed, (**if you do not want to build a real-world compiler**), so I decide to write a toy compiler to kill some time and have fun.
+After I studied the book *Engineering a Compiler 3E*, I found the compiler is much simpler than what I supposed **if you do not want to build a real-world compiler** so I decide to write a toy compiler to kill some time and have fun.
 
-before I start coding I thought it will be very simple, when I am coding I found it is not that simple even it is a toy compiler.
-I used AI for auxiliary work: debugging code snippets, implementing boring utility routines (e.g. token reading, dump AST as graph, makefile), and looking up compiler‑related knowledge.
+Before I start coding I thought it will be very simple, when I am coding I found it is not that simple even it is a toy compiler.
+I used AI for auxiliary work: debug, write boring code(read a word from file, dump AST as graph, makefile), and looking up compiler‑related knowledge, but I do not ask AI to tell me how to design a compiler.
 
-I named the language **vsl (very simple language)**, so the compiler's name is **vsc**.
-Project original goal: compile VSL source to x86‑64 / RISC‑V assembly (or binary), which can execute on real CPU hardware.
+I named the language **vsl** (very simple language), so the compiler's name is **vsc**.
+Project original goal: compile vsl source to x86‑64 or RISC‑V assembly, uses gcc for assembling/linking; run the final executable on CPU.
 
 ## Process
 
 **2026.9.15**
 
-Full VSL‑to‑x86‑64 compiler chain except assembler, outputs x86‑64 assembly; uses GCC for assembling/linking;  the finally executable binary can run on a real x86‑64 CPU.
-
-The implement of all module is simple and straightforward, but not too simple, reg-alloc is -O0 style, load/spill every virtual-register use.
-
-Didn't implement block, control flow, jump, SSA, optimize, and many thing.
-
-Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything simple and self‑designed.
+The original goal is basicly reached.
+Full vsl‑to‑x86‑64 compiler chain except assembler/linker, outputs x86‑64 assembly; gcc assembler & link; the final binary can on Linux-x86‑64.
+The implement of all module is straightforward and simple, reg-alloc is -O0 style, load/spill every virtual-register use.
+Did not implement block, control flow, jump, SSA, optimize, and many thing.
+Plan to go on: SSA, -O1 reg-alloc, maybe a riscv backend, also keep everything simple and self‑designed.
 
 
 ## Project Status
@@ -34,10 +32,10 @@ Plan to go on: SSA, -O1 reg-alloc, maybe a risc-v backend, also keep everything 
 - [ ] SSA based optimize
 - [x] basic Semantic analysis
 - [x] Three-address IR
-- [x] x64 Instruction select
-- [x] x64 Instruction schedule
-- [x] x64 -O0 Register allocate
-- [ ] x64 -O1 Register allocate
+- [x] x64 Inst-select
+- [x] x64 Inst-schedule
+- [x] x64 -O0 reg-alloc
+- [ ] x64 -O1 reg-alloc
 - [x] x64 asm
 
 
