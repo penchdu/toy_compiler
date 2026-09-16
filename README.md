@@ -1,21 +1,28 @@
 # VSC - Very Simple Compiler
 
-After I studied the book *Engineering a Compiler 3E*, I found the compiler is much simpler than what I supposed **if you do not want to build a real-world compiler** so I decide to write a toy compiler to kill some time and have fun.
+After I studied the book *Engineering a Compiler 3E*, I found the compiler is much simpler than what I supposed **if you do not want to build a real-world compiler**, so I decide to write a toy compiler to kill some time and have fun.
 
 Before I start coding I thought it will be very simple, when I am coding I found it is not that simple even it is a toy compiler.
-I used AI for auxiliary work: debug, write boring code(read a word from file, dump AST as graph, makefile), and looking up compiler‑related knowledge, but I do not ask AI to tell me how to design a compiler.
+
+I used AI for auxiliary work: debug, write boring code(read a word from file, dump AST as graph, makefile), and looking up related knowledge, but I do not ask AI to tell me how to design a compiler.
 
 I named the language **vsl** (very simple language), so the compiler's name is **vsc**.
+
 Project original goal: compile vsl source to x86‑64 or RISC‑V assembly, uses gcc for assembling/linking; run the final executable on CPU.
 
 ## Process
 
 **2026.9.15**
 
-The original goal is basicly reached.
+The original goal is reached.
+
 Full vsl‑to‑x86‑64 compiler chain except assembler/linker, outputs x86‑64 assembly; gcc assembler & link; the final binary can on Linux-x86‑64.
+Namespace management works good! **vsc** does not support function call but **Gemini** wrote a piece of assembly code to call **printf**, I put it in my assembly dump, it works, that is fantastic!
+
 The implement of all module is straightforward and simple, reg-alloc is -O0 style, load/spill every virtual-register use.
+
 Did not implement block, control flow, jump, SSA, optimize, and many thing.
+
 Plan to go on: SSA, -O1 reg-alloc, maybe a riscv backend, also keep everything simple and self‑designed.
 
 
