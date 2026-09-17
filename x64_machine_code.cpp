@@ -8,71 +8,71 @@
 #include "h.h"
 #include "x64_back_end.h"
 
-extern vector<Three_addr_code*> three_addr_code;
+extern vector<ThreeAddrCode*> three_addr_code;
 
-vector<X64_mc> x64mc;
-vector<X64_mc> x64mc_schedued;
-vector<Mc_dep> mcs_pred;
-vector<Mc_dep> mcs_succ;
+vector<X64mc> x64mc;
+vector<X64mc> x64mc_schedued;
+vector<McDepend> mcs_pred;
+vector<McDepend> mcs_succ;
 
-static void gen__add_sub_mul_div_mc(Machine_code_type mc, string ori_sem, int tac_dst, int tac_s1, int tac_s2)
+static void gen__add_sub_mul_div_mc(MachineCodeType mc, string ori_sem, int tac_dst, int tac_s1, int tac_s2)
 {
-	X64_mc inst;
+	X64mc inst;
 
-	inst = X64_mc(mc_assign, tac_dst, tac_s1);
+	inst = X64mc(MC_ASSIGN, tac_dst, tac_s1);
 	inst.ori_sem = ori_sem;
 	x64mc.push_back(inst);
 
-	inst = X64_mc(mc, tac_dst, tac_s2);
+	inst = X64mc(mc, tac_dst, tac_s2);
 	inst.ori_sem = ori_sem;
 	x64mc.push_back(inst);
 }
-static void _gen_machine_code()
+static void gen_mc()
 {
-	X64_mc inst;
+	X64mc inst;
 	for (auto &tac : three_addr_code)
 	{
-		Semantic_type ty = tac->ast->semty;
+		SemanticType ty = tac->ast->semty;
 
 		switch (ty)
 		{
-		case sem_const_num:
-			inst = X64_mc(mc_li, tac->dst);
+		case SEM_CONST_NUM:
+			inst = X64mc(MC_LI, tac->dst);
 			inst.const_num = tac->const_num_value;
 			inst.ori_sem = "li";
 			x64mc.push_back(inst);
 			break;
 
-		case op_assign:
-			inst = X64_mc(mc_assign, tac->dst, tac->s1);
+		case OP_ASSIGN:
+			inst = X64mc(MC_ASSIGN, tac->dst, tac->s1);
 			inst.ori_sem = "assign";
 			x64mc.push_back(inst);
 			break;
 
-		case op_add:
-			gen__add_sub_mul_div_mc(mc_add, "add", tac->dst, tac->s1, tac->s2);
+		case OP_ADD:
+			gen__add_sub_mul_div_mc(MC_ADD, "add", tac->dst, tac->s1, tac->s2);
 			break;
 
-		case op_sub:
-			gen__add_sub_mul_div_mc(mc_sub, "sub", tac->dst, tac->s1, tac->s2);
+		case OP_SUB:
+			gen__add_sub_mul_div_mc(MC_SUB, "sub", tac->dst, tac->s1, tac->s2);
 			break;
 
-		case op_mul:
-			gen__add_sub_mul_div_mc(mc_imul, "imul", tac->dst, tac->s1, tac->s2);
+		case OP_MUL:
+			gen__add_sub_mul_div_mc(MC_IMUL, "imul", tac->dst, tac->s1, tac->s2);
 			break;
 
-		case op_div:
-			gen__add_sub_mul_div_mc(mc_div, "div", tac->dst, tac->s1, tac->s2);
+		case OP_DIV:
+			gen__add_sub_mul_div_mc(MC_DIV, "div", tac->dst, tac->s1, tac->s2);
 			break;
 
-		case sem_return:
-			inst = X64_mc(mc_ret, tac->s1);
+		case SEM_RETURN:
+			inst = X64mc(MC_RET, tac->s1);
 			inst.ori_sem = "ret";
 			x64mc.push_back(inst);
 			break;
 
 			// todo
-		case sem_func_call:
+		case SEM_FUNC_CALL:
 			ERR("todo sem_func* semty %d \n", ty);
 			break;
 
@@ -82,7 +82,7 @@ static void _gen_machine_code()
 		}
 	}
 }
-void dump_mc(vector<X64_mc> &v)
+void dump_mc(vector<X64mc> &v)
 {
 	printf("\n========== mc ==========\n");
 
@@ -91,38 +91,38 @@ void dump_mc(vector<X64_mc> &v)
 	// sub rsp, <num>
 	printf("push rbp\n");
 	printf("mov rbp, rsp\n");
-	printf("sub rsp, %d\n\n", vreg.offset);
+	printf("sub rsp, %d\n\n", vrm.offset);
 
 	for (auto &mc : v)
 	{
-		Machine_code_type ty = mc.mcty;
+		MachineCodeType ty = mc.mcty;
 
 		switch (ty)
 		{
-		case mc_li:
+		case MC_LI:
 			printf("%s %%%d, num %d ", mc.asm_code.c_str(), mc.s1, mc.const_num);
 			PRINT_MORE
 			break;
 
-		case mc_ld:
+		case MC_LD:
 			printf("%s %%%d, dword ptr [%d] ", mc.asm_code.c_str(), mc.s1, mc.of1);
 			PRINT_MORE
 			break;
 
-		case mc_st:
+		case MC_ST:
 			printf("%s dword ptr [%d], %%%d ", mc.asm_code.c_str(), mc.of1 ,mc.s1);
 			PRINT_MORE
 			break;
 
-		case mc_assign:
-			case mc_add:
-			case mc_sub:
-			case mc_imul:
+		case MC_ASSIGN:
+			case MC_ADD:
+			case MC_SUB:
+			case MC_IMUL:
 			printf("%s %%%d, %%%d ", mc.asm_code.c_str(), mc.s1, mc.s2);
 			PRINT_MORE
 			break;
 
-		case mc_div:
+		case MC_DIV:
 			printf("mov eax, %%%d", mc.s1);
 			PRINT_MORE
 
@@ -131,7 +131,7 @@ void dump_mc(vector<X64_mc> &v)
 			printf("mov %%%d, eax \t div \n", mc.s1);
 			break;
 
-		case mc_ret:
+		case MC_RET:
 			printf("mov eax, %%%d", mc.s1);
 			PRINT_MORE
 			break;
@@ -147,8 +147,8 @@ void dump_mc(vector<X64_mc> &v)
 	printf("ret \n\n");
 }
 
-void gen_mc()
+void gen_machine_code()
 {
-	_gen_machine_code();
+	gen_mc();
 //	dump_mc(x64mc);
 }

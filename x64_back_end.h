@@ -70,65 +70,65 @@ sem_return
 #endif
 
 
-enum Machine_code_type{
-	mc_li,	// reg-num
+enum MachineCodeType{
+	MC_LI,	// reg-num
 
-	mc_ld,	// reg <- ptr
-	mc_st,	// reg -> ptr
+	MC_LD,	// reg <- ptr
+	MC_ST,	// reg -> ptr
 
-	mc_assign,	// reg-reg
-	mc_add,	// reg-reg
-	mc_sub,
-	mc_imul,
-	mc_div,
+	MC_ASSIGN,	// reg-reg
+	MC_ADD,	// reg-reg
+	MC_SUB,
+	MC_IMUL,
+	MC_DIV,
 
-	mc_ret,	// reg-reg
-	mc_invalid,
+	MC_RET,	// reg-reg
+	MC_INVALID,
 };
-struct Mc_info{
+struct McInfo{
 	int mc_latency = -1;
 	string mc_code;	// just for print
 };
-static const Mc_info mc_info[mc_invalid] = {
-		[mc_li] = {1, "mov"},
-		[mc_ld] = {3, "mov"},
-		[mc_st] = {3, "mov"},
+static const McInfo mc_info[MC_INVALID] = {
+		[MC_LI] = {1, "mov"},
+		[MC_LD] = {3, "mov"},
+		[MC_ST] = {3, "mov"},
 
-		[mc_assign] = {1, "mov"},
-		[mc_add] = {1, "add"},
-		[mc_sub] = {1, "sub"},
-		[mc_imul] = {3, "imul"},
-		[mc_div] = {10, "div"},
-		[mc_ret] = {1, "ret"},
+		[MC_ASSIGN] = {1, "mov"},
+		[MC_ADD] = {1, "add"},
+		[MC_SUB] = {1, "sub"},
+		[MC_IMUL] = {3, "imul"},
+		[MC_DIV] = {10, "div"},
+		[MC_RET] = {1, "ret"},
 };
 
-struct X64_mc{
-	X64_mc(Machine_code_type ty, int three_addr_code_dst, int three_addr_code_s2)
+struct X64mc{
+	X64mc(MachineCodeType ty, int three_addr_code_dst, int three_addr_code_s2)
 	{
 		mcty = ty;
 		s1 = three_addr_code_dst;
 		s2 = three_addr_code_s2;
 
-		of1 = vreg.get_vr_off(s1);
-		of2 = vreg.get_vr_off(s2);
+		of1 = vrm.get_vr_off(s1);
+		of2 = vrm.get_vr_off(s2);
 
 		asm_code = mc_info[ty].mc_code;
 		latency = mc_info[ty].mc_latency;
 	}
-	X64_mc(Machine_code_type ty, int three_addr_code_s1)
+	X64mc(MachineCodeType ty, int three_addr_code_s1)
 	{
 		mcty = ty;
 		s1 = three_addr_code_s1;
-		of1 = vreg.get_vr_off(three_addr_code_s1);
+		of1 = vrm.get_vr_off(three_addr_code_s1);
 
 		asm_code = mc_info[ty].mc_code;
 		latency = mc_info[ty].mc_latency;
 	}
-	X64_mc(){
-		mcty = mc_invalid;
+	X64mc(){
+		mcty = MC_INVALID;
 	}
 
-	Machine_code_type mcty = mc_invalid;
+	MachineCodeType mcty = MC_INVALID;
 
 	int s1 = -1;
 	int s2 = -1;
@@ -142,7 +142,7 @@ struct X64_mc{
 
 	int const_num = 0;
 
-	// put them here to easy dump
+	// put these here to easy dump
 	string asm_code;
 	string ori_sem;
 	int latency = -1;
@@ -150,20 +150,20 @@ struct X64_mc{
 	int start_cycle = -1;
 };
 
-struct Mc_dep
+struct McDepend
 {
 	vector<int> mcs;
 	int edges = 0;
 };
 
-extern vector<X64_mc> x64mc;
-extern vector<X64_mc> x64mc_schedued;
-extern vector<X64_mc> x64mc_alloced;
-extern vector<Mc_dep> mcs_pred;
-extern vector<Mc_dep> mcs_succ;
+extern vector<X64mc> x64mc;
+extern vector<X64mc> x64mc_schedued;
+extern vector<X64mc> x64mc_alloced;
+extern vector<McDepend> mcs_pred;
+extern vector<McDepend> mcs_succ;
 
-void dump_mc(vector<X64_mc> &v);
-void gen_mc();
+void dump_mc(vector<X64mc> &v);
+void gen_machine_code();
 void mc_schedule();
 void x64_pr_alloc();
 

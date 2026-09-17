@@ -8,192 +8,297 @@
 #include "h.h"
 
 Tokens tokens;
-Scope file_scope;
-Scope *scope;
-int scope_id = 0;
 
-//enum Op_priority get_op_priority(enum Token_type type)
-//{
-//	switch(type)
-//	{
-//	case tk_assign:
-//		return op_assign_priority;
-//	case tk_add:
-//		return op_add_priority;
-//	case tk_sub:
-//		return op_sub_priority;
-//	case tk_mul:
-//		return op_mul_priority;
-//	case tk_div:
-//		return op_div_priority;
-//
-//	case tk_left_round_bracket:
-//	case tk_right_round_bracket:
-//		return op_bracket_priority;
-//
-//	default:
-//		return op_invalid_priority;
-//	}
-//
-//	return op_invalid_priority;
-//}
-
-// get a word from fp, read until =+-*/(){};
-//stripe blank char like blank '\t' '\n'...
-static Token get_single_op_token(int c)
-{
-	Token token;
-    switch(c) {
-    case '=':
-    	token.type = tk_assign;
-    	break;
-    case '+':
-    	token.type = tk_add;
-    	break;
-    case '-':
-    	token.type = tk_sub;
-    	break;
-    case '*':
-    	token.type = tk_mul;
-    	break;
-    case '/':
-    	token.type = tk_div;
-    	break;
-
-    case '(':
-    	token.type = tk_lparen;
-    	break;
-    case ')':
-    	token.type = tk_rparen;
-    	break;
-
-    case '{':
-    	token.type = tk_lbrace;
-    	break;
-
-    case '}':
-    	token.type = tk_rbrace;
-    	break;
-
-    case ';':
-    	token.type = tk_semicolon;
-    	break;
-
-    default:
-    	return token;
-    }
-
-    token.src = c;
-    return token;
-}
-
-static int my_getc(FILE *fp)
+static int lexer_getc(FILE *fp)
 {
 	int c = fgetc(fp);
-//	LOG("%c ", c);
 	return c;
 }
+
+// Get a single-character operator / delimiter token.
+static Token get_single_op_token(int c)
+{
+	Token tk;
+
+	switch (c)
+	{
+	case '=':
+		tk.type = TK_ASSIGN;
+		break;
+
+	case '+':
+		tk.type = TK_ADD;
+		break;
+
+	case '-':
+		tk.type = TK_SUB;
+		break;
+
+	case '*':
+		tk.type = TK_MUL;
+		break;
+
+	case '/':
+		tk.type = TK_DIV;
+		break;
+
+	case '(':
+		tk.type = TK_PAREN_L;
+		break;
+
+	case ')':
+		tk.type = TK_PAREN_R;
+		break;
+
+	case '{':
+		tk.type = TK_BRACE_L;
+		break;
+
+	case '}':
+		tk.type = TK_BRACE_R;
+		break;
+
+	case ':':
+		tk.type = TK_LABEL;
+		break;
+
+	case ';':
+		tk.type = TK_SEMICOLON;
+		break;
+
+	default:
+		tk.type = TK_INVALID;
+		return tk;
+	}
+
+	tk.src = c;
+	return tk;
+}
+static Token get_cmp_token(FILE *fp, int c)
+{
+	Token tk;
+	int next;
+
+	switch (c)
+	{
+
+	case '<':
+		next = lexer_getc(fp);
+
+		if (next == '=')
+		{
+			tk.type = TK_CMP_LE;
+			tk.src = "<=";
+		}
+		else
+		{
+			ungetc(next, fp);
+			tk.type = TK_CMP_LT;
+			tk.src = "<";
+		}
+		break;
+
+	case '>':
+		next = lexer_getc(fp);
+
+		if (next == '=')
+		{
+			tk.type = TK_CMP_GE;
+			tk.src = ">=";
+		}
+		else
+		{
+			ungetc(next, fp);
+			tk.type = TK_CMP_GT;
+			tk.src = ">";
+		}
+		break;
+
+	case '=':
+		next = lexer_getc(fp);
+
+		if (next == '=')
+		{
+			tk.type = TK_CMP_E;
+			tk.src = "==";
+		}
+		else
+		{
+			ungetc(next, fp);
+			tk.type = TK_ASSIGN;
+			tk.src = "=";
+		}
+		break;
+
+	case '!':
+		next = lexer_getc(fp);
+
+		if (next == '=')
+		{
+			tk.type = TK_CMP_NE;
+			tk.src = "!=";
+		}
+		else
+		{
+			ungetc(next, fp);
+			tk.type = TK_INVALID;
+			tk.src = "!";
+		}
+		break;
+
+	case '&':
+		next = lexer_getc(fp);
+
+		if (next == '&')
+		{
+			tk.type = TK_LOGIC_AND;
+			tk.src = "&&";
+		}
+		else
+		{
+			ungetc(next, fp);
+			tk.type = TK_INVALID;
+			tk.src = "&";
+		}
+		break;
+
+	default:
+		tk.type = TK_INVALID;
+		return tk;
+	}
+
+	return tk;
+}
+
 static Token get_a_token_from_file(FILE *fp)
 {
-	Token token;
+	Token tk;
 	string word;
 	int c;
 
-	// 1. skip whitespace
-	while((c = my_getc(fp)) != EOF) {
-		if(c != ' ' && c != '\t' && c != '\n' && c != '\r') {
+	while ((c = lexer_getc(fp)) != EOF)
+	{
+		if (c != ' ' &&
+				c != '\t' &&
+				c != '\n' &&
+				c != '\r')
+		{
 			break;
 		}
 	}
 
-	if(c == EOF || c == '#')
-		return Token{"EOF", tk_EOF};
+	if (c == EOF || c == '#')
+		return Token
+		{ "EOF", TK_EOF };
 
-	// 2. single-character token
-    Token t = get_single_op_token(c);
-    if(t.type != tk_EOF)
-    {
-        return t;
-    }
-//    LOG("%d \n", type);
+	if (c == '<' ||
+			c == '>' ||
+			c == '=' ||
+			c == '!')
+	{
 
-	// 3. identifier / keyword
-	if((c >= 'a' && c <= 'z') ||
-	        (c >= 'A' && c <= 'Z') ||
-	        c == '_')
+		return get_cmp_token(fp, c);
+	}
+
+	Token t = get_single_op_token(c);
+
+	if (t.type != TK_INVALID)
+	{
+		return t;
+	}
+
+	// 4. identifier / keyword
+	if ((c >= 'a' && c <= 'z') ||
+			(c >= 'A' && c <= 'Z') ||
+			c == '_')
 	{
 		word += static_cast<char>(c);
 
-		while((c = my_getc(fp)) != EOF) {
-			if((c >= 'a' && c <= 'z') ||
-			        (c >= 'A' && c <= 'Z') ||
-			        (c >= '0' && c <= '9') ||
-			        c == '_') {
+		while ((c = lexer_getc(fp)) != EOF)
+		{
+
+			if ((c >= 'a' && c <= 'z') ||
+					(c >= 'A' && c <= 'Z') ||
+					(c >= '0' && c <= '9') ||
+					c == '_')
+			{
+
 				word += static_cast<char>(c);
 			}
-			else {
+			else
+			{
 				// this character belongs to the next token
 				ungetc(c, fp);
 				break;
 			}
 		}
 
-		if(word == "int")
-			token.type = tk_int;
-		else if(word == "return")
-			token.type = tk_return;
-		else
-			token.type = tk_var;
+		if (word == "int")
+			tk.type = TK_INT;
 
-		token.src = word;
-		return token;
+		else if (word == "float")
+			tk.type = TK_FLOAT;
+
+		else if (word == "if")
+			tk.type = TK_IF;
+
+		else if (word == "while")
+			tk.type = TK_WHILE;
+
+		else if (word == "return")
+			tk.type = TK_RETURN;
+
+		else
+			tk.type = TK_VAR;
+
+		tk.src = word;
+		return tk;
 	}
 
-	// 4. integer literal
-	if(c >= '0' && c <= '9') {
+	if (c >= '0' && c <= '9')
+	{
 		word += static_cast<char>(c);
 
-		while((c = my_getc(fp)) != EOF) {
-			if(c >= '0' && c <= '9') {
+		while ((c = lexer_getc(fp)) != EOF)
+		{
+			if (c >= '0' && c <= '9')
+			{
 				word += static_cast<char>(c);
 			}
-			else {
+			else
+			{
 				ungetc(c, fp);
 				break;
 			}
 		}
 
-		token.type = tk_const_num;
-		token.src = word;
-		return token;
+		tk.type = TK_CONST_NUM;
+		tk.src = word;
+		return tk;
 	}
 
-	// 5. unknown character
+	// 6. unknown character
 	word += static_cast<char>(c);
-	token.src = word;
-	return token;
+	tk.type = TK_INVALID;
+	tk.src = word;
+
+	return tk;
 }
 
 int lexer(FILE *fp)
 {
-	scope = &file_scope;
-	scope->id = scope_id++;
-	scope->name = "b" + std::to_string(scope->id);
-	scope->is_virtual_scope = false;
-	scope->parent = 0;
-
-	while(1) {
-		Token token = get_a_token_from_file(fp);
-		if(token.type == tk_EOF)
+	while (1)
+	{
+		Token tk = get_a_token_from_file(fp);
+		if (tk.type == TK_EOF)
 			break;
 
-		tokens.append(token);
+		tokens.append(tk);
 	}
 
-	bool dump_token = 0;
-	if(dump_token) {
+	bool dump_token = 1;
+	if (dump_token)
 		tokens.dump();
-	}
 
 	return 0;
 }

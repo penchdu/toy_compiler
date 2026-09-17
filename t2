@@ -2,7 +2,24 @@
 
 
 
+int a = 0;
 
+int main()
+{
+	int a = 1;
+	int b = 2;
+
+    {
+		int a = 0;
+		b = a + 2;
+    }
+
+
+		return a;
+}
+
+
+#
 
 	int a = 1;
 	int b = 2;

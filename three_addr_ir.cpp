@@ -7,16 +7,8 @@
 
 #include "h.h"
 
-extern Scope file_scope;
-vector<Three_addr_code*> three_addr_code;
-
-//int get_const_vr(int v)
-//{
-//	if (const_num_vr_tbl.find(v) == const_num_vr_tbl.end()){
-//
-//	}
-//
-//}
+extern Scope file_scp;
+vector<ThreeAddrCode*> three_addr_code;
 
 static int trace_ast_down_up_gen_3_address_code(Ast *p)
 {
@@ -26,60 +18,60 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 	int b = trace_ast_down_up_gen_3_address_code(p->right);
 	int a = trace_ast_down_up_gen_3_address_code(p->left);
 	string c;
-	Symbol_var *symb = 0;
-	Three_addr_code *inst = 0;
+	SymbolVar *symb = 0;
+	ThreeAddrCode *inst = 0;
 
 	switch(p->semty)
 	{
 	// leaf node
-	case sem_var:
+	case SEM_VAR:
 		symb = p->symb_var;
 		assert(symb);
 
 		// todo symb->vr to be defined in "new =" to gen ssa
 		return symb->vr;
 
-	case sem_const_num:
-		inst = new Three_addr_code(p);
+	case SEM_CONST_NUM:
+		inst = new ThreeAddrCode(p);
 		inst->dst = p->vr_id;
 		inst->const_num_value = p->const_value;
 		three_addr_code.push_back(inst);
 		return p->vr_id;
 
 		// x = y : return x
-	case op_assign:
-		inst = new Three_addr_code(p);
+	case OP_ASSIGN:
+		inst = new ThreeAddrCode(p);
 		inst->dst = a;
 		inst->s1 = b;
 		three_addr_code.push_back(inst);
 		return a;
 
 		// todo gen a assign inst
-	case op_add:
-		case op_sub:
-		case op_mul:
-		case op_div:
+	case OP_ADD:
+		case OP_SUB:
+		case OP_MUL:
+		case OP_DIV:
 
-			inst = new Three_addr_code(p);
+			inst = new ThreeAddrCode(p);
 			inst->dst = p->vr_id;
 			inst->s1 = a;
 			inst->s2 = b;
 			three_addr_code.push_back(inst);
 			return p->vr_id;
 
-	case sem_return:
-		inst = new Three_addr_code(p);
+	case SEM_RETURN:
+		inst = new ThreeAddrCode(p);
 		inst->s1 = a;
 		three_addr_code.push_back(inst);
 		return -1;
 
-	case sem_var_declare:
+	case SEM_VAR_DECLARE:
 		return -1;
 
 		// todo
-	case sem_func_declare:
-	case sem_func_define:
-	case sem_func_call:
+	case SEM_FUNC_DECLARE:
+	case SEM_FUNC_DEFINE:
+	case SEM_FUNC_CALL:
 		printf("todo sem_func* semty %d \n", p->semty);
 		return -1;
 
@@ -90,7 +82,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 
 	return -1;
 }
-static void _gen_three_address_code(Scope *scp)
+static void gen_tac(Scope *scp)
 {
 	LOG("scp %s \n", scp->name.c_str());
 
@@ -103,7 +95,7 @@ static void _gen_three_address_code(Scope *scp)
 	}
 
 	for(Scope *p : scp->clds) {
-		_gen_three_address_code(p);
+		gen_tac(p);
 	}
 	return;
 }
@@ -116,34 +108,34 @@ static void dump()
 
 		switch(p->semty)
 		{
-		case sem_const_num:
+		case SEM_CONST_NUM:
 			printf("const:\t %%%d num %d\n", r->dst, p->const_value);
 			break;
 
-		case op_assign:
+		case OP_ASSIGN:
 			printf("assign:\t %%%d %s %%%d\n", r->dst, p->tk.src.c_str(), r->s1);
 			break;
 
-		case op_add:
-		case op_sub:
-		case op_mul:
-		case op_div:
+		case OP_ADD:
+		case OP_SUB:
+		case OP_MUL:
+		case OP_DIV:
 			printf("op:\t %%%d = %%%d %s %%%d\n", r->dst, r->s1, p->tk.src.c_str(), r->s2);
 			break;
 
-		case sem_var_declare:
+		case SEM_VAR_DECLARE:
 			printf("del:\t %s[%s] %%%d\n", p->tk.src.c_str(), p->symb_var->unique_name.c_str(),p->symb_var->vr);
 			break;
 
-		case sem_var:
+		case SEM_VAR:
 			printf("var:\t %%%d %s\n", r->dst, p->tk.src.c_str());
 			break;
 
-		case sem_func_call:
+		case SEM_FUNC_CALL:
 			printf("func call:\t %s\n", p->tk.src.c_str());
 			break;
 
-		case sem_return:
+		case SEM_RETURN:
 			printf("return:\t %s %%%d\n", p->tk.src.c_str(), r->s1);
 			break;
 
@@ -155,7 +147,7 @@ static void dump()
 }
 void gen_three_address_code()
 {
-	_gen_three_address_code(&file_scope);
+	gen_tac(&file_scp);
 //	dump_ast();
 //	dump();
 }

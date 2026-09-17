@@ -26,87 +26,64 @@ using std::string;
 using std::map;
 using std::deque;
 
-#include <cstdio>
-#include <cstdlib>
+#include "enums.h"
 
-#define ERR(fmt, ...) do{ \
-    printf("%s:%d: error:  " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
-    exit(1);	\
-}while(0)
-
-//#define DEBUG
-#ifdef DEBUG
-	#define LOG(fmt, ...) do{ \
-		printf("LOG %s:%d: " fmt "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
-	}while(0)
-#else
-	#define LOG(fmt, ...)
-#endif
-
-enum Token_type{
-	tk_assign,
-	tk_add,
-	tk_sub,
-	tk_mul,
-	tk_div,
-	tk_op_all,
-
-	tk_const_num,
-	tk_return,
-
-	tk_int,
-	tk_float,
-	tk_var,
-
-	tk_lparen,
-	tk_rparen,
-	tk_lbrace,
-	tk_rbrace,
-    tk_semicolon,         // ;
-
-    tk_invalid,
-    tk_EOF,
-};
-struct Token {
+struct Token
+{
 	string src;
-	Token_type type = tk_EOF;
+	TokenType type = TK_EOF;
 };
-class Tokens{
+class Tokens
+{
 public:
-	void append(Token t){
+	void append(Token t)
+	{
 		v.push_back(t);
 	}
-	Token get(){
-		if(i == v.size()){
-			return {"", tk_EOF};
+	Token get()
+	{
+		if (i == v.size())
+		{
+			return
+			{	"", TK_EOF};
 		}
 		return v[i++];
 	}
-	void unget(){
-		if(i <= 0) {
+	void unget()
+	{
+		if (i <= 0)
+		{
 			return;
 		}
 		i--;
 	}
-	Token peek(){
-		if(i == v.size()){
-			return {"", tk_EOF};
+	Token peek()
+	{
+		if (i == v.size())
+		{
+			return
+			{	"", TK_EOF};
 		}
 		return v[i];
 	}
 
-	Token prev(){
-		if(i <= 0){
-			return {"", tk_EOF};
+	Token prev()
+	{
+		if (i <= 0)
+		{
+			return
+			{	"", TK_EOF};
 		}
 		return v[i - 1];
 	}
-	bool empty(){
+	bool empty()
+	{
 		return i == v.size();
 	}
-	void dump() {
-		printf("lexer: \n" );
-		for(auto x : v)
+	void dump()
+	{
+		printf("lexer: \n");
+		for (auto x : v)
 			printf("%s ", x.src.c_str());
 		printf("\n");
 	}
@@ -116,57 +93,13 @@ private:
 	int i = 0;
 };
 
-
-enum Semantic_type{
-	op_assign,
-	op_add,
-	op_sub,
-	op_mul,
-	op_div,
-	op_all,
-
-	sem_var_declare,
-	sem_var,
-	sem_const_num,
-
-	sem_func_declare,
-	sem_func_define,
-	sem_func_call,
-	sem_return,
-
-//	sem_if,
-//	sem_while,
-//	sem_none,
-	sem_invalid,
-};
-enum Op_priority{
-	op_semicolon_priority,
-
-	op_declare_priority,
-	op_assign_priority,
-
-	op_add_priority,
-	op_sub_priority = op_add_priority,
-	op_mul_priority,
-	op_div_priority = op_mul_priority,
-
-	op_paren_priority,
-
-	op_invalid_priority = -1,
-};
-enum Var_type{
-	INT,
-	FLOAT,
-	VOID,
-	INVALID_TYPE,
-};
-
 struct Scope;
 
-struct Symbol_var{
+struct SymbolVar
+{
 //	Semantic_type semty;
-	Var_type var_type = INT;
-//	int value;
+	VarType var_type = INT;
+	//	int value;
 
 	string *src;
 	string unique_name;		// global unique
@@ -175,27 +108,29 @@ struct Symbol_var{
 	int vr = -1;
 	Scope *scp;
 
-	vector<Symbol_var*> cld;
+	vector<SymbolVar*> cld;
 };
-struct Symbol_func{
-	Var_type return_type = INT;
+struct SymbolFunc
+{
+	VarType return_type = INT;
 	string name;
 	int argc = 0;
 	Scope *func_scope;
 };
-struct Ast {
+struct Ast
+{
 public:
-	Semantic_type semty;
+	SemanticType semty;
 
 	// op
-	Op_priority op_prio;
+	OpPriority op_prio;
 	// for op, vr is temp vr
 	int vr_id = -1;
 
 	// var
 	// for op, var_type is type of temp vr
-	Var_type var_type;		// var_type in ast or symtable?
-	Symbol_var *symb_var = 0;
+	VarType var_type;		// var_type in ast or symtable?
+	SymbolVar *symb_var = 0;
 	int const_value;
 
 	Token tk;
@@ -206,35 +141,69 @@ public:
 	Scope *this_scp = 0;
 	Scope *sem_home_scp = 0;
 
-	Ast(Token &token)
+	Ast(Token &_token)
 	{
-		tk = token;
+		tk = _token;
 
-		switch(token.type)
+		switch (_token.type)
 		{
-		case tk_assign:
-			semty = op_assign;
-			op_prio = op_assign_priority;
-			break;
-		case tk_add:
-			semty = op_add;
-			op_prio = op_add_priority;
-			break;
-		case tk_sub:
-			semty = op_sub;
-			op_prio = op_sub_priority;
-			break;
-		case tk_mul:
-			semty = op_mul;
-			op_prio = op_mul_priority;
-			break;
-		case tk_div:
-			semty = op_div;
-			op_prio = op_div_priority;
+		case TK_ASSIGN:
+			semty = OP_ASSIGN;
+			op_prio = OP_ASSIGN_PRIORITY;
 			break;
 
-		case tk_return:
-			semty = sem_return;
+		case TK_ADD:
+			semty = OP_ADD;
+			op_prio = OP_ADD_PRIORITY;
+			break;
+		case TK_SUB:
+			semty = OP_SUB;
+			op_prio = OP_SUB_PRIORITY;
+			break;
+		case TK_MUL:
+			semty = OP_MUL;
+			op_prio = OP_MUL_PRIORITY;
+			break;
+		case TK_DIV:
+			semty = OP_DIV;
+			op_prio = OP_DIV_PRIORITY;
+			break;
+
+		case TK_LOGIC_AND:
+			semty = OP_LOGIC_AND;
+			op_prio = OP_LOGIC_AND_PRIORITY;
+			break;
+
+		case TK_CMP_LT:
+			semty = OP_CMP_LT;
+			op_prio = OP_CMP_LT_PRIORITY;
+			break;
+		case TK_CMP_LE:
+			semty = OP_CMP_LE;
+			op_prio = OP_CMP_LE_PRIORITY;
+			break;
+		case TK_CMP_E:
+			semty = OP_CMP_E;
+			op_prio = OP_CMP_E_PRIORITY;
+			break;
+		case TK_CMP_GE:
+			semty = OP_CMP_GE;
+			op_prio = OP_CMP_GE_PRIORITY;
+			break;
+		case TK_CMP_GT:
+			semty = OP_CMP_GT;
+			op_prio = OP_CMP_GT_PRIORITY;
+			break;
+		case TK_CMP_NE:
+			semty = OP_CMP_NE;
+			op_prio = OP_CMP_NE_PRIORITY;
+			break;
+
+		case TK_IF:
+			semty = SEM_IF;
+			break;
+		case TK_ELSE:
+			semty = SEM_ELSE;
 			break;
 
 //		case tk_int:
@@ -243,48 +212,71 @@ public:
 //			sem_name = src_name;
 //			break;
 
-		case tk_var:
-			semty = sem_var;
+		case TK_VAR:
+			semty = SEM_VAR;
 			var_type = INT;
 			break;
 
-		case tk_const_num:
-			semty = sem_const_num;
+		case TK_CONST_NUM:
+			semty = SEM_CONST_NUM;
 			var_type = INT;
-			const_value = atoi(token.src.c_str());
+			const_value = atoi(_token.src.c_str());
+			break;
+
+		case TK_RETURN:
+			semty = SEM_RETURN;
 			break;
 
 		default:
-			ERR("unexpect token %s\n", token.src.c_str());
+			ERR("unexpect token %s\n", _token.src.c_str());
 			break;
 		}
 	}
 };
 
-struct Scope{
+struct BasicBlock
+{
 public:
 	int id;
 	string name;
-	Semantic_type sem = sem_invalid;
+	SemanticType sem = SEM_INVALID;
 
 	vector<Ast*> asts;
-	map<string, Symbol_var*> _var_table;
-	map<string, Symbol_var*> *var_table = &_var_table;
-	map<string, Symbol_func*> _func_table;
-	map<string, Symbol_func*> *func_table = &_func_table;
-//	Sem_type region_header = sem_none;
 
-	Scope * parent;
+	map<string, SymbolVar*> *var_table = 0;
+	map<string, SymbolFunc*> *func_table = 0;
+
+	Scope *parent;
+};
+struct Scope
+{
+public:
+	int id;
+	string name;
+	SemanticType sem = SEM_INVALID;
+
+	vector<Ast*> asts;
+	map<string, SymbolVar*> _var_table;
+	map<string, SymbolVar*> *var_table = &_var_table;
+	map<string, SymbolFunc*> _func_table;
+	map<string, SymbolFunc*> *func_table = &_func_table;
+	//	Sem_type region_header = sem_none;
+
+	// SEM_IF
+	int jmp_to_if_true = -1;
+	int jmp_to_if_false = -1;
+
+	Scope *parent;
 	vector<Scope*> clds;
 	bool is_virtual_scope;
-	Var_type return_type = INVALID_TYPE;
+	VarType return_type = INVALID_TYPE;
 
 	Scope* new_cld()
 	{
-		Scope* p = new Scope;
-		Scope* real_parent;
+		Scope *p = new Scope;
+		Scope *real_parent;
 
-		if(!this->is_virtual_scope)
+		if (!this->is_virtual_scope)
 			real_parent = this;
 		else
 			real_parent = this->parent;
@@ -295,8 +287,20 @@ public:
 	}
 };
 
-struct Three_addr_code{
-	Three_addr_code(Ast *p){
+struct SemanticNode
+{
+	SemanticNodeType nodety;
+	union
+	{
+		Ast *ast;
+		Scope *scp;
+	};
+};
+
+struct ThreeAddrCode
+{
+	ThreeAddrCode(Ast *p)
+	{
 		ast = p;
 	}
 	Ast *ast = 0;
@@ -309,7 +313,8 @@ struct Three_addr_code{
 };
 
 // virtual register
-struct VReg{
+struct VirtualRegisterManager
+{
 	int new_vr(Ast *p, int size = 4)
 	{
 		id++;
@@ -318,8 +323,10 @@ struct VReg{
 		return id;
 	}
 
-	int get_vr_off(unsigned int id){
-		if(id >= vr_off.size() || vr_off[id] < 0){
+	int get_vr_off(unsigned int id)
+	{
+		if (id >= vr_off.size() || vr_off[id] < 0)
+		{
 			ERR("id %d, %zu\n", id, vr_off.size());
 			return -1;
 		}
@@ -330,73 +337,13 @@ struct VReg{
 	int offset = 0;
 	vector<int> vr_off;
 };
-//struct Virtual_reg2{
-//	struct vr_off{
-//		int vr;
-//		int off;
-//		int size;
-//		int live = true;
-//	};
-//
-//	int new_vr(Ast *p)
-//	{
-//		id++;
-//
-//		int size = 4;
-//		if(p->var_type == INT)
-//			size = 4;
-//
-//		vr_off t{id, offset, size, true};
-//		vr_tbl.push_back(t);
-//		offset += size;
-//		return id;
-//	}
-//	void rm_vr(unsigned int id){
-//		if(id >= vr_tbl.size())
-//			ERR();
-//		if(!vr_tbl[id].live)
-//			ERR();
-//
-//		vr_tbl[id].live = false;
-//	}
-//	int get_vr(unsigned int id){
-//		if(id >= vr_tbl.size() || !vr_tbl[id].live)
-//			ERR();
-//
-//		return vr_tbl[id].vr;
-//	}
-//	int get_vr_off(unsigned int id){
-//		if(id >= vr_tbl.size() || !vr_tbl[id].live || vr_tbl[id].off < 0)
-//			ERR("id %d, %zu\n", id, vr_tbl.size());
-//
-//		return vr_tbl[id].off;
-//	}
-//	void rebuild()
-//	{
-//		id = 0;
-//		offset = 0;
-//		for(auto &r : vr_tbl)
-//		{
-//			if(!r.live)
-//				continue;
-//
-//			r.vr = id++;
-//			r.off = offset;
-//			offset += r.size;
-//		}
-//	}
-//
-//	int id = -1;
-//	int offset = 0;
-//	vector<vr_off> vr_tbl;
-//};
 
-extern VReg vreg;
+extern VirtualRegisterManager vrm;
 
 int lexer(FILE *fp);
+void dump_ast();
 void parser();
 void sem_analysis();
 void gen_three_address_code();
-
 
 #endif /* H_H_ */

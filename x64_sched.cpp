@@ -8,10 +8,10 @@
 #include "h.h"
 #include "x64_back_end.h"
 
-extern vector<X64_mc> x64mc;
-extern vector<Mc_dep> mcs_pred;
-extern vector<Mc_dep> mcs_succ;
-extern vector<X64_mc> x64mc_schedued;
+extern vector<X64mc> x64mc;
+extern vector<McDepend> mcs_pred;
+extern vector<McDepend> mcs_succ;
+extern vector<X64mc> x64mc_schedued;
 
 void create_dependcy(int a, int b)
 {
@@ -52,8 +52,8 @@ static void dump_chain()
 }
 void gen_use_def_chain()
 {
-	vector<int> prev_w_mc_of_vr(vreg.id + 1, -1);
-	vector<int> prev_r_mc_of_vr(vreg.id + 1, -1);
+	vector<int> prev_w_mc_of_vr(vrm.id + 1, -1);
+	vector<int> prev_r_mc_of_vr(vrm.id + 1, -1);
 	mcs_pred.resize(x64mc.size());
 	mcs_succ.resize(x64mc.size());
 
@@ -62,7 +62,7 @@ void gen_use_def_chain()
 
 	for (int i = 0; i < x64mc.size(); i++)
 	{
-		Machine_code_type ty = x64mc[i].mcty;
+		MachineCodeType ty = x64mc[i].mcty;
 
 		int s1 = x64mc[i].s1;
 		int w1 = prev_w_mc_of_vr[s1];	// write and write ?
@@ -79,11 +79,11 @@ void gen_use_def_chain()
 
 		switch (ty)
 		{
-		case mc_li:
+		case MC_LI:
 			prev_w_mc_of_vr[s1] = i;
 			break;
 
-		case mc_assign:
+		case MC_ASSIGN:
 			if (w1 >= 0)
 				create_dependcy(i, w1);
 
@@ -98,10 +98,10 @@ void gen_use_def_chain()
 			prev_r_mc_of_vr[s2] = i;
 			break;
 
-		case mc_add:
-			case mc_sub:
-			case mc_imul:
-			case mc_div:
+		case MC_ADD:
+			case MC_SUB:
+			case MC_IMUL:
+			case MC_DIV:
 			if (w1 >= 0)
 				create_dependcy(i, w1);
 
@@ -117,7 +117,7 @@ void gen_use_def_chain()
 			prev_r_mc_of_vr[s2] = i;
 			break;
 
-		case mc_ret:
+		case MC_RET:
 			if (w1 >= 0)
 				create_dependcy(i, w1);
 
@@ -166,7 +166,7 @@ int get_mc_latency(int mc_id)
 	c += mx;
 	return c;
 }
-void gen_schedule_chain_latency()
+void gen_schdu_chain_latency()
 {
 	for (int i = 0; i < mcs_succ.size(); i++)
 	{
@@ -188,16 +188,16 @@ int free_div_unit = div_unit;
 
 bool get_function_unit(int mc)
 {
-	Machine_code_type ty = x64mc[mc].mcty;
+	MachineCodeType ty = x64mc[mc].mcty;
 
 	switch (ty)
 	{
-	case mc_li:
-		case mc_assign:
+	case MC_LI:
+		case MC_ASSIGN:
 		return true;
 
-	case mc_add:
-		case mc_sub:
+	case MC_ADD:
+		case MC_SUB:
 		if (free_add_sub_unit > 0)
 		{
 			free_add_sub_unit--;
@@ -205,7 +205,7 @@ bool get_function_unit(int mc)
 		}
 		break;
 
-	case mc_imul:
+	case MC_IMUL:
 		if (free_imul_unit > 0)
 		{
 			free_imul_unit--;
@@ -213,7 +213,7 @@ bool get_function_unit(int mc)
 		}
 		break;
 
-	case mc_div:
+	case MC_DIV:
 		if (free_div_unit > 0)
 		{
 			free_div_unit--;
@@ -221,7 +221,7 @@ bool get_function_unit(int mc)
 		}
 		break;
 
-	case mc_ret:
+	case MC_RET:
 		return true;
 		break;
 
@@ -234,27 +234,27 @@ bool get_function_unit(int mc)
 }
 void free_function_unit(int mc)
 {
-	Machine_code_type ty = x64mc[mc].mcty;
+	MachineCodeType ty = x64mc[mc].mcty;
 	switch (ty)
 	{
-	case mc_li:
-		case mc_assign:
+	case MC_LI:
+		case MC_ASSIGN:
 		break;
 
-	case mc_add:
-		case mc_sub:
+	case MC_ADD:
+		case MC_SUB:
 		free_add_sub_unit++;
 		break;
 
-	case mc_imul:
+	case MC_IMUL:
 		free_imul_unit++;
 		break;
 
-	case mc_div:
+	case MC_DIV:
 		free_div_unit++;
 		break;
 
-	case mc_ret:
+	case MC_RET:
 		break;
 
 	default:
@@ -309,7 +309,7 @@ void finish_mc__update_ready_queue(int mc)
 	}
 }
 
-void _mc_schedule()
+void mc_schdu()
 {
 	/*
 	 * 	for mc : x64mc
@@ -323,7 +323,7 @@ void _mc_schedule()
 	 *				run mc:
 	 *				mc.start_time = cycle
 	 *				cp mc to x64mc_scheduled & running
-	 *				if x64mc_scheduled == x64mc
+	 *				if x64mc_scheduled.size == x64mc.size
 	 *					break
 	 *
 	 *		for mc : running
@@ -377,7 +377,7 @@ void _mc_schedule()
 //	printf("max cycle: %d \n", cycle);
 
 	auto &t = *x64mc_schedued.rbegin();
-	if (t.mcty != mc_ret)
+	if (t.mcty != MC_RET)
 	{
 		printf("x64mc_scheduled last: %s %s, s1 %%%d, s2 %%%d, cycle: %d-%d\n",
 				t.asm_code.c_str(), t.ori_sem.c_str(),
@@ -390,9 +390,9 @@ void mc_schedule()
 {
 	gen_use_def_chain();
 //	dump_chain();
-	gen_schedule_chain_latency();
+	gen_schdu_chain_latency();
 
-	_mc_schedule();
+	mc_schdu();
 //	dump_mc(x64mc_scheded);
 }
 
