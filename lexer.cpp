@@ -15,6 +15,38 @@ static int lexer_getc(FILE *fp)
 	return c;
 }
 
+/*
+ * Skip a single-line comment (// ... \n).
+ * Consumes everything up to and including '\n', or until EOF if no newline exists.
+ */
+static void skip_line_comment(FILE *fp)
+{
+	int c;
+	while ((c = lexer_getc(fp)) != EOF) {
+		if (c == '\n')
+			return;
+	}
+	// File ended without newline — just return normally, c == EOF
+}
+
+/*
+ * Skip a block comment (/* ... *\/).
+ * Handles nested ? No, standard C/C++ block comments don't nest.
+ */
+static void skip_block_comment(FILE *fp)
+{
+	int c;
+	while ((c = lexer_getc(fp)) != EOF) {
+		if (c == '*') {
+			int next = lexer_getc(fp);
+			if (next == '/')
+				return;         // Found closing */
+			ungetc(next, fp);   // Put back the non-'/' char
+		}
+	}
+	// Unterminated block comment — file ended without */
+}
+
 // Get a single-character operator / delimiter token.
 static Token get_single_op_token(int c)
 {
@@ -36,10 +68,6 @@ static Token get_single_op_token(int c)
 
 	case '*':
 		tk.type = TK_MUL;
-		break;
-
-	case '/':
-		tk.type = TK_DIV;
 		break;
 
 	case '(':
@@ -74,6 +102,8 @@ static Token get_single_op_token(int c)
 	tk.src = c;
 	return tk;
 }
+
+// Get a comparison / logic operator token (handles two-char disambiguation like ==, <=, &&, etc.)
 static Token get_cmp_token(FILE *fp, int c)
 {
 	Token tk;
@@ -178,13 +208,35 @@ static Token get_a_token_from_file(FILE *fp)
 
 	while ((c = lexer_getc(fp)) != EOF)
 	{
-		if (c != ' ' &&
-				c != '\t' &&
-				c != '\n' &&
-				c != '\r')
+		if (c == ' ' || c == '\t' || c == '\n' || c == '\r')
 		{
-			break;
+			continue;   // Skip whitespace
 		}
+
+		if (c == '/')
+		{
+			int next = lexer_getc(fp);
+			if (next == '/')
+			{
+				skip_line_comment(fp);
+				continue;   // Loop back to get next real token
+			}
+			else if (next == '*')
+			{
+				skip_block_comment(fp);
+				continue;   // Loop back to get next real token
+			}
+			else
+			{
+				ungetc(next, fp);   // Not a comment — put char back
+				// Fall through to handle '/' as division operator
+				tk.type = TK_DIV;
+				tk.src = "/";
+				return tk;
+			}
+		}
+
+		break;  // Found a non-whitespace, non-comment character
 	}
 
 	if (c == EOF || c == '#')
@@ -194,7 +246,8 @@ static Token get_a_token_from_file(FILE *fp)
 	if (c == '<' ||
 			c == '>' ||
 			c == '=' ||
-			c == '!')
+			c == '!' ||
+			c == '&')
 	{
 
 		return get_cmp_token(fp, c);

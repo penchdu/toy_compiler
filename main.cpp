@@ -44,11 +44,11 @@ int main(int argc, char **argv)
 //		}
 //	}
 //
-//	if(1)
+//	if(if(1) )
 //	{
 //
 //	}
-//	int a = 0;
+	int a = 0;
 //	a = (a + 3);
 //	for(a;;)
 //			a;;
