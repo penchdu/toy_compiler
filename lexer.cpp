@@ -291,6 +291,9 @@ static Token get_a_token_from_file(FILE *fp)
 		else if (word == "if")
 			tk.type = TK_IF;
 
+		else if (word == "else")
+			tk.type = TK_ELSE;
+
 		else if (word == "while")
 			tk.type = TK_WHILE;
 

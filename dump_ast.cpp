@@ -52,22 +52,24 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 
 	printf("%s", line_prefix.c_str());
 	if (p->semty == SEM_VAR_DECLARE)
-		printf("[VAR_DECL %s %s]\n", get_var_type_name(p->var_type).c_str(), p->tk.src.c_str());
+		printf("[del %s %s]\n", get_var_type_name(p->var_type).c_str(), p->tk.src.c_str());
 	else if (p->semty < OP_ALL)
-		printf("[OP %s %% %d]\n", p->tk.src.c_str(), p->vr_id);
+		printf("[op %s %% %d]\n", p->tk.src.c_str(), p->vr_id);
 	else if (p->semty == SEM_VAR)
 	{
 		if (!p->symb_var)
-			printf("[VAR %s]\n", p->tk.src.c_str());
+			printf("[var %s]\n", p->tk.src.c_str());
 		else
-			printf("[VAR %s %% %d]\n", p->symb_var->unique_name.c_str(), p->symb_var->vr);
+			printf("[var %s %% %d]\n", p->symb_var->unique_name.c_str(), p->symb_var->vr);
 	}
 	else if (p->semty == SEM_CONST_NUM)
-		printf("[NUM %d]\n", p->const_value);
+		printf("[num %d]\n", p->const_value);
 	else if (p->semty == SEM_FUNC_CALL)
-		printf("[FUNC_CALL %s]\n", p->tk.src.c_str());
+		printf("[func_call %s]\n", p->tk.src.c_str());
 	else if (p->semty == SEM_RETURN)
-		printf("[RETURN %s]\n", p->tk.src.c_str());
+		printf("[ret %s]\n", p->tk.src.c_str());
+	else if (p->semty == SEM_NONE)
+		printf("[none %s]\n", p->tk.src.c_str());
 	else
 		ERR();
 
@@ -93,9 +95,19 @@ static void dump_scope(Scope *s, int depth)
 		return;
 
 	print_blank(depth);
-	printf("======%s, %d %d====== %s", s->name.c_str(), s->id,
+	printf("======%s %d  parent=%d  true=%d  false=%d====== %s out=%d",
+	    s->name.c_str(),
+	    s->id,
 	    s->parent ? s->parent->id : 0,
-	    s->sem == SEM_INVALID ? "" : sem_ty_names[s->sem]);
+	    s->jmp_if_true ? s->jmp_if_true->id : 0,
+	    s->jmp_if_false ? s->jmp_if_false->id : 0,
+	    s->sem == SEM_INVALID ? "" : sem_ty_names[s->sem],
+	    s->jmp_out ? s->jmp_out->id : 0);
+
+	if (s->jmp_in.size() > 0)
+		printf("  in=");
+	for (auto p : s->jmp_in)
+		printf("%d ", p->id);
 
 	if (s->is_virtual_scope)
 		printf(" virtual");
@@ -110,7 +122,7 @@ static void dump_scope(Scope *s, int depth)
 	for (auto ast : s->asts)
 	{
 		print_blank(depth);
-		printf("AST:\n");
+		printf("ast:\n");
 		dump_ast_node(ast, indent_str(depth), true);
 	}
 	printf("\n");
@@ -124,7 +136,7 @@ static void dump_scope(Scope *s, int depth)
 }
 void dump_ast()
 {
-	printf("========== AST ==========\n");
+	printf("========== ast ==========\n");
 	dump_scope(&file_scp, 0);
 	printf("=========================\n");
 }

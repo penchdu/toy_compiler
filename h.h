@@ -227,6 +227,10 @@ public:
 			semty = SEM_RETURN;
 			break;
 
+		case TK_SEMICOLON:
+			semty = SEM_NONE;
+			break;
+
 		default:
 			ERR("unexpect token %s\n", _token.src.c_str());
 			break;
@@ -262,15 +266,35 @@ public:
 	map<string, SymbolFunc*> *func_table = &_func_table;
 	//	Sem_type region_header = sem_none;
 
-	// SEM_IF
-	int jmp_to_if_true = -1;
-	int jmp_to_if_false = -1;
+	// ifc
+	Scope *jmp_if_true = 0;
+	Scope *jmp_if_false = 0;
+
+	// ift, iff
+	vector<Scope*> jmp_in;
+	Scope *jmp_out = 0;
 
 	Scope *parent;
 	vector<Scope*> clds;
 	bool is_virtual_scope;
 	enum VarType return_type = INVALID_TYPE;
 
+//	static Scope* new_scope(bool is_virtual)
+//	{
+//		LOG("scope %s: new %s", cur_scp->name.c_str(), is_virtual ? "virtual scope" : "real scope");
+//	//	assert(cur_scp->is_virtual_scope);
+//
+//	//	if (cur_scp->is_virtual_scope)
+//	//		cur_scp = cur_scp->parent;
+//	//	assert(cur_scp->is_virtual_scope == false);
+//
+//		cur_scp = cur_scp->new_cld();
+//		cur_scp->is_virtual_scope = is_virtual;
+//		cur_scp->id = scope_id++;
+//		cur_scp->name = "b" + std::to_string(cur_scp->id);
+//
+//		return cur_scp;
+//	}
 	Scope* new_cld()
 	{
 		Scope *p = new Scope;
@@ -285,6 +309,7 @@ public:
 		p->parent = real_parent;
 		return p;
 	}
+
 };
 
 struct SemanticNode

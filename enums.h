@@ -134,9 +134,11 @@ enum TokenType {
 							\
 		X(SEM_IF)    \
 		X(SEM_ELSE)    \
+		X(SEM_ELIF)    \
 		X(SEM_WHILE)    \
 		X(SEM_LABEL)    \
 		X(SEM_JMP)    \
+		X(SEM_JMP_TARGET)    \
 								\
 		X(SEM_FUNC_DECLARE)    \
 		X(SEM_FUNC_DEFINE)    \
@@ -145,6 +147,7 @@ enum TokenType {
 									\
 		X(SEM_FILE_SCOPE)    \
 		X(SEM_UNNAMED_SCOPE)    \
+	/*	X(SEM_SEMICOLON)	*/    \
 		X(SEM_NONE)    \
 		X(SEM_INVALID)
 
