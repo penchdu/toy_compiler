@@ -29,10 +29,6 @@ static void skip_line_comment(FILE *fp)
 	// File ended without newline — just return normally, c == EOF
 }
 
-/*
- * Skip a block comment (/* ... *\/).
- * Handles nested ? No, standard C/C++ block comments don't nest.
- */
 static void skip_block_comment(FILE *fp)
 {
 	int c;

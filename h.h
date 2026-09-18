@@ -269,7 +269,7 @@ public:
 	Scope *parent;
 	vector<Scope*> clds;
 	bool is_virtual_scope;
-	VarType return_type = INVALID_TYPE;
+	enum VarType return_type = INVALID_TYPE;
 
 	Scope* new_cld()
 	{

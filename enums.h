@@ -16,14 +16,14 @@
 #define STR(x) #x
 
 #define ERR(fmt, ...) do{ \
-    printf("%s: error:  " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
+    printf("%s %d, error: " fmt "\n", __FUNCTION__, __LINE__ , ##__VA_ARGS__); \
     exit(1);	\
 }while(0)
 
 #define DEBUG
 #ifdef DEBUG
 #define LOG(fmt, ...) do{ \
-		printf("LOG %s: " fmt "\n", __FUNCTION__, ##__VA_ARGS__); \
+		printf("%s %d, " fmt "\n", __FUNCTION__, __LINE__ , ##__VA_ARGS__); \
 	}while(0)
 #else
 	#define LOG(fmt, ...)

@@ -94,8 +94,8 @@ static void dump_scope(Scope *s, int depth)
 
 	print_blank(depth);
 	printf("======%s, %d %d====== %s", s->name.c_str(), s->id,
-		s->parent ? s->parent->id : 0,
-		sem_ty_names[s->sem]);
+	    s->parent ? s->parent->id : 0,
+	    s->sem == SEM_INVALID ? "" : sem_ty_names[s->sem]);
 
 	if (s->is_virtual_scope)
 		printf(" virtual");

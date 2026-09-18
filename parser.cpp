@@ -12,7 +12,7 @@ extern Tokens tokens;
 Scope file_scp;
 Scope *cur_scp;
 int scope_id = 0;
-int in_func_declare = 0;
+int in_func_define = 0;
 
 #define STR_ITEM(name) STR(name),
 const char *tk_ty_names[TK_EOF + 1] = {
@@ -112,9 +112,9 @@ static int case_tk_func()
 //			break;
 //		parser();
 //	}
-	in_func_declare = 1;
+	in_func_define = 1;
 	case_tk_left_brace();
-	in_func_declare = 0;
+	in_func_define = 0;
 	return 0;
 }
 
@@ -269,44 +269,80 @@ static Ast* parse_expr(TokenType end_tk_ty)
 
 	return _parse_expr(end_tk_ty);
 }
-static Ast* case_tk_assign()
-{
-	Ast *left = new_ast_node(tokens.prev());
-	Ast *assign = new_ast_node(tokens.get());
-	LOG("%s \n", assign->tk.src.c_str());
-
-	assign->left = left;
-	assign->right = parse_expr(TK_SEMICOLON);
-	return assign;
-}
-static Ast* case_tk_variable()
+//static Ast* case_tk_assign()
+//{
+//	Ast *left = new_ast_node(tokens.prev());
+//	Ast *assign = new_ast_node(tokens.get());
+//	LOG("%s \n", assign->tk.src.c_str());
+//
+//	assign->left = left;
+//	assign->right = parse_expr(TK_SEMICOLON);
+//	return assign;
+//}
+//static Ast* case_tk_variable()
+//{
+//	Token tk = tokens.get();
+//	LOG("%s \n", tk.src.c_str());
+//
+////	if(symble_table.find(tk.str) == symble_table.end()){
+////		LOG("%s not declared\n", tk.str.c_str());
+////		assert(0);
+////	}
+//
+//	tk = tokens.peek();
+////	if(tk.type == tk_semicolon)
+////		return 0;
+//
+//	if (tk.type == TK_ASSIGN)
+//		return case_tk_assign();
+//
+//	tokens.unget();
+//	return parse_expr(TK_SEMICOLON);
+//}
+//static Ast* case_tk_const_num()
+//{
+//	return parse_expr(TK_SEMICOLON);
+//}
+static Ast* case_tk_else()
 {
 	Token tk = tokens.get();
-	LOG("%s \n", tk.src.c_str());
+	if (!in_func_define)
+		ERR("%s not in func", tk.src.c_str());
 
-//	if(symble_table.find(tk.str) == symble_table.end()){
-//		LOG("%s not declared\n", tk.str.c_str());
-//		assert(0);
-//	}
+	new_scope(false);
+	cur_scp->sem = SEM_ELSE;
 
 	tk = tokens.peek();
-//	if(tk.type == tk_semicolon)
-//		return 0;
+	if (tk.type == TK_IF)
+	{
 
-	if (tk.type == TK_ASSIGN)
-		return case_tk_assign();
+	}
 
-	tokens.unget();
-	return parse_expr(TK_SEMICOLON);
-}
-static Ast* case_tk_const_num()
-{
-	return parse_expr(TK_SEMICOLON);
+	//	Scope *if_scp = cur_scp;
+	cur_scp = cur_scp->parent;
+
+	tk = tokens.peek();
+	if (tk.type == TK_BRACE_L)
+	{
+
+	}
+	else
+	{
+		// only one express, create a real-scope to save it
+		// must use real-scope because the express could be "int a = 0;"
+		new_scope(false);
+		Ast *p = parse_stmt();
+		cur_scp->asts.push_back(p);
+		cur_scp = cur_scp->parent;
+		new_scope(true);
+	}
+
+	return 0;
 }
 static Ast* case_tk_if()
 {
 	Token tk = tokens.get();
-	if(!in_func_declare)
+	if (!in_func_define)
 		ERR("%s not in func", tk.src.c_str());
 
 	new_scope(false);
@@ -319,26 +355,30 @@ static Ast* case_tk_if()
 	// SEM_IF only have one condition express
 	Ast *p = case_tk_lparen();
 	cur_scp->asts.push_back(p);
-//	new_scope(false);
-	Scope *if_scp = cur_scp;
+
+//	Scope *if_scp = cur_scp;
 	cur_scp = cur_scp->parent;
 
 	tk = tokens.peek();
 	if (tk.type == TK_BRACE_L)
 	{
-//		cur_scp = cur_scp->parent;
+
 	}
 	else
 	{
-		// todo if(a = 1)
-//		cur_scp = cur_scp->parent;
+		// only one express, create a real-scope to save it
+		// must use real-scope because the express could be "int a = 0;"
 		new_scope(false);
-
-//		Ast *p = parse_stmt();
-		Ast *p = parse_expr(TK_PAREN_R);
+		Ast *p = parse_stmt();
 		cur_scp->asts.push_back(p);
 		cur_scp = cur_scp->parent;
 		new_scope(true);
+	}
+
+	tk = tokens.peek();
+	if (tk.type == TK_ELSE)
+	{
+		case_tk_else();
 	}
 
 	return 0;
@@ -346,7 +386,7 @@ static Ast* case_tk_if()
 static Ast* case_tk_return()
 {
 	Token tk = tokens.get();
-	if(!in_func_declare)
+	if (!in_func_define)
 		ERR("%s not in func", tk.src.c_str());
 
 	LOG("%s \n", tk.src.c_str());
@@ -361,68 +401,62 @@ static Ast* case_tk_return()
 static Ast* parse_stmt()
 {
 	LOG("");
-	while (!tokens.empty())
+	Token tk = tokens.peek();
+	if (tk.type < TK_OP_ALL)
+		ERR();
+
+	switch (tk.type)
 	{
-		Token tk = tokens.peek();
-		if (tk.type < TK_OP_ALL)
-			ERR();
+	case TK_INT:
+		case TK_FLOAT:
+		return case_tk_declare();
 
-		switch (tk.type)
-		{
-		case TK_INT:
-			case TK_FLOAT:
-			return case_tk_declare();
+	case TK_VAR:
+		return parse_expr(TK_SEMICOLON);
+//			return case_tk_variable();
 
-		case TK_VAR:
-			return case_tk_variable();
-			break;
+	case TK_CONST_NUM:
+		return parse_expr(TK_SEMICOLON);
+//			return case_tk_const_num();
 
-		case TK_ASSIGN:
-			assert(0);
-			break;
+	case TK_SEMICOLON:
+		tokens.get();		// todo
+		break;
 
-			// todo a = 0 + b ? parse_expr ?
-		case TK_CONST_NUM:
-			return case_tk_const_num();
-			break;
+	case TK_IF:
+		case_tk_if();
+		break;
 
-		case TK_SEMICOLON:
-			tokens.get();
-			break;
+	case TK_WHILE:
+		ERR();
+		break;
 
-		case TK_IF:
-			return case_tk_if();
-			break;
+	case TK_BRACE_L:
+		tokens.get();
+		new_scope(false);
+		case_tk_left_brace();
+		break;
 
-		case TK_WHILE:
-			ERR();
-			break;
+	case TK_BRACE_R:
+		ERR();
+		case_tk_right_brace();
+		break;
 
-		case TK_BRACE_L:
-			tokens.get();
-			new_scope(false);
-			case_tk_left_brace();
-			break;
+	case TK_RETURN:
+		return case_tk_return();
 
-		case TK_BRACE_R:
-			case_tk_right_brace();
-			break;
+	case TK_EOF:
+		return 0;
 
-		case TK_RETURN:
-			return case_tk_return();
-
-		case TK_EOF:
-			return 0;
-
+	case TK_ASSIGN:
 		case TK_PAREN_L:
-			case TK_PAREN_R:
-			case TK_INVALID:
-			ERR("unexpect token %s", tk.src.c_str());
-			break;
+		case TK_PAREN_R:
+		case TK_INVALID:
+		ERR("unexpect token %s", tk.src.c_str());
+		break;
 
-		default:
-			assert(0);
-		}
+	default:
+		ERR();
 	}
 
 	return 0;
@@ -433,9 +467,9 @@ static Scope* new_scope(bool is_virtual)
 	LOG("scope %s: new %s", cur_scp->name.c_str(), is_virtual ? "virtual scope" : "real scope");
 //	assert(cur_scp->is_virtual_scope);
 
-	if (cur_scp->is_virtual_scope)
-		cur_scp = cur_scp->parent;
-	assert(cur_scp->is_virtual_scope == false);
+//	if (cur_scp->is_virtual_scope)
+//		cur_scp = cur_scp->parent;
+//	assert(cur_scp->is_virtual_scope == false);
 
 	cur_scp = cur_scp->new_cld();
 	cur_scp->is_virtual_scope = is_virtual;
@@ -453,6 +487,8 @@ void parse_scope(TokenType end_tk_ty)
 		Token tk = tokens.peek();
 		if (tk.type == TK_BRACE_R)
 		{
+//			tokens.get();
+			case_tk_right_brace();
 			return;
 		}
 
@@ -470,51 +506,39 @@ static Ast* case_tk_left_brace()
 	 */
 
 	LOG();
-	if(!in_func_declare)
+	if (!in_func_define)
 		ERR("tk_left_brace not in func");
-//	if (cur_scp->is_virtual_scope)
-//		cur_scp = cur_scp->parent;
 
-	Token tk;
-//	Token tk = tokens.get();		// {
-//	if (tk.type != TK_BRACE_L)
-//		ERR("tk.type %s, except {", tk.src.c_str());
-
-//	new_scope(false);
+	assert(cur_scp->is_virtual_scope == false);
 
 	parse_scope(TK_BRACE_R);
 
-	tk = tokens.peek();
+	Token tk = tokens.prev();		// }
 	if (tk.type != TK_BRACE_R)
-		ERR("tk.type %s, except }", tk.src.c_str());
+		ERR("tk: %s, except }", tk.src.c_str());
 
-	if (cur_scp->is_virtual_scope)
-		cur_scp = cur_scp->parent;
-
-	tokens.get();		// }
-	cur_scp = cur_scp->parent;
-
-	tk = tokens.peek();
-	if(tk.type == TK_INVALID)
-		ERR("%s is invalis token", tk.src.c_str());
-	if(tk.type == TK_EOF)
-		return 0;
-
-	if (!(tk.type == TK_BRACE_L || tk.type == TK_BRACE_R))
-		new_scope(true);
-
-//	new_scope(true);
 	return 0;
 }
 static Ast* case_tk_right_brace()
 {
-	return 0;
+	LOG();
+	if (cur_scp->is_virtual_scope)
+		cur_scp = cur_scp->parent;
+	assert(cur_scp->is_virtual_scope == false);
 
-//	if (cur_scp->is_virtual_scope)
-//		cur_scp = cur_scp->parent;
-//	assert(cur_scp->is_virtual_scope == false);
-//
-//	return 0;
+	tokens.get();
+	cur_scp = cur_scp->parent;
+
+	Token tk = tokens.peek();
+	if (tk.type == TK_INVALID)
+		ERR("%s is invalis token", tk.src.c_str());
+	if (tk.type == TK_EOF)
+		return 0;
+
+	if (!(tk.type == TK_BRACE_L || tk.type == TK_BRACE_R || tk.type == TK_EOF))
+		new_scope(true);
+
+	return 0;
 //
 //	// go on leave parent scope
 //	tokens.get();

@@ -14,7 +14,6 @@ void func()
 {
 }
 
-
 int main(int argc, char **argv)
 {
 	FILE *fp = fopen("./t1", "r");
@@ -44,10 +43,24 @@ int main(int argc, char **argv)
 //		}
 //	}
 //
-//	if(if(1) )
-//	{
-//
-//	}
+	if (1)
+	{
+	}
+
+	if (1)
+		if (1)
+		{
+			1;
+		}
+		else if (1)
+			2;
+		else if (2)
+			3;
+		else
+			3;
+	else
+		(1);
+
 	int a = 0;
 //	a = (a + 3);
 //	for(a;;)
