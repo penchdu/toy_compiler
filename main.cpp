@@ -43,25 +43,42 @@ int main(int argc, char **argv)
 //		}
 //	}
 //
-	if (1)
-	{
-	}
-
-	if (1)
-		if (1)
-		{
-			1;
-		}
-		else if (1)
-			2;
-		else if (2)
-			3;
-		else
-			3;
-	else
-		(1);
-
-	int a = 0;
+//	if (1)
+//	{
+//	}
+//
+//	if (1)
+//		if (1)
+//		{
+//			1;
+//		}
+//		else if (1)
+//			2;
+//		else if (2)
+//			3;
+//		else
+//			3;
+//	else
+//		(1);
+//
+//	if (3)
+//		if (4)
+//			4;
+//
+//	printf("\n");
+//
+//	if (printf("1\n"))
+//		if (printf("2\n"))
+//			if (printf("3\n"))
+//				if (printf("4\n"))
+//					4;
+//				else if (printf("5\n"))
+//					if (printf("6\n"))
+//						6;
+//					else
+//						printf("7\n");
+//
+//	int a = 0;
 //	a = (a + 3);
 //	for(a;;)
 //			a;;

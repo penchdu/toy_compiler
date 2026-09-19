@@ -6,14 +6,7 @@
  */
 
 #include "h.h"
-
-//extern Tokens tokens;
-extern const char *tk_ty_names[];
-extern const char *sem_ty_names[];
-
-extern Scope file_scp;
-//extern Scope *cur_scp;
-//extern int scope_id;
+#include "parser.h"
 
 static string get_var_type_name(VarType ty)
 {
@@ -30,17 +23,20 @@ static string get_var_type_name(VarType ty)
 		return "INVALID_TYPE";
 	}
 }
-static void print_blank(int n)
-{
-	n = std::max(n, 0);
-	for (int i = 0; i < n; i++)
-		printf("    ");
-}
+
 static string indent_str(int n)
 {
 	n = std::max(n, 0);
-	return string(n * 4, ' ');
+	return string(n * 8, ' ');
 }
+static void print_blank(int n)
+{
+	n = std::max(n, 0);
+
+	string s = indent_str(n);
+	printf("%s", s.c_str());
+}
+
 
 // 树形打印 AST 节点
 static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
@@ -95,14 +91,19 @@ static void dump_scope(Scope *s, int depth)
 		return;
 
 	print_blank(depth);
-	printf("======%s %d  parent=%d  true=%d  false=%d====== %s out=%d",
+	printf("======%s %d  parent=%d",
 	    s->name.c_str(),
 	    s->id,
-	    s->parent ? s->parent->id : 0,
-	    s->jmp_if_true ? s->jmp_if_true->id : 0,
-	    s->jmp_if_false ? s->jmp_if_false->id : 0,
-	    s->sem == SEM_INVALID ? "" : sem_ty_names[s->sem],
-	    s->jmp_out ? s->jmp_out->id : 0);
+	    s->parent ? s->parent->id : 0);
+
+	if(s->sem == SEM_IF || s->sem == SEM_ELIF)
+	printf("  true=%d  false=%d",
+		    s->jmp_to_if_true ? s->jmp_to_if_true->id : 0,
+		    s->jmp_to_if_false ? s->jmp_to_if_false->id : 0);
+
+	printf("====== %s out=%d",
+		    s->sem == SEM_INVALID ? "" : sem_ty_names[s->sem],
+		    s->jmp_out ? s->jmp_out->id : 0);
 
 	if (s->jmp_in.size() > 0)
 		printf("  in=");

@@ -267,8 +267,8 @@ public:
 	//	Sem_type region_header = sem_none;
 
 	// ifc
-	Scope *jmp_if_true = 0;
-	Scope *jmp_if_false = 0;
+	Scope *jmp_to_if_true = 0;
+	Scope *jmp_to_if_false = 0;
 
 	// ift, iff
 	vector<Scope*> jmp_in;

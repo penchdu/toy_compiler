@@ -4,7 +4,7 @@ After I studied the book *Engineering a Compiler 3E*, I found the compiler theor
 
 Before I start coding I thought it will be very simple, when I am coding I found it is not that simple even it is a toy compiler.
 
-I used AI for auxiliary work: debug, write boring code(read a word from file, dump AST as graph, makefile), and looking up related knowledge, but I do not ask AI to tell me how to design a compiler.
+I used AI for auxiliary work: debug, write boring code(read a word from file, dump AST as graph, makefile), and looking up related knowledge.
 
 I named the language **vsl** (very simple language), so the compiler's name is **vsc**.
 

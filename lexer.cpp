@@ -343,8 +343,10 @@ int lexer(FILE *fp)
 	{
 		Token tk = get_a_token_from_file(fp);
 		if (tk.type == TK_EOF)
+		{
+			tokens.append(tk);
 			break;
-
+		}
 		tokens.append(tk);
 	}
 
