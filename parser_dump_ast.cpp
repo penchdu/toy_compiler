@@ -48,9 +48,9 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 
 	printf("%s", line_prefix.c_str());
 	if (p->semty == SEM_VAR_DECLARE)
-		printf("[del %s %s]\n", get_var_type_name(p->var_type).c_str(), p->tk.src.c_str());
+		printf("[%s %s]\n", get_var_type_name(p->var_type).c_str(), p->tk.src.c_str());
 	else if (p->semty < OP_ALL)
-		printf("[op %s %% %d]\n", p->tk.src.c_str(), p->vr_id);
+		printf("[op %s %%%d]\n", p->tk.src.c_str(), p->vr_id);
 	else if (p->semty == SEM_VAR)
 	{
 		if (!p->symb_var)
@@ -91,26 +91,26 @@ static void dump_scope(Scope *s, int depth)
 		return;
 
 	print_blank(depth);
-	printf("======%s %d  parent=%d",
+	printf("======%s=%d  parent=%d",
 	    s->name.c_str(),
 	    s->id,
 	    s->parent ? s->parent->id : 0);
 
 	if(s->sem == SEM_IF || s->sem == SEM_ELIF)
-	printf("  true=%d  false=%d",
-		    s->jmp_to_if_true ? s->jmp_to_if_true->id : 0,
-		    s->jmp_to_if_false ? s->jmp_to_if_false->id : 0);
+	printf("  then=%d  else=%d",
+		    s->jmp_then ? s->jmp_then->id : 0,
+		    s->jmp_else ? s->jmp_else->id : 0);
 
 	printf("====== %s out=%d",
 		    s->sem == SEM_INVALID ? "" : sem_ty_names[s->sem],
 		    s->jmp_out ? s->jmp_out->id : 0);
 
-	if (s->jmp_in.size() > 0)
+	if (s->jmp_in.size())
 		printf("  in=");
 	for (auto p : s->jmp_in)
 		printf("%d ", p->id);
 
-	if (s->is_virtual_scope)
+	if (s->is_virtual)
 		printf(" virtual");
 	printf("\n");
 

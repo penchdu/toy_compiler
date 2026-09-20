@@ -76,7 +76,7 @@ static int case_sem_return(Ast *p)
 	}
 
 	Scope *scp = p->this_scp;
-	while(scp && scp->is_virtual_scope){
+	while(scp && scp->is_virtual){
 		scp = scp->parent;
 	}
 

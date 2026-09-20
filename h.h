@@ -206,11 +206,9 @@ public:
 			semty = SEM_ELSE;
 			break;
 
-//		case tk_int:
-//		case tk_float:
-//			semty = sem_declare;
-//			sem_name = src_name;
-//			break;
+		case TK_INT:
+			semty = SEM_VAR_DECLARE;
+			break;
 
 		case TK_VAR:
 			semty = SEM_VAR;
@@ -267,8 +265,8 @@ public:
 	//	Sem_type region_header = sem_none;
 
 	// ifc
-	Scope *jmp_to_if_true = 0;
-	Scope *jmp_to_if_false = 0;
+	Scope *jmp_then = 0;
+	Scope *jmp_else = 0;
 
 	// ift, iff
 	vector<Scope*> jmp_in;
@@ -276,7 +274,7 @@ public:
 
 	Scope *parent;
 	vector<Scope*> clds;
-	bool is_virtual_scope;
+	bool is_virtual;
 	enum VarType return_type = INVALID_TYPE;
 
 //	static Scope* new_scope(bool is_virtual)
@@ -300,7 +298,7 @@ public:
 		Scope *p = new Scope;
 		Scope *real_parent;
 
-		if (!this->is_virtual_scope)
+		if (!this->is_virtual)
 			real_parent = this;
 		else
 			real_parent = this->parent;

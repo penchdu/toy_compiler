@@ -83,6 +83,17 @@ int main(int argc, char **argv)
 //	for(a;;)
 //			a;;
 //	;3;;
+	if(1)1;
+		else if(2)2;
+		else 3;
+
+	if(1)
+		1;
+	else
+		if(2)
+			{2;}
+		else 3;
+
 
 	fclose(fp);
 	return 0;

@@ -10,8 +10,8 @@
 
 #include "h.h"
 
-#define DEBUG
-#ifdef DEBUG
+//#define PARSER_DEBUG
+#ifdef PARSER_DEBUG
 #define PARSER_LOG(fmt, ...) do{ \
 		printf("%s %d, scope-%s-%d,        " fmt "\n",	\
 	__FUNCTION__, __LINE__ , \
@@ -20,7 +20,7 @@
 	##__VA_ARGS__); \
 	}while(0)
 #else
-	#define LOG(fmt, ...)
+	#define PARSER_LOG(fmt, ...)
 #endif
 
 extern Tokens tokens;
@@ -34,10 +34,10 @@ extern bool in_func_define;
 
 Scope* new_scope_and_drop_in();
 Scope* new_virtual_scp_and_drop_in();
+Scope* parse_scope(bool eat = true);
+Scope* case_tk_right_brace(bool eat = true);
 void exit_current_scope();
 
-Ast* parse_scope(bool eat = true);
-Ast* case_tk_right_brace(bool eat = true);
 
 Ast* parse_stmt();
 Ast* parse_expr_with_paren();
