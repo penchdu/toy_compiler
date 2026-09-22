@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 	parser();
 	sem_analysis();
 	gen_three_address_code();
-	gen_machine_code();
+//	gen_machine_code();
 //	mc_schedule();
 //	x64_pr_alloc();		// create a.s in current location
 //

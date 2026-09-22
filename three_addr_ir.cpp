@@ -10,18 +10,31 @@
 extern Scope file_scp;
 vector<ThreeAddrCode*> three_addr_code;
 
+//static int sem_if_scope(Ast *p)
+//{
+//	Scope *scp = p->this_scp;
+//	Ast *cond = scp->asts[0];
+//	assert(cond->op >= OP_CMP_LT && cond->op <= OP_CMP_NE);
+//	cond->vr_id;
+
+//	ThreeAddrCode *inst = new ThreeAddrCode(p);
+//	inst->dst = p->vr_id;
+//	inst->s1 = a;
+//	inst->s2 = b;
+//	three_addr_code.push_back(inst);
+//}
+
 static int trace_ast_down_up_gen_3_address_code(Ast *p)
 {
-	if(!p)
-		return -1;
+	if (!p || p->sem == SEM_VAR_DECLARE)
+			return -1;
 
 	int b = trace_ast_down_up_gen_3_address_code(p->right);
 	int a = trace_ast_down_up_gen_3_address_code(p->left);
-	string c;
 	SymbolVar *symb = 0;
 	ThreeAddrCode *inst = 0;
 
-	switch(p->semty)
+	switch(p->sem)
 	{
 	// leaf node
 	case SEM_VAR:
@@ -38,26 +51,22 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 		three_addr_code.push_back(inst);
 		return p->vr_id;
 
-		// x = y : return x
-	case OP_ASSIGN:
-		inst = new ThreeAddrCode(p);
-		inst->dst = a;
-		inst->s1 = b;
-		three_addr_code.push_back(inst);
-		return a;
-
-		// todo gen a assign inst
-	case OP_ADD:
-		case OP_SUB:
-		case OP_MUL:
-		case OP_DIV:
-
-			inst = new ThreeAddrCode(p);
-			inst->dst = p->vr_id;
-			inst->s1 = a;
-			inst->s2 = b;
-			three_addr_code.push_back(inst);
-			return p->vr_id;
+		case SEM_OPERATOR:
+				if (p->op == OP_ASSIGN)
+				{
+					// x = y : return x
+					inst = new ThreeAddrCode(p);
+					inst->dst = a;
+					inst->s1 = b;
+					three_addr_code.push_back(inst);
+					return a;
+				}
+				inst = new ThreeAddrCode(p);
+				inst->dst = p->vr_id;
+				inst->s1 = a;
+				inst->s2 = b;
+				three_addr_code.push_back(inst);
+				return p->vr_id;
 
 	case SEM_RETURN:
 		inst = new ThreeAddrCode(p);
@@ -85,6 +94,20 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 static void gen_tac(Scope *scp)
 {
 	LOG("scp %s \n", scp->name.c_str());
+
+	// SEM_IF scope have only one ast
+//	if (scp->sem == SEM_IF)
+//	{
+//		Ast *cond = scp->asts[0];
+//		cond->vr_id;
+//	}
+//	// then and SEM_ELSE scope have jmp_in
+//	if (scp->sem == SEM_ELSE)
+//	{
+//	}
+//	if (scp->sem == SEM_JMP_UNIT)	// have no ast
+//	{
+//	}
 
 	for(auto it = scp->asts.begin(); it != scp->asts.end();) {
 		LOG("%s, scp %s, ast %ld\n", __FUNCTION__, scp->name.c_str(), it - scp->asts.begin());
