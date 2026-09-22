@@ -20,7 +20,7 @@ Scope* case_tk_if()
 	ERR("unexpect token %s", tk.src.c_str());
 
 	Scope *cond = new_scope_and_drop_in();
-	current_scope_pointer->sem = SEM_IF;
+	current_scope_pointer->sem = SEM_IF_COND;
 	current_scope_pointer->name = "if";
 
 	/////////////////////////////////// if-cond SEM_IF only have one condition express

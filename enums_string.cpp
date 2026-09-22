@@ -68,7 +68,7 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 	[SEM_VAR] = "SEM_VAR",
 	[SEM_CONST_NUM] = "SEM_CONST_NUM",
 
-	[SEM_IF] = "SEM_IF",
+	[SEM_IF_COND] = "SEM_IF",
 	[SEM_ELSE] = "SEM_ELSE",
 	[SEM_WHILE] = "SEM_WHILE",
 

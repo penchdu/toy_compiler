@@ -8,7 +8,8 @@
 #ifndef X64_BACK_END_H_
 #define X64_BACK_END_H_
 
-#include "h.h"
+#include "frontend.h"
+
 
 /*
  *
@@ -156,6 +157,11 @@ struct McDepend
 	int edges = 0;
 };
 
+extern vector<X64mc> x64mc;
+extern vector<X64mc> x64mc_schedued;
+extern vector<X64mc> x64mc_alloced;
+extern vector<McDepend> mcs_pred;
+extern vector<McDepend> mcs_succ;
 
 void dump_mc(vector<X64mc> &v);
 void gen_machine_code();

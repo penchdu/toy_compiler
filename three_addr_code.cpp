@@ -5,7 +5,8 @@
  *      Author: x
  */
 
-#include "h.h"
+#include "frontend.h"
+#include "scope.h"
 
 extern Scope file_scp;
 vector<ThreeAddrCode*> three_addr_code;
@@ -81,11 +82,11 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 	case SEM_FUNC_DECLARE:
 	case SEM_FUNC_DEFINE:
 	case SEM_FUNC_CALL:
-		printf("todo sem_func* semty %d \n", p->semty);
+		printf("todo sem_func* semty %d \n", p->sem);
 		return -1;
 
 	default:
-		ERR("%d \n", p->semty);
+		ERR("%d \n", p->sem);
 		break;
 	}
 
@@ -93,7 +94,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 }
 static void gen_tac(Scope *scp)
 {
-	LOG("scp %s \n", scp->name.c_str());
+	LOG("scp %s", scp->name.c_str());
 
 	// SEM_IF scope have only one ast
 //	if (scp->sem == SEM_IF)
@@ -110,7 +111,7 @@ static void gen_tac(Scope *scp)
 //	}
 
 	for(auto it = scp->asts.begin(); it != scp->asts.end();) {
-		LOG("%s, scp %s, ast %ld\n", __FUNCTION__, scp->name.c_str(), it - scp->asts.begin());
+		LOG("%s, scp %s, ast %ld", __FUNCTION__, scp->name.c_str(), it - scp->asts.begin());
 		Ast *p = *it;
 
 		trace_ast_down_up_gen_3_address_code(p);
@@ -129,21 +130,18 @@ static void dump()
 //		Ast *p = global_unique_vrid_tbl[r->dst];
 		Ast *p = r->ast;
 
-		switch(p->semty)
+		switch(p->sem)
 		{
 		case SEM_CONST_NUM:
 			printf("const:\t %%%d num %d\n", r->dst, p->const_value);
 			break;
 
-		case OP_ASSIGN:
-			printf("assign:\t %%%d %s %%%d\n", r->dst, p->tk.src.c_str(), r->s1);
-			break;
 
-		case OP_ADD:
-		case OP_SUB:
-		case OP_MUL:
-		case OP_DIV:
-			printf("op:\t %%%d = %%%d %s %%%d\n", r->dst, r->s1, p->tk.src.c_str(), r->s2);
+		case SEM_OPERATOR:
+			if (p->op == OP_ASSIGN)
+				printf("assign:\t %%%d %s %%%d\n", r->dst, p->tk.src.c_str(), r->s1);
+			else
+				printf("op:\t %%%d = %%%d %s %%%d\n", r->dst, r->s1, p->tk.src.c_str(), r->s2);
 			break;
 
 		case SEM_VAR_DECLARE:
@@ -171,6 +169,6 @@ static void dump()
 void gen_three_address_code()
 {
 	gen_tac(&file_scp);
-//	dump_ast();
-//	dump();
+	dump_ast();
+	dump();
 }

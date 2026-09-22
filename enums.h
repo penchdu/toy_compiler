@@ -96,7 +96,7 @@ enum Semantic {
 	SEM_VAR,
 	SEM_CONST_NUM,
 
-	SEM_IF,
+	SEM_IF_COND,
 	SEM_ELSE,
 //	SEM_ELIF,
 	SEM_WHILE,

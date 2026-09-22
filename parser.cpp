@@ -5,8 +5,9 @@
  *      Author: x
  */
 
-#include "h.h"
 #include "parser.h"
+
+#include "frontend.h"
 #include "scope.h"
 
 Scope file_scp;

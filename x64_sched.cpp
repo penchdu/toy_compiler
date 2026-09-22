@@ -5,15 +5,11 @@
  *      Author: x
  */
 
-#include "h.h"
+#include "frontend.h"
 #include "x64_back_end.h"
 #include "scope.h"
 
-vector<X64mc> x64mc;
-vector<X64mc> x64mc_schedued;
-vector<X64mc> x64mc_alloced;
-vector<McDepend> mcs_pred;
-vector<McDepend> mcs_succ;
+
 //
 //
 //void create_dependcy(int a, int b)

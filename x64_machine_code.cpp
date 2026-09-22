@@ -1,16 +1,22 @@
-///*
-// * a.cpp
-// *
-// *  Created on: 2026年9月5日
-// *      Author: x
-// */
-//
-//#include "h.h"
-//#include "x64_back_end.h"
-//#include "scope.h"
-//
-//extern Scope file_scp;
-//
+/*
+ * a.cpp
+ *
+ *  Created on: 2026年9月5日
+ *      Author: x
+ */
+
+#include "frontend.h"
+#include "x64_back_end.h"
+#include "scope.h"
+
+extern Scope file_scp;
+
+vector<X64mc> x64mc;
+vector<X64mc> x64mc_schedued;
+vector<X64mc> x64mc_alloced;
+vector<McDepend> mcs_pred;
+vector<McDepend> mcs_succ;
+
 //const McInfo mc_info[MC_INVALID + 1] = {
 //        [MC_LI] = {1, "mov"},
 //        [MC_LD] = {3, "mov"},

@@ -5,8 +5,8 @@
  *      Author: x
  */
 
-#ifndef H_H_
-#define H_H_
+#ifndef FRONTEND_H_
+#define FRONTEND_H_
 
 #include <stdio.h>
 #include <string.h>
@@ -203,7 +203,7 @@ public:
 
 
 		case TK_IF:
-			sem = SEM_IF;
+			sem = SEM_IF_COND;
 			break;
 		case TK_ELSE:
 			sem = SEM_ELSE;
@@ -311,16 +311,10 @@ struct VirtualRegisterManager
 
 extern VirtualRegisterManager vrm;
 
-extern vector<X64mc> x64mc;
-extern vector<X64mc> x64mc_schedued;
-extern vector<X64mc> x64mc_alloced;
-extern vector<McDepend> mcs_pred;
-extern vector<McDepend> mcs_succ;
-
 int lexer(FILE *fp);
 void dump_ast();
 void parser();
 void sem_analysis();
 void gen_three_address_code();
 
-#endif /* H_H_ */
+#endif /* FRONTEND_H_ */

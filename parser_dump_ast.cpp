@@ -5,7 +5,7 @@
  *      Author: x
  */
 
-#include "h.h"
+#include "frontend.h"
 #include "parser.h"
 #include "scope.h"
 
@@ -97,7 +97,7 @@ static void dump_scope(Scope *s, int depth)
 	    s->id,
 	    s->parent ? s->parent->id : 0);
 
-	if(s->sem == SEM_IF)
+	if(s->sem == SEM_IF_COND)
 	printf("  then=%d  else=%d",
 		    s->jmp_then ? s->jmp_then->id : 0,
 		    s->jmp_else ? s->jmp_else->id : 0);
