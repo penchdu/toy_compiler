@@ -1,9 +1,0 @@
-135:	vector<X64mc> &x64mc_alloced = scp->x64mc_alloced;
-138:	for (auto &r : scp->x64mc_schedued)
-183:	for (Scope *p : scp->clds)
-198://	LOG("scp %s", scp->name.c_str());
-199:	printf("scp %s:\n", scp->name.c_str());
-201:	dump_mc(scp->x64mc_alloced);
-203:	for (Scope *p : scp->clds)
-223:	for (auto &mc : scp->x64mc_alloced)
-273:	for (Scope *p : scp->clds)
