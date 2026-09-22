@@ -49,7 +49,7 @@ const char *SemOperator_string[OP_ALL + 1] = {
 
 	[OP_CMP_LT] = "OP_CMP_LT",
 	[OP_CMP_LE] = "OP_CMP_LE",
-	[OP_CMP_E] = "OP_CMP_E",
+	[OP_CMP_EQ] = "OP_CMP_E",
 	[OP_CMP_GE] = "OP_CMP_GE",
 	[OP_CMP_GT] = "OP_CMP_GT",
 	[OP_CMP_NE] = "OP_CMP_NE",
@@ -68,13 +68,12 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 	[SEM_VAR] = "SEM_VAR",
 	[SEM_CONST_NUM] = "SEM_CONST_NUM",
 
-	[SEM_IF_COND] = "SEM_IF",
+	[SEM_COND_JMP] = "SEM_COND_JMP",
+	[SEM_JMP] = "SEM_JMP",
 	[SEM_ELSE] = "SEM_ELSE",
 	[SEM_WHILE] = "SEM_WHILE",
 
 	[SEM_LABEL] = "SEM_LABEL",
-	[SEM_JMP] = "SEM_JMP",
-	[SEM_JMP_UNIT] = "SEM_JMP_UNIT",
 
 	[SEM_FUNC_DECLARE] = "SEM_FUNC_DECLARE",
 	[SEM_FUNC_DEFINE] = "SEM_FUNC_DEFINE",

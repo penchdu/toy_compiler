@@ -5,25 +5,9 @@
  *      Author: x
  */
 
+#include "basic_block.h"
 #include "frontend.h"
 #include "parser.h"
-#include "scope.h"
-
-static string get_var_type_name(Type ty)
-{
-	switch (ty)
-	{
-	case INT:
-		return "int";
-	case FLOAT:
-		return "float";
-	case VOID:
-		return "void";
-	case INVALID_TYPE:
-		default:
-		return "INVALID_TYPE";
-	}
-}
 
 static string indent_str(int n)
 {
@@ -37,7 +21,6 @@ static void print_blank(int n)
 	string s = indent_str(n);
 	printf("%s", s.c_str());
 }
-
 
 // 树形打印 AST 节点
 static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
@@ -97,10 +80,10 @@ static void dump_scope(Scope *s, int depth)
 	    s->id,
 	    s->parent ? s->parent->id : 0);
 
-	if(s->sem == SEM_IF_COND)
-	printf("  then=%d  else=%d",
-		    s->jmp_then ? s->jmp_then->id : 0,
-		    s->jmp_else ? s->jmp_else->id : 0);
+//	if(s->sem == SEM_COND_JMP)
+//	printf("  then=%d  else=%d",
+//		    s->jmp_then ? s->jmp_then->id : 0,
+//		    s->jmp_else ? s->jmp_else->id : 0);
 
 	printf("====== %s out=%d",
 		    s->sem == SEM_INVALID ? "" : Semantic_string[s->sem],

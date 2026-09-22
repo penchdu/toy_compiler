@@ -1,49 +1,47 @@
 lexer: 
-int main ( ) { int a = 1 ; int b = 2 ; if ( a < b ) a = 1 ; else a = 2 ; return a ; } EOF 
-sweep dead scope: id=7 name=b7
-sweep dead scope: id=9 name=scp_jmp_lable
+int main ( ) { int a = 1 ; int b = 2 ; if ( a < b ) a = 3 ; else a = 4 ; return a ; } EOF 
+sweep dead scope: id=6 name=scp_jmp_lable
+sweep dead scope: id=8 name=scp_jmp_lable
 ========== ast ==========
 ======b0=0  parent=0====== SEM_FILE_SCOPE out=0
 
       ======main=1  parent=0====== SEM_FUNC_DEFINE out=0
       ast:
-      └── [del int]
+      └── [del INT]
           └── [var a]
       ast:
       └── [op = %-1]
           ├── [var a]
           └── [num 1]
       ast:
-      └── [del int]
+      └── [del INT]
           └── [var b]
       ast:
       └── [op = %-1]
           ├── [var b]
           └── [num 2]
 
-            ======if=2  parent=1  then=3  else=5====== SEM_IF out=8
+            ======if=2  parent=1====== SEM_COND_JMP out=5
             ast:
             └── [op < %-1]
                 ├── [var a]
                 └── [var b]
 
-            ======then=3  parent=1======  out=8  in=2 
+            ======then=3  parent=1======  out=0
             ast:
             └── [op = %-1]
                 ├── [var a]
-                └── [num 1]
+                └── [num 3]
 
-                  ======scp_jmp_lable=4  parent=3====== SEM_JMP_TARGET out=8 virtual
+                  ======scp_jmp_lable=4  parent=3====== SEM_JMP out=7 virtual
 
-            ======else=5  parent=1====== SEM_ELSE out=8  in=2 
+            ======else=5  parent=1====== SEM_ELSE out=0  in=2 
             ast:
             └── [op = %-1]
                 ├── [var a]
-                └── [num 2]
+                └── [num 4]
 
-                  ======scp_jmp_lable=6  parent=5====== SEM_JMP_TARGET out=8 virtual
-
-            ======if_jmp_tail=8  parent=1====== SEM_JMP_TARGET out=0  in=2 3 4 5 6  virtual
+            ======b7=7  parent=1======  out=0  in=4  virtual
             ast:
             └── [ret return]
                 └── [var a]
@@ -69,9 +67,7 @@ sem_analysis_named_var 200,
 sem_analysis_named_var 201, else
 sem_analysis_named_var 205, ast 0
 sem_analysis_named_var 200, 
-sem_analysis_named_var 201, scp_jmp_lable
-sem_analysis_named_var 200, 
-sem_analysis_named_var 201, if_jmp_tail
+sem_analysis_named_var 201, b7
 sem_analysis_named_var 205, ast 0
 ========== ast ==========
 ======b0=0  parent=0====== SEM_FILE_SCOPE out=0
@@ -80,64 +76,61 @@ sem_analysis_named_var 205, ast 0
       symbol: a
       symbol: b
       ast:
-      └── [del int]
+      └── [del INT]
           └── [var a %-1]
       ast:
       └── [op = %-1]
           ├── [var a %-1]
           └── [num 1]
       ast:
-      └── [del int]
+      └── [del INT]
           └── [var b %-1]
       ast:
       └── [op = %-1]
           ├── [var b %-1]
           └── [num 2]
 
-            ======if=2  parent=1  then=3  else=5====== SEM_IF out=8
+            ======if=2  parent=1====== SEM_COND_JMP out=5
             ast:
             └── [op < %-1]
                 ├── [var a %-1]
                 └── [var b %-1]
 
-            ======then=3  parent=1======  out=8  in=2 
+            ======then=3  parent=1======  out=0
             ast:
             └── [op = %-1]
                 ├── [var a %-1]
-                └── [num 1]
+                └── [num 3]
 
-                  ======scp_jmp_lable=4  parent=3====== SEM_JMP_TARGET out=8 virtual
+                  ======scp_jmp_lable=4  parent=3====== SEM_JMP out=7 virtual
 
-            ======else=5  parent=1====== SEM_ELSE out=8  in=2 
+            ======else=5  parent=1====== SEM_ELSE out=0  in=2 
             ast:
             └── [op = %-1]
                 ├── [var a %-1]
-                └── [num 2]
+                └── [num 4]
 
-                  ======scp_jmp_lable=6  parent=5====== SEM_JMP_TARGET out=8 virtual
-
-            ======if_jmp_tail=8  parent=1====== SEM_JMP_TARGET out=0  in=2 3 4 5 6  virtual
+            ======b7=7  parent=1======  out=0  in=4  virtual
             ast:
             └── [ret return]
                 └── [var a %-1]
 
 =========================
-sem_analysis_gen_vr 326, scp b0
-sem_analysis_gen_vr 326, scp main
-sem_analysis_gen_vr 330, sem_analysis_gen_vr, scp main, ast 0
-sem_analysis_gen_vr 330, sem_analysis_gen_vr, scp main, ast 1
-sem_analysis_gen_vr 330, sem_analysis_gen_vr, scp main, ast 2
-sem_analysis_gen_vr 330, sem_analysis_gen_vr, scp main, ast 3
-sem_analysis_gen_vr 326, scp if
-sem_analysis_gen_vr 330, sem_analysis_gen_vr, scp if, ast 0
-sem_analysis_gen_vr 326, scp then
-sem_analysis_gen_vr 330, sem_analysis_gen_vr, scp then, ast 0
-sem_analysis_gen_vr 326, scp scp_jmp_lable
-sem_analysis_gen_vr 326, scp else
-sem_analysis_gen_vr 330, sem_analysis_gen_vr, scp else, ast 0
-sem_analysis_gen_vr 326, scp scp_jmp_lable
-sem_analysis_gen_vr 326, scp if_jmp_tail
-sem_analysis_gen_vr 330, sem_analysis_gen_vr, scp if_jmp_tail, ast 0
+sem_analysis_gen_vr 325, scp b0
+sem_analysis_gen_vr 325, scp main
+sem_analysis_gen_vr 329, sem_analysis_gen_vr, scp main, ast 0
+sem_analysis_gen_vr 329, sem_analysis_gen_vr, scp main, ast 1
+sem_analysis_gen_vr 329, sem_analysis_gen_vr, scp main, ast 2
+sem_analysis_gen_vr 329, sem_analysis_gen_vr, scp main, ast 3
+sem_analysis_gen_vr 325, scp if
+sem_analysis_gen_vr 329, sem_analysis_gen_vr, scp if, ast 0
+sem_analysis_gen_vr 325, scp then
+sem_analysis_gen_vr 329, sem_analysis_gen_vr, scp then, ast 0
+sem_analysis_gen_vr 325, scp scp_jmp_lable
+sem_analysis_gen_vr 325, scp else
+sem_analysis_gen_vr 329, sem_analysis_gen_vr, scp else, ast 0
+sem_analysis_gen_vr 325, scp b7
+sem_analysis_gen_vr 329, sem_analysis_gen_vr, scp b7, ast 0
 ========== ast ==========
 ======b0=0  parent=0====== SEM_FILE_SCOPE out=0
 
@@ -145,64 +138,53 @@ sem_analysis_gen_vr 330, sem_analysis_gen_vr, scp if_jmp_tail, ast 0
       symbol: a
       symbol: b
       ast:
-      └── [del int]
-          └── [var a %0]
+      └── [del INT]
+          └── [var a %1]
       ast:
-      └── [op = %0]
-          ├── [var a %0]
+      └── [op = %1]
+          ├── [var a %1]
           └── [num 1]
       ast:
-      └── [del int]
-          └── [var b %2]
+      └── [del INT]
+          └── [var b %3]
       ast:
-      └── [op = %2]
-          ├── [var b %2]
+      └── [op = %3]
+          ├── [var b %3]
           └── [num 2]
 
-            ======if=2  parent=1  then=3  else=5====== SEM_IF out=8
+            ======if=2  parent=1====== SEM_COND_JMP out=5
             ast:
             └── [op < %4]
-                ├── [var a %0]
-                └── [var b %2]
+                ├── [var a %1]
+                └── [var b %3]
 
-            ======then=3  parent=1======  out=8  in=2 
+            ======then=3  parent=1======  out=0
             ast:
-            └── [op = %0]
-                ├── [var a %0]
-                └── [num 1]
+            └── [op = %1]
+                ├── [var a %1]
+                └── [num 3]
 
-                  ======scp_jmp_lable=4  parent=3====== SEM_JMP_TARGET out=8 virtual
+                  ======scp_jmp_lable=4  parent=3====== SEM_JMP out=7 virtual
 
-            ======else=5  parent=1====== SEM_ELSE out=8  in=2 
+            ======else=5  parent=1====== SEM_ELSE out=0  in=2 
             ast:
-            └── [op = %0]
-                ├── [var a %0]
-                └── [num 2]
+            └── [op = %1]
+                ├── [var a %1]
+                └── [num 4]
 
-                  ======scp_jmp_lable=6  parent=5====== SEM_JMP_TARGET out=8 virtual
-
-            ======if_jmp_tail=8  parent=1====== SEM_JMP_TARGET out=0  in=2 3 4 5 6  virtual
+            ======b7=7  parent=1======  out=0  in=4  virtual
             ast:
             └── [ret return]
-                └── [var a %0]
+                └── [var a %1]
 
 =========================
-gen_tac 82, scp b0
-gen_tac 82, scp main
-gen_tac 86, gen_tac, scp main, ast 0
-gen_tac 86, gen_tac, scp main, ast 1
-gen_tac 86, gen_tac, scp main, ast 2
-gen_tac 86, gen_tac, scp main, ast 3
-gen_tac 82, scp if
-gen_tac 86, gen_tac, scp if, ast 0
-gen_tac 82, scp then
-gen_tac 86, gen_tac, scp then, ast 0
-gen_tac 82, scp scp_jmp_lable
-gen_tac 82, scp else
-gen_tac 86, gen_tac, scp else, ast 0
-gen_tac 82, scp scp_jmp_lable
-gen_tac 82, scp if_jmp_tail
-gen_tac 86, gen_tac, scp if_jmp_tail, ast 0
+gen_tac 102, scp b0
+gen_tac 102, scp main
+gen_tac 102, scp if
+gen_tac 102, scp then
+gen_tac 102, scp scp_jmp_lable
+gen_tac 102, scp else
+gen_tac 102, scp b7
 ========== ast ==========
 ======b0=0  parent=0====== SEM_FILE_SCOPE out=0
 
@@ -210,70 +192,87 @@ gen_tac 86, gen_tac, scp if_jmp_tail, ast 0
       symbol: a
       symbol: b
       ast:
-      └── [del int]
-          └── [var a %0]
+      └── [del INT]
+          └── [var a %1]
       ast:
-      └── [op = %0]
-          ├── [var a %0]
+      └── [op = %1]
+          ├── [var a %1]
           └── [num 1]
       ast:
-      └── [del int]
-          └── [var b %2]
+      └── [del INT]
+          └── [var b %3]
       ast:
-      └── [op = %2]
-          ├── [var b %2]
+      └── [op = %3]
+          ├── [var b %3]
           └── [num 2]
 
-            ======if=2  parent=1  then=3  else=5====== SEM_IF out=8
+            ======if=2  parent=1====== SEM_COND_JMP out=5
             ast:
             └── [op < %4]
-                ├── [var a %0]
-                └── [var b %2]
+                ├── [var a %1]
+                └── [var b %3]
 
-            ======then=3  parent=1======  out=8  in=2 
+            ======then=3  parent=1======  out=0
             ast:
-            └── [op = %0]
-                ├── [var a %0]
-                └── [num 1]
+            └── [op = %1]
+                ├── [var a %1]
+                └── [num 3]
 
-                  ======scp_jmp_lable=4  parent=3====== SEM_JMP_TARGET out=8 virtual
+                  ======scp_jmp_lable=4  parent=3====== SEM_JMP out=7 virtual
 
-            ======else=5  parent=1====== SEM_ELSE out=8  in=2 
+            ======else=5  parent=1====== SEM_ELSE out=0  in=2 
             ast:
-            └── [op = %0]
-                ├── [var a %0]
-                └── [num 2]
+            └── [op = %1]
+                ├── [var a %1]
+                └── [num 4]
 
-                  ======scp_jmp_lable=6  parent=5====== SEM_JMP_TARGET out=8 virtual
-
-            ======if_jmp_tail=8  parent=1====== SEM_JMP_TARGET out=0  in=2 3 4 5 6  virtual
+            ======b7=7  parent=1======  out=0  in=4  virtual
             ast:
             └── [ret return]
-                └── [var a %0]
+                └── [var a %1]
 
 =========================
 
 ========== tac ==========
-const:	 %1 num 1
-assign:	 %0 = %1
-const:	 %3 num 2
-assign:	 %2 = %3
-op:	 %4 = %0 < %2
-const:	 %5 num 1
-assign:	 %0 = %5
-const:	 %6 num 2
-assign:	 %0 = %6
-return:	 return %0
+
+label 0:
+const:	 %0 num 1
+assign:	 %1 = %0
+const:	 %2 num 2
+assign:	 %3 = %2
+op:	 %4 = %1 < %3
+SEM_COND_JMP jmp 2->5:
+
+const:	 %5 num 3
+assign:	 %1 = %5
+SEM_JMP jmp 4->7:
+
+
+label 5:
+const:	 %6 num 4
+assign:	 %1 = %6
+
+label 7:
+return:	 return %1
 
 ========== mc ==========
 push rbp
 mov rbp, rsp
 sub rsp, 28
 
-mov %1, num 1 
-mov %0, %1 
-mov %3, num 2 
-mov %2, %3 
-mov %4, %0 
-dump_mc 180, error: 8 
+mov %0, num 1 
+mov %1, %0 
+mov %2, num 2 
+mov %3, %2 
+cmp %1, %3 
+setlt %4 
+mov %5, num 3 
+mov %1, %5 
+mov %6, num 4 
+mov %1, %6 
+mov eax, %1
+
+mov rsp, rbp 
+pop rbp 
+ret 
 

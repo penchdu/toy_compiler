@@ -7,8 +7,8 @@
 
 #include "parser.h"
 
+#include "basic_block.h"
 #include "frontend.h"
-#include "scope.h"
 
 Scope file_scp;
 Scope *current_scope_pointer;
@@ -489,16 +489,17 @@ Scope* case_tk_right_brace(bool eat)
 	Scope *tail;
 	tail = current_scope_pointer;
 
-	if (tail->is_virtual == false || tail->asts.size())
+	if (tail->is_virtual == false || tail->asts.size() > 0)
 	{
 		tail = new_virtual_scp_and_drop_in();
-		tail->sem = SEM_JMP_UNIT;
+		tail->sem = SEM_JMP;
 		tail->name = "scp_jmp_lable";
 	}
 	else
 	{
+
 		assert(tail->clds.size() == 0);
-		tail->sem = SEM_JMP_UNIT;
+		tail->sem = SEM_JMP;
 		tail->name = "scp_jmp_lable_reuse";
 	}
 

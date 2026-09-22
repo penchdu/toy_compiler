@@ -5,13 +5,10 @@
  *      Author: x
  */
 
+#include "basic_block.h"
 #include "frontend.h"
 #include "x64_back_end.h"
-#include "scope.h"
 
-
-//
-//
 //void create_dependcy(int a, int b)
 //{
 //	// a depend on b, data flow: b -> a

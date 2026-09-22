@@ -6,10 +6,10 @@
  */
 
 #include "frontend.h"
-#include "scope.h"
+#include "basic_block.h"
 
 extern Scope file_scp;
-vector<ThreeAddrCode*> three_addr_code;
+vector<BasicBlock> basic_blocks;
 
 //static int sem_if_scope(Ast *p)
 //{
@@ -28,14 +28,16 @@ vector<ThreeAddrCode*> three_addr_code;
 static int trace_ast_down_up_gen_3_address_code(Ast *p)
 {
 	if (!p || p->sem == SEM_VAR_DECLARE)
-			return -1;
+		return -1;
+
+	vector<Tac> &tacs = basic_blocks.back().tacs;
 
 	int b = trace_ast_down_up_gen_3_address_code(p->right);
 	int a = trace_ast_down_up_gen_3_address_code(p->left);
 	SymbolVar *symb = 0;
-	ThreeAddrCode *inst = 0;
+	Tac t;
 
-	switch(p->sem)
+	switch (p->sem)
 	{
 	// leaf node
 	case SEM_VAR:
@@ -46,33 +48,36 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 		return symb->vr;
 
 	case SEM_CONST_NUM:
-		inst = new ThreeAddrCode(p);
-		inst->dst = p->vr_id;
-		inst->const_num_value = p->const_value;
-		three_addr_code.push_back(inst);
+		t = Tac(p);
+		t.dst = p->vr_id;
+		t.const_num_value = p->const_value;
+		tacs.push_back(t);
 		return p->vr_id;
 
-		case SEM_OPERATOR:
-				if (p->op == OP_ASSIGN)
-				{
-					// x = y : return x
-					inst = new ThreeAddrCode(p);
-					inst->dst = a;
-					inst->s1 = b;
-					three_addr_code.push_back(inst);
-					return a;
-				}
-				inst = new ThreeAddrCode(p);
-				inst->dst = p->vr_id;
-				inst->s1 = a;
-				inst->s2 = b;
-				three_addr_code.push_back(inst);
-				return p->vr_id;
+	case SEM_OPERATOR:
+		if (p->op == OP_ASSIGN)
+		{
+			// x = y : return x
+			t = Tac(p);
+			t.dst = a;
+			t.s1 = b;
+			tacs.push_back(t);
+			return a;
+		}
+		if (p->op == OP_LOGIC_AND || p->op == OP_LOGIC_OR)
+			ERR("op: %d", p->op);
+
+		t = Tac(p);
+		t.dst = p->vr_id;
+		t.s1 = a;
+		t.s2 = b;
+		tacs.push_back(t);
+		return p->vr_id;
 
 	case SEM_RETURN:
-		inst = new ThreeAddrCode(p);
-		inst->s1 = a;
-		three_addr_code.push_back(inst);
+		t = Tac(p);
+		t.s1 = a;
+		tacs.push_back(t);
 		return -1;
 
 	case SEM_VAR_DECLARE:
@@ -80,8 +85,8 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 
 		// todo
 	case SEM_FUNC_DECLARE:
-	case SEM_FUNC_DEFINE:
-	case SEM_FUNC_CALL:
+		case SEM_FUNC_DEFINE:
+		case SEM_FUNC_CALL:
 		printf("todo sem_func* semty %d \n", p->sem);
 		return -1;
 
@@ -96,79 +101,91 @@ static void gen_tac(Scope *scp)
 {
 	LOG("scp %s", scp->name.c_str());
 
-	// SEM_IF scope have only one ast
-//	if (scp->sem == SEM_IF)
-//	{
-//		Ast *cond = scp->asts[0];
-//		cond->vr_id;
-//	}
-//	// then and SEM_ELSE scope have jmp_in
-//	if (scp->sem == SEM_ELSE)
-//	{
-//	}
-//	if (scp->sem == SEM_JMP_UNIT)	// have no ast
-//	{
-//	}
+	if(scp->jmp_in.size() > 0)
+	{
+		BasicBlock t;
+		t.entry_label = scp;
+		basic_blocks.push_back(t);
+	}
 
-	for(auto it = scp->asts.begin(); it != scp->asts.end();) {
-		LOG("%s, scp %s, ast %ld", __FUNCTION__, scp->name.c_str(), it - scp->asts.begin());
-		Ast *p = *it;
-
+	for (auto *p : scp->asts)
 		trace_ast_down_up_gen_3_address_code(p);
-		it++;
+
+	if (scp->jmp_out != 0)	// || scp->sem == SEM_COND_JMP || scp->sem == SEM_JMP)
+	{
+		// SEM_IF scope have only one ast, SEM_JMP have no ast
+//		Ast *cond = scp->asts[0];
+		basic_blocks.back().exit_jmp = scp;
+
+		BasicBlock t;
+		basic_blocks.push_back(t);
 	}
 
-	for(Scope *p : scp->clds) {
+	for (Scope *p : scp->clds)
 		gen_tac(p);
-	}
-	return;
 }
-static void dump()
+
+static void dump_tac()
 {
-	printf("\n========== inst ==========\n");
-	for(auto &r : three_addr_code) {
-//		Ast *p = global_unique_vrid_tbl[r->dst];
-		Ast *p = r->ast;
+	printf("\n========== tac ==========\n");
+	for (BasicBlock &scpcrs_tac : basic_blocks)
+	{
+		if(scpcrs_tac.entry_label != 0)
+			printf("\nlabel %d:\n", scpcrs_tac.entry_label->id);
 
-		switch(p->sem)
+		for (Tac &r : scpcrs_tac.tacs)
 		{
-		case SEM_CONST_NUM:
-			printf("const:\t %%%d num %d\n", r->dst, p->const_value);
-			break;
+			Ast *p = r.ast;
 
+			switch (p->sem)
+			{
+			case SEM_CONST_NUM:
+				printf("const:\t %%%d num %d\n", r.dst, p->const_value);
+				break;
 
-		case SEM_OPERATOR:
-			if (p->op == OP_ASSIGN)
-				printf("assign:\t %%%d %s %%%d\n", r->dst, p->tk.src.c_str(), r->s1);
-			else
-				printf("op:\t %%%d = %%%d %s %%%d\n", r->dst, r->s1, p->tk.src.c_str(), r->s2);
-			break;
+			case SEM_OPERATOR:
+				if (p->op == OP_ASSIGN)
+					printf("assign:\t %%%d %s %%%d\n", r.dst, p->tk.src.c_str(), r.s1);
+				else
+					printf("op:\t %%%d = %%%d %s %%%d\n", r.dst, r.s1, p->tk.src.c_str(), r.s2);
+				break;
 
-		case SEM_VAR_DECLARE:
-			printf("del:\t %s[%s] %%%d\n", p->tk.src.c_str(), p->symb_var->unique_name.c_str(),p->symb_var->vr);
-			break;
+			case SEM_VAR_DECLARE:
+				printf("del:\t %s[%s] %%%d\n", p->tk.src.c_str(), p->symb_var->unique_name.c_str(), p->symb_var->vr);
+				break;
 
-		case SEM_VAR:
-			printf("var:\t %%%d %s\n", r->dst, p->tk.src.c_str());
-			break;
+			case SEM_VAR:
+				printf("var:\t %%%d %s\n", r.dst, p->tk.src.c_str());
+				break;
 
-		case SEM_FUNC_CALL:
-			printf("func call:\t %s\n", p->tk.src.c_str());
-			break;
+			case SEM_FUNC_CALL:
+				printf("func call:\t %s\n", p->tk.src.c_str());
+				break;
 
-		case SEM_RETURN:
-			printf("return:\t %s %%%d\n", p->tk.src.c_str(), r->s1);
-			break;
+			case SEM_RETURN:
+				printf("return:\t %s %%%d\n", p->tk.src.c_str(), r.s1);
+				break;
 
-		default:
-			ERR();
-			break;
+			default:
+				ERR();
+				break;
+			}
+		}
+
+		if(scpcrs_tac.exit_jmp != 0)
+		{
+			printf("%s jmp %d->%d:\n\n", Semantic_string[scpcrs_tac.exit_jmp->sem],
+				scpcrs_tac.exit_jmp->id, scpcrs_tac.exit_jmp->jmp_out->id);
 		}
 	}
 }
 void gen_three_address_code()
 {
+	BasicBlock sct;
+	sct.entry_label = &file_scp;
+	basic_blocks.push_back(sct);
+
 	gen_tac(&file_scp);
 	dump_ast();
-	dump();
+	dump_tac();
 }

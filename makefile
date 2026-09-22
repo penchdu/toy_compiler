@@ -4,7 +4,11 @@
 CCACHE := $(shell command -v ccache 2> /dev/null)
 CXX := $(CCACHE) clang++
 
-CXXFLAGS = -std=c++20 -O0 -g -MMD -MP -Wno-c99-designator
+
+CXXFLAGS = -std=c++20 -O0 -g -MMD -MP \
+	-Wall -Wextra -Wconstant-logical-operand -Wtautological-compare -Wint-in-bool-context \
+	-Wno-c99-designator -Wno-sign-compare -Wno-unused-parameter
+	
 BUILD_DIR = build
 TARGET = $(BUILD_DIR)/a
 

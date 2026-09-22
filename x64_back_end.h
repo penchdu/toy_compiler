@@ -8,7 +8,9 @@
 #ifndef X64_BACK_END_H_
 #define X64_BACK_END_H_
 
+#include "enums.h"
 #include "frontend.h"
+
 
 
 /*
@@ -70,10 +72,13 @@ sem_return
 		printf("\n");
 #endif
 
-//#define MC_LIST(X)	\
-//	X(OP_ASSIGN,  "assign") \
+struct McDepend
+{
+	vector<int> mcs;
+	int edges = 0;
+};
 
-enum MachineCodeType{
+enum MachineCodeStamp{
 	MC_LI,	// reg-num
 
 	MC_LD,	// reg <- ptr
@@ -85,15 +90,19 @@ enum MachineCodeType{
 	MC_IMUL,
 	MC_DIV,
 
-	MC_CMP_LT,
-	MC_CMP_LE,
-	MC_CMP_E,
-	MC_CMP_GE,
-	MC_CMP_GT,
-	MC_CMP_NE,
+	MC_CMP,	// setl cl
+	MC_SET_EQ,
+	MC_SET_NE,
+
+	MC_SET_LT,
+	MC_SET_LE,
+	MC_SET_GT,
+	MC_SET_GE,
 
 	MC_LOGIC_AND,
+	MC_LOGIC_OR,
 
+	MC_JMP,
 	MC_RET,	// reg-reg
 	MC_INVALID,
 };
@@ -102,34 +111,39 @@ struct McInfo{
 	string mc_code;	// just for print
 };
 extern const McInfo mc_info[];
+extern VirtualRegisterManager vrm;
 
 struct X64mc{
-	X64mc(MachineCodeType ty, int three_addr_code_dst, int three_addr_code_s2)
+	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s2)
 	{
-		mcty = ty;
-		s1 = three_addr_code_dst;
-		s2 = three_addr_code_s2;
+		mc_stamp = _mc_stamp;
+		s1 = tac_dst;
+		s2 = tac_s2;
 
 		of1 = vrm.get_vr_off(s1);
 		of2 = vrm.get_vr_off(s2);
 
-		asm_code = mc_info[ty].mc_code;
-		latency = mc_info[ty].mc_latency;
+		asm_code = mc_info[_mc_stamp].mc_code;
+		latency = mc_info[_mc_stamp].mc_latency;
 	}
-	X64mc(MachineCodeType ty, int three_addr_code_s1)
+	X64mc(MachineCodeStamp _mc_stamp, int tac_s1)
 	{
-		mcty = ty;
-		s1 = three_addr_code_s1;
-		of1 = vrm.get_vr_off(three_addr_code_s1);
+		mc_stamp = _mc_stamp;
+		s1 = tac_s1;
+		of1 = vrm.get_vr_off(tac_s1);
 
-		asm_code = mc_info[ty].mc_code;
-		latency = mc_info[ty].mc_latency;
+		asm_code = mc_info[_mc_stamp].mc_code;
+		latency = mc_info[_mc_stamp].mc_latency;
+	}
+	X64mc(MachineCodeStamp _mc_stamp)
+	{
+		mc_stamp = _mc_stamp;
 	}
 	X64mc(){
-		mcty = MC_INVALID;
+		mc_stamp = MC_INVALID;
 	}
 
-	MachineCodeType mcty = MC_INVALID;
+	MachineCodeStamp mc_stamp = MC_INVALID;
 
 	int s1 = -1;
 	int s2 = -1;
@@ -151,13 +165,6 @@ struct X64mc{
 	int start_cycle = -1;
 };
 
-struct McDepend
-{
-	vector<int> mcs;
-	int edges = 0;
-};
-
-extern vector<X64mc> x64mc;
 extern vector<X64mc> x64mc_schedued;
 extern vector<X64mc> x64mc_alloced;
 extern vector<McDepend> mcs_pred;

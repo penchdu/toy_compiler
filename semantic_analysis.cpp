@@ -5,8 +5,8 @@
  *      Author: x
  */
 
+#include "basic_block.h"
 #include "frontend.h"
-#include "scope.h"
 
 extern Scope file_scp;
 map<string, SymbolVar*> global_unique_src_name_tbl;
@@ -97,7 +97,6 @@ static int case_sem_return(Ast *p)
 }
 static int case_sem_var(Ast *p)
 {
-	SymbolVar *symb;
 	Scope *scp = p->this_scp;
 
 	while (scp && scp->var_table)
@@ -252,7 +251,7 @@ static int case_op(Ast *p)
 			// todo, type bool
 	case OP_CMP_LT:
 		case OP_CMP_LE:
-		case OP_CMP_E:
+		case OP_CMP_EQ:
 		case OP_CMP_GE:
 		case OP_CMP_GT:
 		case OP_CMP_NE:
@@ -278,7 +277,6 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	int b = trace_ast_down_up_gen_vr(p->right);
 	int a = trace_ast_down_up_gen_vr(p->left);
 	SymbolVar *symb = 0;
-	ThreeAddrCode *inst = 0;
 
 	switch (p->sem)
 	{

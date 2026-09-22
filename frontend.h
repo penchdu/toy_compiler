@@ -117,8 +117,7 @@ struct SymbolFunc
 	int argc = 0;
 	Scope *func_scope;
 };
-struct Ast
-{
+struct Ast {
 public:
 	Semantic sem;
 
@@ -170,7 +169,6 @@ public:
 			op_prio = OP_DIV_PRIORITY;
 			break;
 
-
 		case TK_CMP_LT:
 			op = OP_CMP_LT;
 			op_prio = OP_CMP_LT_PRIORITY;
@@ -180,7 +178,7 @@ public:
 			op_prio = OP_CMP_LE_PRIORITY;
 			break;
 		case TK_CMP_E:
-			op = OP_CMP_E;
+			op = OP_CMP_EQ;
 			op_prio = OP_CMP_E_PRIORITY;
 			break;
 		case TK_CMP_GE:
@@ -201,9 +199,8 @@ public:
 			op_prio = OP_LOGIC_AND_PRIORITY;
 			break;
 
-
 		case TK_IF:
-			sem = SEM_IF_COND;
+			sem = SEM_COND_JMP;
 			break;
 		case TK_ELSE:
 			sem = SEM_ELSE;
@@ -238,14 +235,56 @@ public:
 			break;
 		}
 
-		if(op != OP_ALL)
+		if (op != OP_ALL)
 			sem = SEM_OPERATOR;
 	}
 };
 
-struct ThreeAddrCode
+struct Scope
 {
-	ThreeAddrCode(Ast *p)
+public:
+	int id;
+	string name;
+	Semantic sem = SEM_INVALID;
+
+	vector<Ast*> asts;
+	map<string, SymbolVar*> _var_table;
+	map<string, SymbolVar*> *var_table = &_var_table;
+	map<string, SymbolFunc*> _func_table;
+	map<string, SymbolFunc*> *func_table = &_func_table;
+	//	Sem_type region_header = sem_none;
+
+	// ifc
+//	Scope *jmp_then = 0;
+//	Scope *jmp_else = 0;
+
+	// ift, iff
+	vector<Scope*> jmp_in;
+	Scope *jmp_out = 0;
+
+	Scope *parent;
+	vector<Scope*> clds;
+	bool is_virtual;
+	enum Type return_type = INVALID_TYPE;
+
+	Scope* new_cld()
+	{
+		Scope *p = new Scope;
+		Scope *real_parent;
+
+		if (!this->is_virtual)
+			real_parent = this;
+		else
+			real_parent = this->parent;
+
+		real_parent->clds.push_back(p);
+		p->parent = real_parent;
+		return p;
+	}
+};
+
+struct Tac {
+	Tac(Ast *p = 0)
 	{
 		ast = p;
 	}
@@ -257,6 +296,7 @@ struct ThreeAddrCode
 
 	int const_num_value = 0;
 };
+
 //struct BasicBlock
 //{
 //public:
@@ -271,7 +311,6 @@ struct ThreeAddrCode
 //
 //	Scope *parent;
 //};
-
 
 //struct SemanticNode
 //{
