@@ -69,6 +69,61 @@ static void gen_op_mc(vector<X64mc> &x64mc, MachineCodeType mc, const string &or
 	inst.ori_sem = ori_sem;
 	x64mc.push_back(inst);
 }
+static void gen_scope_mc(Scope *scp)
+{
+	LOG("scp %s", scp->name.c_str());
+
+	X64mc inst;
+
+	for (auto &tac : scp->tacs)
+	{
+		Semantic sem = tac->ast->sem;
+		if (sem == SEM_OPERATOR)
+		{
+			if (tac->ast->op == OP_ASSIGN)
+			{
+				inst = X64mc(MC_ASSIGN, tac->dst, tac->s1);
+				inst.ori_sem = "assign";
+				x64mc.push_back(inst);
+				continue;
+			}
+
+			// CMP 通常不需要写回目标寄存器，逻辑上可能不对, LOGIC_AND ?
+			MachineCodeType mc = op2mc[tac->ast->op].mc;
+			gen_op_mc(x64mc, mc, mc_info[mc].mc_code, tac->dst, tac->s1, tac->s2);
+			continue;
+		}
+
+		switch (sem)
+		{
+		case SEM_CONST_NUM:
+			inst = X64mc(MC_LI, tac->dst);
+			inst.const_num = tac->const_num_value;
+			inst.ori_sem = "li";
+			x64mc.push_back(inst);
+			break;
+
+		case SEM_RETURN:
+			inst = X64mc(MC_RET, tac->s1);
+			inst.ori_sem = "ret";
+			x64mc.push_back(inst);
+			break;
+
+			// todo
+		case SEM_FUNC_CALL:
+			ERR("todo sem_func* semty %d \n", sem);
+			break;
+
+		case SEM_OPERATOR:
+			default:
+			ERR("%d \n", sem);
+			break;
+		}
+	}
+
+	for (Scope *p : scp->clds)
+		gen_scope_mc(p);
+}
 void dump_mc(vector<X64mc> &v)
 {
 	for (auto &mc : v)
@@ -125,7 +180,7 @@ void dump_scope(Scope *scp)
 //	LOG("scp %s", scp->name.c_str());
 	printf("scp %s:\n", scp->name.c_str());
 
-	dump_mc(scp->x64mc);
+	dump_mc(x64mc);
 
 	for (Scope *p : scp->clds)
 		dump_scope(p);
@@ -148,62 +203,7 @@ static void dump_ori_mc()
 	printf("pop rbp \n");
 	printf("ret \n\n");
 }
-static void gen_scope_mc(Scope *scp)
-{
-	LOG("scp %s", scp->name.c_str());
 
-	vector<X64mc> &x64mc = scp->x64mc;
-	X64mc inst;
-
-	for (auto &tac : scp->tacs)
-	{
-		Semantic sem = tac->ast->sem;
-		if (sem == SEM_OPERATOR)
-		{
-			if (tac->ast->op == OP_ASSIGN)
-			{
-				inst = X64mc(MC_ASSIGN, tac->dst, tac->s1);
-				inst.ori_sem = "assign";
-				x64mc.push_back(inst);
-				continue;
-			}
-
-			// CMP 通常不需要写回目标寄存器，逻辑上可能不对, LOGIC_AND ?
-			MachineCodeType mc = op2mc[tac->ast->op].mc;
-			gen_op_mc(x64mc, mc, mc_info[mc].mc_code, tac->dst, tac->s1, tac->s2);
-			continue;
-		}
-
-		switch (sem)
-		{
-		case SEM_CONST_NUM:
-			inst = X64mc(MC_LI, tac->dst);
-			inst.const_num = tac->const_num_value;
-			inst.ori_sem = "li";
-			x64mc.push_back(inst);
-			break;
-
-		case SEM_RETURN:
-			inst = X64mc(MC_RET, tac->s1);
-			inst.ori_sem = "ret";
-			x64mc.push_back(inst);
-			break;
-
-			// todo
-		case SEM_FUNC_CALL:
-			ERR("todo sem_func* semty %d \n", sem);
-			break;
-
-		case SEM_OPERATOR:
-			default:
-			ERR("%d \n", sem);
-			break;
-		}
-	}
-
-	for (Scope *p : scp->clds)
-		gen_scope_mc(p);
-}
 void gen_machine_code()
 {
 	gen_scope_mc(&file_scp);

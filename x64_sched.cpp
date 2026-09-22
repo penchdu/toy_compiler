@@ -9,6 +9,9 @@
 #include "x64_back_end.h"
 #include "scope.h"
 
+vector<X64mc> x64mc;
+vector<X64mc> x64mc_schedued;
+vector<X64mc> x64mc_alloced;
 vector<McDepend> mcs_pred;
 vector<McDepend> mcs_succ;
 
@@ -334,8 +337,6 @@ static void mc_schdu(Scope *scp)
 
 	//	LOG("scp %s", scp->name.c_str());
 	printf("scp %s:\n", scp->name.c_str());
-	vector<X64mc> &x64mc = scp->x64mc;
-	vector<X64mc> &x64mc_schedued = scp->x64mc_schedued;
 
 	int cycle = 0;
 	init_ready_queue();
@@ -397,7 +398,7 @@ static void dump_scope(Scope *scp)
 //	LOG("scp %s", scp->name.c_str());
 	printf("scp %s:\n", scp->name.c_str());
 
-	dump_mc(scp->x64mc_schedued);
+	dump_mc(x64mc_schedued);
 
 	for (Scope *p : scp->clds)
 		dump_scope(p);
@@ -428,4 +429,3 @@ void mc_schedule()
 	mc_schdu(&file_scp);
 	dump_schedued_mc();
 }
-

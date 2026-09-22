@@ -132,10 +132,9 @@ void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
 
 void x64_pr_alloc_o0(Scope *scp)
 {
-	vector<X64mc> &x64mc_alloced = scp->x64mc_alloced;
 	vr2pr.resize(vrm.id + 1);
 
-	for (auto &r : scp->x64mc_schedued)
+	for (auto &r : x64mc_schedued)
 	{
 		X64mc mc = r;
 		MachineCodeType ty = mc.mcty;
@@ -198,7 +197,7 @@ static void dump_scope(Scope *scp)
 //	LOG("scp %s", scp->name.c_str());
 	printf("scp %s:\n", scp->name.c_str());
 
-	dump_mc(scp->x64mc_alloced);
+	dump_mc(x64mc_alloced);
 
 	for (Scope *p : scp->clds)
 		dump_scope(p);
@@ -220,7 +219,7 @@ static void dump_alloced_mc()
 
 static void dump_asm_scope(Scope *scp, FILE *fp)
 {
-	for (auto &mc : scp->x64mc_alloced)
+	for (auto &mc : x64mc_alloced)
 	{
 		MachineCodeType ty = mc.mcty;
 
@@ -317,4 +316,3 @@ void x64_pr_alloc()
 //	system("gcc a.s -o a");
 //	system("./a");
 }
-

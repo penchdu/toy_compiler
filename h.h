@@ -311,7 +311,11 @@ struct VirtualRegisterManager
 
 extern VirtualRegisterManager vrm;
 
-
+extern vector<X64mc> x64mc;
+extern vector<X64mc> x64mc_schedued;
+extern vector<X64mc> x64mc_alloced;
+extern vector<McDepend> mcs_pred;
+extern vector<McDepend> mcs_succ;
 
 int lexer(FILE *fp);
 void dump_ast();

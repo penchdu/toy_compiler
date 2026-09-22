@@ -28,11 +28,6 @@ public:
 	//	Sem_type region_header = sem_none;
 
 	vector<ThreeAddrCode*> tacs;
-	vector<X64mc> x64mc;
-	vector<X64mc> x64mc_schedued;
-	vector<X64mc> x64mc_alloced;
-	vector<McDepend> mcs_pred;
-	vector<McDepend> mcs_succ;
 
 	// ifc
 	Scope *jmp_then = 0;
