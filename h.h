@@ -31,7 +31,7 @@ using std::deque;
 struct Token
 {
 	string src;
-	TokenType type = TK_EOF;
+	TokenStamp stamp = TK_EOF;
 };
 class Tokens
 {
@@ -98,7 +98,7 @@ struct Scope;
 struct SymbolVar
 {
 //	Semantic_type semty;
-	VarType var_type = INT;
+	Type type = INT;
 	//	int value;
 
 	string *src;
@@ -112,7 +112,7 @@ struct SymbolVar
 };
 struct SymbolFunc
 {
-	VarType return_type = INT;
+	Type return_type = INT;
 	string name;
 	int argc = 0;
 	Scope *func_scope;
@@ -120,16 +120,17 @@ struct SymbolFunc
 struct Ast
 {
 public:
-	SemanticType semty;
+	Semantic sem;
 
 	// op
+	SemOperator op = OP_ALL;
 	OpPriority op_prio;
 	// for op, vr is temp vr
 	int vr_id = -1;
 
 	// var
 	// for op, var_type is type of temp vr
-	VarType var_type;		// var_type in ast or symtable?
+	Type type;		// var_type in ast or symtable?
 	SymbolVar *symb_var = 0;
 	int const_value;
 
@@ -145,179 +146,101 @@ public:
 	{
 		tk = _token;
 
-		switch (_token.type)
+		switch (_token.stamp)
 		{
 		case TK_ASSIGN:
-			semty = OP_ASSIGN;
+			op = OP_ASSIGN;
 			op_prio = OP_ASSIGN_PRIORITY;
 			break;
 
 		case TK_ADD:
-			semty = OP_ADD;
+			op = OP_ADD;
 			op_prio = OP_ADD_PRIORITY;
 			break;
 		case TK_SUB:
-			semty = OP_SUB;
+			op = OP_SUB;
 			op_prio = OP_SUB_PRIORITY;
 			break;
 		case TK_MUL:
-			semty = OP_MUL;
+			op = OP_MUL;
 			op_prio = OP_MUL_PRIORITY;
 			break;
 		case TK_DIV:
-			semty = OP_DIV;
+			op = OP_DIV;
 			op_prio = OP_DIV_PRIORITY;
 			break;
 
-		case TK_LOGIC_AND:
-			semty = OP_LOGIC_AND;
-			op_prio = OP_LOGIC_AND_PRIORITY;
-			break;
 
 		case TK_CMP_LT:
-			semty = OP_CMP_LT;
+			op = OP_CMP_LT;
 			op_prio = OP_CMP_LT_PRIORITY;
 			break;
 		case TK_CMP_LE:
-			semty = OP_CMP_LE;
+			op = OP_CMP_LE;
 			op_prio = OP_CMP_LE_PRIORITY;
 			break;
 		case TK_CMP_E:
-			semty = OP_CMP_E;
+			op = OP_CMP_E;
 			op_prio = OP_CMP_E_PRIORITY;
 			break;
 		case TK_CMP_GE:
-			semty = OP_CMP_GE;
+			op = OP_CMP_GE;
 			op_prio = OP_CMP_GE_PRIORITY;
 			break;
 		case TK_CMP_GT:
-			semty = OP_CMP_GT;
+			op = OP_CMP_GT;
 			op_prio = OP_CMP_GT_PRIORITY;
 			break;
 		case TK_CMP_NE:
-			semty = OP_CMP_NE;
+			op = OP_CMP_NE;
 			op_prio = OP_CMP_NE_PRIORITY;
 			break;
 
+		case TK_LOGIC_AND:
+			op = OP_LOGIC_AND;
+			op_prio = OP_LOGIC_AND_PRIORITY;
+			break;
+
+
 		case TK_IF:
-			semty = SEM_IF;
+			sem = SEM_IF;
 			break;
 		case TK_ELSE:
-			semty = SEM_ELSE;
+			sem = SEM_ELSE;
 			break;
 
 		case TK_INT:
-			semty = SEM_VAR_DECLARE;
+			sem = SEM_VAR_DECLARE;
+			type = get_declare_type(tk.stamp);
 			break;
 
 		case TK_VAR:
-			semty = SEM_VAR;
-			var_type = INT;
+			sem = SEM_VAR;
+			type = INT;
 			break;
 
 		case TK_CONST_NUM:
-			semty = SEM_CONST_NUM;
-			var_type = INT;
+			sem = SEM_CONST_NUM;
+			type = INT;
 			const_value = atoi(_token.src.c_str());
 			break;
 
 		case TK_RETURN:
-			semty = SEM_RETURN;
+			sem = SEM_RETURN;
 			break;
 
 		case TK_SEMICOLON:
-			semty = SEM_NONE;
+			sem = SEM_NONE;
 			break;
 
 		default:
-			ERR("unexpect token %s\n", _token.src.c_str());
+			ERR("unexpect token %s", _token.src.c_str());
 			break;
 		}
+
+		if(op != OP_ALL)
+			sem = SEM_OPERATOR;
 	}
-};
-
-struct BasicBlock
-{
-public:
-	int id;
-	string name;
-	SemanticType sem = SEM_INVALID;
-
-	vector<Ast*> asts;
-
-	map<string, SymbolVar*> *var_table = 0;
-	map<string, SymbolFunc*> *func_table = 0;
-
-	Scope *parent;
-};
-struct Scope
-{
-public:
-	int id;
-	string name;
-	SemanticType sem = SEM_INVALID;
-
-	vector<Ast*> asts;
-	map<string, SymbolVar*> _var_table;
-	map<string, SymbolVar*> *var_table = &_var_table;
-	map<string, SymbolFunc*> _func_table;
-	map<string, SymbolFunc*> *func_table = &_func_table;
-	//	Sem_type region_header = sem_none;
-
-	// ifc
-	Scope *jmp_then = 0;
-	Scope *jmp_else = 0;
-
-	// ift, iff
-	vector<Scope*> jmp_in;
-	Scope *jmp_out = 0;
-
-	Scope *parent;
-	vector<Scope*> clds;
-	bool is_virtual;
-	enum VarType return_type = INVALID_TYPE;
-
-//	static Scope* new_scope(bool is_virtual)
-//	{
-//		LOG("scope %s: new %s", cur_scp->name.c_str(), is_virtual ? "virtual scope" : "real scope");
-//	//	assert(cur_scp->is_virtual_scope);
-//
-//	//	if (cur_scp->is_virtual_scope)
-//	//		cur_scp = cur_scp->parent;
-//	//	assert(cur_scp->is_virtual_scope == false);
-//
-//		cur_scp = cur_scp->new_cld();
-//		cur_scp->is_virtual_scope = is_virtual;
-//		cur_scp->id = scope_id++;
-//		cur_scp->name = "b" + std::to_string(cur_scp->id);
-//
-//		return cur_scp;
-//	}
-	Scope* new_cld()
-	{
-		Scope *p = new Scope;
-		Scope *real_parent;
-
-		if (!this->is_virtual)
-			real_parent = this;
-		else
-			real_parent = this->parent;
-
-		real_parent->clds.push_back(p);
-		p->parent = real_parent;
-		return p;
-	}
-
-};
-
-struct SemanticNode
-{
-	SemanticNodeType nodety;
-	union
-	{
-		Ast *ast;
-		Scope *scp;
-	};
 };
 
 struct ThreeAddrCode
@@ -334,6 +257,31 @@ struct ThreeAddrCode
 
 	int const_num_value = 0;
 };
+//struct BasicBlock
+//{
+//public:
+//	int id;
+//	string name;
+//	Semantic sem = SEM_INVALID;
+//
+//	vector<Ast*> asts;
+//
+//	map<string, SymbolVar*> *var_table = 0;
+//	map<string, SymbolFunc*> *func_table = 0;
+//
+//	Scope *parent;
+//};
+
+
+//struct SemanticNode
+//{
+//	SemanticNodeType nodety;
+//	union
+//	{
+//		Ast *ast;
+//		Scope *scp;
+//	};
+//};
 
 // virtual register
 struct VirtualRegisterManager
@@ -362,6 +310,8 @@ struct VirtualRegisterManager
 };
 
 extern VirtualRegisterManager vrm;
+
+
 
 int lexer(FILE *fp);
 void dump_ast();

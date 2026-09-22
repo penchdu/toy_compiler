@@ -66,9 +66,11 @@ sem_return
 //			printf(", off %d\n", mc.of1);
 #else
 	#define PRINT_MORE	\
-//		printf("\n\t");
+		printf("\n");
 #endif
 
+//#define MC_LIST(X)	\
+//	X(OP_ASSIGN,  "assign") \
 
 enum MachineCodeType{
 	MC_LI,	// reg-num
@@ -82,6 +84,15 @@ enum MachineCodeType{
 	MC_IMUL,
 	MC_DIV,
 
+	MC_CMP_LT,
+	MC_CMP_LE,
+	MC_CMP_E,
+	MC_CMP_GE,
+	MC_CMP_GT,
+	MC_CMP_NE,
+
+	MC_LOGIC_AND,
+
 	MC_RET,	// reg-reg
 	MC_INVALID,
 };
@@ -89,18 +100,7 @@ struct McInfo{
 	int mc_latency = -1;
 	string mc_code;	// just for print
 };
-static const McInfo mc_info[MC_INVALID] = {
-		[MC_LI] = {1, "mov"},
-		[MC_LD] = {3, "mov"},
-		[MC_ST] = {3, "mov"},
-
-		[MC_ASSIGN] = {1, "mov"},
-		[MC_ADD] = {1, "add"},
-		[MC_SUB] = {1, "sub"},
-		[MC_IMUL] = {3, "imul"},
-		[MC_DIV] = {10, "div"},
-		[MC_RET] = {1, "ret"},
-};
+extern const McInfo mc_info[];
 
 struct X64mc{
 	X64mc(MachineCodeType ty, int three_addr_code_dst, int three_addr_code_s2)
@@ -156,11 +156,6 @@ struct McDepend
 	int edges = 0;
 };
 
-extern vector<X64mc> x64mc;
-extern vector<X64mc> x64mc_schedued;
-extern vector<X64mc> x64mc_alloced;
-extern vector<McDepend> mcs_pred;
-extern vector<McDepend> mcs_succ;
 
 void dump_mc(vector<X64mc> &v);
 void gen_machine_code();

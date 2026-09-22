@@ -7,9 +7,7 @@
 
 #include "h.h"
 #include "x64_back_end.h"
-
-extern vector<X64mc> x64mc_schedued;
-vector<X64mc> x64mc_alloced;
+#include "scope.h"
 
 enum X64pr
 {
@@ -27,16 +25,16 @@ enum X64pr
 vector<int> x64pr_state(x64pr_max, 1);
 
 static const char *pr_name[] =
-		{
-				[R10D] = "r10d",
-				[R11D] = "r11d",
-				[R12D] = "r12d",
-				[R13D] = "r13d",
-				[R14D] = "r14d",
-				[R15D] = "r15d",	
+        {
+                [R10D] = "r10d",
+                [R11D] = "r11d",
+                [R12D] = "r12d",
+                [R13D] = "r13d",
+                [R14D] = "r14d",
+                [R15D] = "r15d",
 
 //				[eax] = "eax",
-		};
+        };
 
 enum VrUsage
 {
@@ -60,14 +58,14 @@ static X64pr get_pr()
 		if (x64pr_state[i] == 1)
 		{
 			x64pr_state[i] = 0;
-			return (X64pr)i;
+			return (X64pr) i;
 		}
 	}
 
 	ERR("-O0");
 	return x64pr_max;
 }
-X64pr get_pr__load_vr(int vr, int u)
+X64pr get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 {
 	/*
 	 * todo
@@ -82,7 +80,7 @@ X64pr get_pr__load_vr(int vr, int u)
 		need_load = (u & VR_USAGE_READ);
 	}
 	else if (!(vr2pr[vr].u & VR_USAGE_READ)
-			&& (u & VR_USAGE_READ))
+	        && (u & VR_USAGE_READ))
 	{
 		need_load = 1;
 	}
@@ -99,7 +97,7 @@ X64pr get_pr__load_vr(int vr, int u)
 	return vr2pr[vr].pr;
 }
 
-void spill_pr(int vr)
+void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 {
 	X64pr pr = vr2pr[vr].pr;
 	int u = vr2pr[vr].u;
@@ -110,7 +108,7 @@ void spill_pr(int vr)
 	if (u & VR_USAGE_WRITE)
 	{
 		X64mc mc(MC_ST, vr);
-		mc.pr1 = (int)pr;
+		mc.pr1 = (int) pr;
 		mc.ori_sem = "spill";
 		x64mc_alloced.push_back(mc);
 	}
@@ -121,22 +119,23 @@ void spill_pr(int vr)
 	assert(x64pr_state[pr] == 0);
 	x64pr_state[pr] = 1;
 }
-void spill_pr(int vr1, int vr2)
+void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
 {
-	if(vr1 == vr2)
+	if (vr1 == vr2)
 	{
-		spill_pr(vr1);
+		spill_pr(x64mc_alloced, vr1);
 		return;
 	}
-	spill_pr(vr1);
-	spill_pr(vr2);
+	spill_pr(x64mc_alloced, vr1);
+	spill_pr(x64mc_alloced, vr2);
 }
 
-void x64_pr_alloc_o0()
+void x64_pr_alloc_o0(Scope *scp)
 {
+	vector<X64mc> &x64mc_alloced = scp->x64mc_alloced;
 	vr2pr.resize(vrm.id + 1);
 
-	for (auto &r : x64mc_schedued)
+	for (auto &r : scp->x64mc_schedued)
 	{
 		X64mc mc = r;
 		MachineCodeType ty = mc.mcty;
@@ -144,18 +143,18 @@ void x64_pr_alloc_o0()
 		switch (ty)
 		{
 		case MC_LI:
-			mc.pr1 = get_pr__load_vr(mc.s1, VR_USAGE_WRITE);
+			mc.pr1 = get_pr__load_vr(x64mc_alloced, mc.s1, VR_USAGE_WRITE);
 			x64mc_alloced.push_back(mc);
-			spill_pr(mc.s1);
+			spill_pr(x64mc_alloced, mc.s1);
 			break;
 
 		case MC_ASSIGN:
-//			if (mc.s1 == mc.s2)
+			//			if (mc.s1 == mc.s2)
 //			    break;
-			mc.pr1 = get_pr__load_vr(mc.s1, VR_USAGE_WRITE);
-			mc.pr2 = get_pr__load_vr(mc.s2, VR_USAGE_READ);
+			mc.pr1 = get_pr__load_vr(x64mc_alloced, mc.s1, VR_USAGE_WRITE);
+			mc.pr2 = get_pr__load_vr(x64mc_alloced, mc.s2, VR_USAGE_READ);
 			x64mc_alloced.push_back(mc);
-			spill_pr(mc.s1, mc.s2);
+			spill_pr(x64mc_alloced, mc.s1, mc.s2);
 			break;
 
 		case MC_ADD:
@@ -163,16 +162,16 @@ void x64_pr_alloc_o0()
 			case MC_IMUL:
 			case MC_DIV:
 
-			mc.pr1 = get_pr__load_vr(mc.s1, VR_USAGE_READ_WRITE);
-			mc.pr2 = get_pr__load_vr(mc.s2, VR_USAGE_READ);
+			mc.pr1 = get_pr__load_vr(x64mc_alloced, mc.s1, VR_USAGE_READ_WRITE);
+			mc.pr2 = get_pr__load_vr(x64mc_alloced, mc.s2, VR_USAGE_READ);
 			x64mc_alloced.push_back(mc);
-			spill_pr(mc.s1, mc.s2);
+			spill_pr(x64mc_alloced, mc.s1, mc.s2);
 			break;
 
 		case MC_RET:
-			mc.pr1 = get_pr__load_vr(mc.s1, VR_USAGE_READ);
+			mc.pr1 = get_pr__load_vr(x64mc_alloced, mc.s1, VR_USAGE_READ);
 			x64mc_alloced.push_back(mc);
-			spill_pr(mc.s1);
+			spill_pr(x64mc_alloced, mc.s1);
 			break;
 
 		default:
@@ -180,61 +179,63 @@ void x64_pr_alloc_o0()
 			break;
 		}
 	}
+
+	for (Scope *p : scp->clds)
+		x64_pr_alloc_o0(p);
 }
 
 int align16(int &n)
 {
 	int align = 16;
-	n = ((n / align) + (bool)(n % align)) * align;
+	n = ((n / align) + (bool) (n % align)) * align;
 	return n;
 
 //	return (n + 15) & ~15;
 }
 
-void dump_asm(vector<X64mc> &v)
+static void dump_scope(Scope *scp)
 {
-	FILE *fp = fopen("a.s", "w");
-	assert(fp);
+//	LOG("scp %s", scp->name.c_str());
+	printf("scp %s:\n", scp->name.c_str());
 
-	fprintf(fp, "\n#========== asm ==========#\n");
-	fprintf(fp, ".intel_syntax noprefix \n");
-	fprintf(fp, ".extern printf \n");
-	fprintf(fp, ".section .rodata \n");
-	fprintf(fp, "fmt: \n\t");
-	fprintf(fp, ".string \"Result: %%d\\n\" \n\n");
+	dump_mc(scp->x64mc_alloced);
 
-	fprintf(fp, ".section .text \n");
-	fprintf(fp, ".global main \n\n");
-	fprintf(fp, "main: \n\t");
+	for (Scope *p : scp->clds)
+		dump_scope(p);
+}
+static void dump_alloced_mc()
+{
+	printf("\n========== mc ==========\n");
 
-	fprintf(fp, "push rbp \n\t");
-	fprintf(fp, "mov rbp, rsp \n\t");
+	printf("push rbp\n");
+	printf("mov rbp, rsp\n");
+	printf("sub rsp, %d\n\n", vrm.offset);
 
-	int rsp_of = vrm.offset;
-	align16(rsp_of);
-//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
+	dump_scope(&file_scp);
 
-	fprintf(fp, "sub rsp, %d \n\n\t", rsp_of);
+	printf("\nmov rsp, rbp \n");
+	printf("pop rbp \n");
+	printf("ret \n\n");
+}
 
-	for (auto &mc : v)
+static void dump_asm_scope(Scope *scp, FILE *fp)
+{
+	for (auto &mc : scp->x64mc_alloced)
 	{
 		MachineCodeType ty = mc.mcty;
 
 		switch (ty)
 		{
 		case MC_LD:
-			fprintf(fp, "%s %s, dword ptr [rbp - %d] \n\t",mc.asm_code.c_str(), pr_name[mc.pr1], mc.of1);
-			PRINT_MORE
+			fprintf(fp, "%s %s, dword ptr [rbp - %d] \n\t", mc.asm_code.c_str(), pr_name[mc.pr1], mc.of1);
 			break;
 
 		case MC_ST:
 			fprintf(fp, "%s dword ptr [rbp - %d], %s \n\t", mc.asm_code.c_str(), mc.of1, pr_name[mc.pr1]);
-			PRINT_MORE
 			break;
 
 		case MC_LI:
 			fprintf(fp, "%s %s, %d \n\t", mc.asm_code.c_str(), pr_name[mc.pr1], mc.const_num);
-			PRINT_MORE
 			break;
 
 		case MC_ASSIGN:
@@ -242,12 +243,10 @@ void dump_asm(vector<X64mc> &v)
 			case MC_SUB:
 			case MC_IMUL:
 			fprintf(fp, "%s %s, %s \n\t", mc.asm_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2]);
-			PRINT_MORE
 			break;
 
 		case MC_DIV:
 			fprintf(fp, "mov eax, %s\n\t", pr_name[mc.pr1]);
-			PRINT_MORE
 
 			fprintf(fp, "cdq \n\t");
 			fprintf(fp, "idiv %s \n\t", pr_name[mc.pr2]);
@@ -263,7 +262,6 @@ void dump_asm(vector<X64mc> &v)
 			fprintf(fp, "# ------------------------------------------\n\t");
 
 			fprintf(fp, "mov eax, %s \n\t", pr_name[mc.pr1]);
-			PRINT_MORE
 			break;
 
 		default:
@@ -272,6 +270,36 @@ void dump_asm(vector<X64mc> &v)
 		}
 	}
 
+	for (Scope *p : scp->clds)
+		dump_asm_scope(p, fp);
+}
+static void dump_asm()
+{
+	int rsp_of = vrm.offset;
+	align16(rsp_of);
+	//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
+
+	FILE *fp = fopen("a.s", "w");
+	assert(fp);
+
+	fprintf(fp, "\n#========== asm ==========#\n");
+	fprintf(fp, ".intel_syntax noprefix \n");
+	fprintf(fp, ".extern printf \n");
+
+	fprintf(fp, ".section .rodata \n");
+	fprintf(fp, "fmt: \n\t");
+	fprintf(fp, ".string \"Result: %%d\\n\" \n\n");
+
+	fprintf(fp, ".section .text \n");
+	fprintf(fp, ".global main \n\n");
+
+	fprintf(fp, "main: \n\t");
+	fprintf(fp, "push rbp \n\t");
+	fprintf(fp, "mov rbp, rsp \n\t");
+	fprintf(fp, "sub rsp, %d \n\n\t", rsp_of);
+
+	dump_asm_scope(&file_scp, fp);
+
 	fprintf(fp, "mov rsp, rbp \n\t");
 	fprintf(fp, "pop rbp \n\t");
 	fprintf(fp, "ret \n\n");
@@ -279,19 +307,14 @@ void dump_asm(vector<X64mc> &v)
 
 	fclose(fp);
 }
-
 void x64_pr_alloc()
 {
-	x64_pr_alloc_o0();
-//	dump_mc(x64mc_alloced);
+	x64_pr_alloc_o0(&file_scp);
+	dump_alloced_mc();
 
-	dump_asm(x64mc_alloced);
+	dump_asm();
 
 //	system("gcc a.s -o a");
 //	system("./a");
 }
-
-
-
-
 

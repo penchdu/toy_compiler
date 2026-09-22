@@ -6,16 +6,17 @@
  */
 
 #include "parser.h"
+#include "scope.h"
 
 Scope* case_tk_if()
 {
-	LOG();
+	PARSER_LOG();
 	Token tk = tokens.get();
 	if (!in_func_define)
 	ERR("%s not in func", tk.src.c_str());
 
 	tk = tokens.peek();
-	if (tk.type != TK_PAREN_L)
+	if (tk.stamp != TK_PAREN_L)
 	ERR("unexpect token %s", tk.src.c_str());
 
 	Scope *cond = new_scope_and_drop_in();
@@ -31,7 +32,7 @@ Scope* case_tk_if()
 	///////////////////////////////// then branch
 	Scope *then_branch = 0;
 	tk = tokens.peek();
-	if (tk.type == TK_BRACE_L)		// {...}
+	if (tk.stamp == TK_BRACE_L)		// {...}
 	{
 		then_branch = new_scope_and_drop_in();
 		current_scope_pointer->name = "then{}";
@@ -58,7 +59,7 @@ Scope* case_tk_if()
 	Scope *else_branch = 0;
 	tk = tokens.peek();
 
-	if (tk.type == TK_ELSE)
+	if (tk.stamp == TK_ELSE)
 	{
 		tokens.get();
 		tk = tokens.peek();
@@ -71,7 +72,7 @@ Scope* case_tk_if()
 //			else_branch->name = "elif";
 //			parse_scope(0);
 //		} else
-		if (tk.type == TK_BRACE_L)
+		if (tk.stamp == TK_BRACE_L)
 		{
 			else_branch = new_scope_and_drop_in();
 			// else_branch->sem = SEM_ELSE;
@@ -85,7 +86,7 @@ Scope* case_tk_if()
 			else_branch = new_scope_and_drop_in();
 			else_branch->sem = SEM_ELSE;
 			else_branch->name = "else";
-			if (tk.type == TK_IF)
+			if (tk.stamp == TK_IF)
 				else_branch->sem = SEM_ELSE;
 
 			Ast *p = parse_stmt();
@@ -100,10 +101,10 @@ Scope* case_tk_if()
 	        || (current_scope_pointer->is_virtual && current_scope_pointer->parent == cond->parent));
 
 	Scope *tail = current_scope_pointer;
-	if (tail->is_virtual == false || tail->sem != SEM_JMP_TARGET)
+	if (tail->is_virtual == false || tail->sem != SEM_JMP_UNIT)
 	{
 		tail = new_virtual_scp_and_drop_in();
-		tail->sem = SEM_JMP_TARGET;
+		tail->sem = SEM_JMP_UNIT;
 		tail->name = "if_jmp_tail";
 	}
 //	tail->sem = SEM_JMP_TARGET;
@@ -135,7 +136,7 @@ Scope* case_tk_if()
 			assert(else_branch->clds.size());
 			Scope *inner_tail = else_branch->clds.back();
 			assert(inner_tail && inner_tail->is_virtual);
-			assert(inner_tail->sem == SEM_JMP_TARGET);
+			assert(inner_tail->sem == SEM_JMP_UNIT);
 
 			inner_tail->jmp_out = tail;
 			tail->jmp_in.push_back(inner_tail);
@@ -145,7 +146,7 @@ Scope* case_tk_if()
 	assert(then_branch->clds.size());
 	inner_tail = then_branch->clds.back();	// then_branch.cld.back()
 	assert(inner_tail && inner_tail->is_virtual);
-	assert(inner_tail->sem == SEM_JMP_TARGET);
+	assert(inner_tail->sem == SEM_JMP_UNIT);
 
 	inner_tail->jmp_out = tail;
 	tail->jmp_in.push_back(inner_tail);

@@ -51,47 +51,47 @@ static Token get_single_op_token(int c)
 	switch (c)
 	{
 	case '=':
-		tk.type = TK_ASSIGN;
+		tk.stamp = TK_ASSIGN;
 		break;
 
 	case '+':
-		tk.type = TK_ADD;
+		tk.stamp = TK_ADD;
 		break;
 
 	case '-':
-		tk.type = TK_SUB;
+		tk.stamp = TK_SUB;
 		break;
 
 	case '*':
-		tk.type = TK_MUL;
+		tk.stamp = TK_MUL;
 		break;
 
 	case '(':
-		tk.type = TK_PAREN_L;
+		tk.stamp = TK_PAREN_L;
 		break;
 
 	case ')':
-		tk.type = TK_PAREN_R;
+		tk.stamp = TK_PAREN_R;
 		break;
 
 	case '{':
-		tk.type = TK_BRACE_L;
+		tk.stamp = TK_BRACE_L;
 		break;
 
 	case '}':
-		tk.type = TK_BRACE_R;
+		tk.stamp = TK_BRACE_R;
 		break;
 
 	case ':':
-		tk.type = TK_LABEL;
+		tk.stamp = TK_LABEL;
 		break;
 
 	case ';':
-		tk.type = TK_SEMICOLON;
+		tk.stamp = TK_SEMICOLON;
 		break;
 
 	default:
-		tk.type = TK_INVALID;
+		tk.stamp = TK_INVALID;
 		return tk;
 	}
 
@@ -113,13 +113,13 @@ static Token get_cmp_token(FILE *fp, int c)
 
 		if (next == '=')
 		{
-			tk.type = TK_CMP_LE;
+			tk.stamp = TK_CMP_LE;
 			tk.src = "<=";
 		}
 		else
 		{
 			ungetc(next, fp);
-			tk.type = TK_CMP_LT;
+			tk.stamp = TK_CMP_LT;
 			tk.src = "<";
 		}
 		break;
@@ -129,13 +129,13 @@ static Token get_cmp_token(FILE *fp, int c)
 
 		if (next == '=')
 		{
-			tk.type = TK_CMP_GE;
+			tk.stamp = TK_CMP_GE;
 			tk.src = ">=";
 		}
 		else
 		{
 			ungetc(next, fp);
-			tk.type = TK_CMP_GT;
+			tk.stamp = TK_CMP_GT;
 			tk.src = ">";
 		}
 		break;
@@ -145,13 +145,13 @@ static Token get_cmp_token(FILE *fp, int c)
 
 		if (next == '=')
 		{
-			tk.type = TK_CMP_E;
+			tk.stamp = TK_CMP_E;
 			tk.src = "==";
 		}
 		else
 		{
 			ungetc(next, fp);
-			tk.type = TK_ASSIGN;
+			tk.stamp = TK_ASSIGN;
 			tk.src = "=";
 		}
 		break;
@@ -161,13 +161,13 @@ static Token get_cmp_token(FILE *fp, int c)
 
 		if (next == '=')
 		{
-			tk.type = TK_CMP_NE;
+			tk.stamp = TK_CMP_NE;
 			tk.src = "!=";
 		}
 		else
 		{
 			ungetc(next, fp);
-			tk.type = TK_INVALID;
+			tk.stamp = TK_INVALID;
 			tk.src = "!";
 		}
 		break;
@@ -177,19 +177,19 @@ static Token get_cmp_token(FILE *fp, int c)
 
 		if (next == '&')
 		{
-			tk.type = TK_LOGIC_AND;
+			tk.stamp = TK_LOGIC_AND;
 			tk.src = "&&";
 		}
 		else
 		{
 			ungetc(next, fp);
-			tk.type = TK_INVALID;
+			tk.stamp = TK_INVALID;
 			tk.src = "&";
 		}
 		break;
 
 	default:
-		tk.type = TK_INVALID;
+		tk.stamp = TK_INVALID;
 		return tk;
 	}
 
@@ -226,7 +226,7 @@ static Token get_a_token_from_file(FILE *fp)
 			{
 				ungetc(next, fp);   // Not a comment — put char back
 				// Fall through to handle '/' as division operator
-				tk.type = TK_DIV;
+				tk.stamp = TK_DIV;
 				tk.src = "/";
 				return tk;
 			}
@@ -251,7 +251,7 @@ static Token get_a_token_from_file(FILE *fp)
 
 	Token t = get_single_op_token(c);
 
-	if (t.type != TK_INVALID)
+	if (t.stamp != TK_INVALID)
 	{
 		return t;
 	}
@@ -283,25 +283,25 @@ static Token get_a_token_from_file(FILE *fp)
 		}
 
 		if (word == "int")
-			tk.type = TK_INT;
+			tk.stamp = TK_INT;
 
 		else if (word == "float")
-			tk.type = TK_FLOAT;
+			tk.stamp = TK_FLOAT;
 
 		else if (word == "if")
-			tk.type = TK_IF;
+			tk.stamp = TK_IF;
 
 		else if (word == "else")
-			tk.type = TK_ELSE;
+			tk.stamp = TK_ELSE;
 
 		else if (word == "while")
-			tk.type = TK_WHILE;
+			tk.stamp = TK_WHILE;
 
 		else if (word == "return")
-			tk.type = TK_RETURN;
+			tk.stamp = TK_RETURN;
 
 		else
-			tk.type = TK_VAR;
+			tk.stamp = TK_VAR;
 
 		tk.src = word;
 		return tk;
@@ -324,14 +324,14 @@ static Token get_a_token_from_file(FILE *fp)
 			}
 		}
 
-		tk.type = TK_CONST_NUM;
+		tk.stamp = TK_CONST_NUM;
 		tk.src = word;
 		return tk;
 	}
 
 	// 6. unknown character
 	word += static_cast<char>(c);
-	tk.type = TK_INVALID;
+	tk.stamp = TK_INVALID;
 	tk.src = word;
 
 	return tk;
@@ -342,7 +342,7 @@ int lexer(FILE *fp)
 	while (1)
 	{
 		Token tk = get_a_token_from_file(fp);
-		if (tk.type == TK_EOF)
+		if (tk.stamp == TK_EOF)
 		{
 			tokens.append(tk);
 			break;

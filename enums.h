@@ -29,171 +29,93 @@
 	#define LOG(fmt, ...)
 #endif
 
-#define TOKEN_LIST(X)	\
-   X(TK_ASSIGN)		\
-    X(TK_ADD)		\
-    X(TK_SUB)		\
-    X(TK_MUL)		\
-    X(TK_DIV)		\
-	X(TK_CMP_LT)	\
-	X(TK_CMP_LE)	\
-	X(TK_CMP_GE)	\
-	X(TK_CMP_GT)    \
-	X(TK_CMP_E)		\
-	X(TK_CMP_NE)    \
-					\
-	X(TK_LOGIC_AND)	\
-	X(TK_OP_ALL)    \
-					\
-	X(TK_INT)   	\
-	X(TK_FLOAT)    	\
-	X(TK_VAR)    	\
-	X(TK_CONST_NUM) \
-					\
-	X(TK_IF)    	\
-	X(TK_ELSE)    	\
-	X(TK_WHILE)    	\
-					\
-	X(TK_PAREN_L)	/*(*/   \
-	X(TK_PAREN_R)	/*)*/   \
-	X(TK_BRACE_L)	/*{*/ \
-	X(TK_BRACE_R)	/*}*/  \
-					\
-	X(TK_LABEL)    	\
-	X(TK_SEMICOLON) \
-	X(TK_RETURN)    \
-					\
-	X(TK_INVALID)   \
-	X(TK_EOF)
+enum TokenStamp {
+	TK_ASSIGN,
+	TK_ADD,
+	TK_SUB,
+	TK_MUL,
+	TK_DIV,
 
-#define ENUM_ITEM(name) name,
-enum TokenType {
-	TOKEN_LIST(ENUM_ITEM)
+	TK_CMP_LT,
+	TK_CMP_LE,
+	TK_CMP_GE,
+	TK_CMP_GT,
+	TK_CMP_E,
+	TK_CMP_NE,
+
+	TK_LOGIC_AND,
+	TK_OP_ALL,
+
+	TK_INT,
+	TK_FLOAT,
+	TK_VAR,
+	TK_CONST_NUM,
+
+	TK_IF,
+	TK_ELSE,
+	TK_WHILE,
+
+	TK_PAREN_L,
+	TK_PAREN_R,
+	TK_BRACE_L,
+	TK_BRACE_R,
+
+	TK_LABEL,
+	TK_SEMICOLON,
+	TK_RETURN,
+
+	TK_INVALID,
+	TK_EOF
 };
-#undef ENUM_ITEM
 
-//enum TokenType
-//{
-//	TK_ASSIGN,
-//	TK_ADD,
-//	TK_SUB,
-//	TK_MUL,
-//	TK_DIV,
-//
-//	TK_CMP_LT,
-//	TK_CMP_LE,
-//	TK_CMP_E,
-//	TK_CMP_GE,
-//	TK_CMP_GT,
-//	TK_CMP_NE,
-//
-//	TK_LOGIC_AND,
-//	TK_OP_ALL,
-//
-//	TK_INT,
-//	TK_FLOAT,
-//	TK_VAR,
-//	TK_CONST_NUM,
-//
-//	TK_IF,
-//	TK_WHILE,
-//
-//	TK_PAREN_L,		// (
-//	TK_PAREN_R,		// )
-//	TK_BRACE_L,		// {
-//	TK_BRACE_R,		// }
-//
-//	TK_LABEL,
-//	TK_SEMICOLON,         // ;
-//	TK_RETURN,
-//
-//	TK_INVALID,
-//	TK_EOF,
-//};
+enum SemOperator{
+	OP_ASSIGN,
+	OP_ADD,
+	OP_SUB,
+	OP_MUL,
+	OP_DIV,
 
-#define SEMANTIC_LIST(X)	\
-	    X(OP_ASSIGN)    \
-		X(OP_ADD)    \
-		X(OP_SUB)    \
-		X(OP_MUL)    \
-		X(OP_DIV)    \
-						\
-		X(OP_CMP_LT)    \
-		X(OP_CMP_LE)    \
-		X(OP_CMP_E)    \
-		X(OP_CMP_GE)    \
-		X(OP_CMP_GT)    \
-		X(OP_CMP_NE)    \
-							\
-		X(OP_LOGIC_AND)    \
-		X(OP_ALL)    		\
-							\
-		X(SEM_VAR_DECLARE)    \
-		X(SEM_VAR)    			\
-		X(SEM_CONST_NUM)    \
-							\
-		X(SEM_IF)    \
-		X(SEM_ELSE)    \
-		X(SEM_ELIF)    \
-		X(SEM_WHILE)    \
-		X(SEM_LABEL)    \
-		X(SEM_JMP)    \
-		X(SEM_JMP_TARGET)    \
-								\
-		X(SEM_FUNC_DECLARE)    \
-		X(SEM_FUNC_DEFINE)    \
-		X(SEM_FUNC_CALL)    \
-		X(SEM_RETURN)    \
-									\
-		X(SEM_FILE_SCOPE)    \
-		X(SEM_UNNAMED_SCOPE)    \
-	/*	X(SEM_SEMICOLON)	*/    \
-		X(SEM_NONE)    \
-		X(SEM_INVALID)
+	OP_CMP_LT,
+	OP_CMP_LE,
+	OP_CMP_E,
+	OP_CMP_GE,
+	OP_CMP_GT,
+	OP_CMP_NE,
 
-#define ENUM_ITEM(name) name,
-enum SemanticType {
-	SEMANTIC_LIST(ENUM_ITEM)
+	OP_LOGIC_AND,
+	OP_LOGIC_OR,
+
+	OP_JMP,
+	OP_ALL,
 };
-#undef ENUM_ITEM
 
-//enum SemanticType
-//{
-//	OP_ASSIGN,
-//	OP_ADD,
-//	OP_SUB,
-//	OP_MUL,
-//	OP_DIV,
-//
-//	OP_CMP_LT,
-//	OP_CMP_LE,
-//	OP_CMP_E,
-//	OP_CMP_GE,
-//	OP_CMP_GT,
-//	OP_CMP_NE,
-//
-//	OP_LOGIC_AND,
-//	OP_ALL,
-//
-//	SEM_VAR_DECLARE,
-//	SEM_VAR,
-//	SEM_CONST_NUM,
-//
-//	SEM_LABEL,
-//	SEM_IF,
-//	SEM_ELSE,
-//	SEM_WHILE,
-//
-//	SEM_FUNC_DECLARE,
-//	SEM_FUNC_DEFINE,
-//	SEM_FUNC_CALL,
-//	SEM_RETURN,
-//
-//	SEM_FILE_SCOPE,
-//	SEM_UNNAMED_SCOPE,
-//	SEM_NONE,
-//	SEM_INVALID,
-//};
+enum Semantic {
+	SEM_OPERATOR,
+
+	SEM_VAR_DECLARE,
+	SEM_VAR,
+	SEM_CONST_NUM,
+
+	SEM_IF,
+	SEM_ELSE,
+//	SEM_ELIF,
+	SEM_WHILE,
+
+	SEM_LABEL,
+	SEM_JMP,
+	SEM_JMP_UNIT,
+
+	SEM_FUNC_DECLARE,
+	SEM_FUNC_DEFINE,
+	SEM_FUNC_CALL,
+	SEM_RETURN,
+
+	SEM_FILE_SCOPE,
+	SEM_UNNAMED_SCOPE,
+
+	SEM_NONE,
+	SEM_INVALID
+};
 
 enum OpPriority
 {
@@ -201,6 +123,7 @@ enum OpPriority
 	OP_DECLARE_PRIORITY,
 	OP_ASSIGN_PRIORITY,
 
+	OP_LOGIC_OR_PRIORITY,
 	OP_LOGIC_AND_PRIORITY,
 
 	OP_CMP_LT_PRIORITY,
@@ -217,9 +140,9 @@ enum OpPriority
 
 	OP_PAREN_PRIORITY,
 
-	OP_INVALID_PRIORITY = -1,
+	OP_INVALID_PRIORITY,
 };
-enum VarType
+enum Type
 {
 	INT,
 	FLOAT,
@@ -299,5 +222,11 @@ enum SemanticNodeType
 //	int offset = 0;
 //	vector<vr_off> vr_tbl;
 //};
+
+extern const char *Type_string[];
+extern const char *Semantic_string[];
+extern const char *TokenStamp_string[];
+
+enum Type get_declare_type(enum TokenStamp ty);
 
 #endif /* ENUMS_H_ */

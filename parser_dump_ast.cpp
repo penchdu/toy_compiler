@@ -7,8 +7,9 @@
 
 #include "h.h"
 #include "parser.h"
+#include "scope.h"
 
-static string get_var_type_name(VarType ty)
+static string get_var_type_name(Type ty)
 {
 	switch (ty)
 	{
@@ -27,7 +28,7 @@ static string get_var_type_name(VarType ty)
 static string indent_str(int n)
 {
 	n = std::max(n, 0);
-	return string(n * 8, ' ');
+	return string(n * 6, ' ');
 }
 static void print_blank(int n)
 {
@@ -47,24 +48,24 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 	string line_prefix = prefix + (is_last ? "└── " : "├── ");
 
 	printf("%s", line_prefix.c_str());
-	if (p->semty == SEM_VAR_DECLARE)
-		printf("[%s %s]\n", get_var_type_name(p->var_type).c_str(), p->tk.src.c_str());
-	else if (p->semty < OP_ALL)
+	if (p->sem == SEM_VAR_DECLARE)
+		printf("[del %s]\n", Type_string[p->type]);
+	else if (p->sem == SEM_OPERATOR)	// OP_ALL
 		printf("[op %s %%%d]\n", p->tk.src.c_str(), p->vr_id);
-	else if (p->semty == SEM_VAR)
+	else if (p->sem == SEM_VAR)
 	{
 		if (!p->symb_var)
 			printf("[var %s]\n", p->tk.src.c_str());
 		else
-			printf("[var %s %% %d]\n", p->symb_var->unique_name.c_str(), p->symb_var->vr);
+			printf("[var %s %%%d]\n", p->symb_var->unique_name.c_str(), p->symb_var->vr);
 	}
-	else if (p->semty == SEM_CONST_NUM)
+	else if (p->sem == SEM_CONST_NUM)
 		printf("[num %d]\n", p->const_value);
-	else if (p->semty == SEM_FUNC_CALL)
+	else if (p->sem == SEM_FUNC_CALL)
 		printf("[func_call %s]\n", p->tk.src.c_str());
-	else if (p->semty == SEM_RETURN)
+	else if (p->sem == SEM_RETURN)
 		printf("[ret %s]\n", p->tk.src.c_str());
-	else if (p->semty == SEM_NONE)
+	else if (p->sem == SEM_NONE)
 		printf("[none %s]\n", p->tk.src.c_str());
 	else
 		ERR();
@@ -96,13 +97,13 @@ static void dump_scope(Scope *s, int depth)
 	    s->id,
 	    s->parent ? s->parent->id : 0);
 
-	if(s->sem == SEM_IF || s->sem == SEM_ELIF)
+	if(s->sem == SEM_IF)
 	printf("  then=%d  else=%d",
 		    s->jmp_then ? s->jmp_then->id : 0,
 		    s->jmp_else ? s->jmp_else->id : 0);
 
 	printf("====== %s out=%d",
-		    s->sem == SEM_INVALID ? "" : sem_ty_names[s->sem],
+		    s->sem == SEM_INVALID ? "" : Semantic_string[s->sem],
 		    s->jmp_out ? s->jmp_out->id : 0);
 
 	if (s->jmp_in.size())

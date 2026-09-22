@@ -10,8 +10,8 @@
 
 #include "h.h"
 
-//#define PARSER_DEBUG
-#ifdef PARSER_DEBUG
+
+#if 0
 #define PARSER_LOG(fmt, ...) do{ \
 		printf("%s %d, scope-%s-%d,        " fmt "\n",	\
 	__FUNCTION__, __LINE__ , \
@@ -24,8 +24,8 @@
 #endif
 
 extern Tokens tokens;
-extern const char *tk_ty_names[];
-extern const char *sem_ty_names[];
+extern const char *tk_names[];
+extern const char *sem_names[];
 
 extern Scope file_scp;
 extern Scope *current_scope_pointer;

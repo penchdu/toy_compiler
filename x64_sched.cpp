@@ -7,11 +7,11 @@
 
 #include "h.h"
 #include "x64_back_end.h"
+#include "scope.h"
 
-extern vector<X64mc> x64mc;
-extern vector<McDepend> mcs_pred;
-extern vector<McDepend> mcs_succ;
-extern vector<X64mc> x64mc_schedued;
+vector<McDepend> mcs_pred;
+vector<McDepend> mcs_succ;
+
 
 void create_dependcy(int a, int b)
 {
@@ -289,7 +289,7 @@ void init_ready_queue()
 	{
 		if (mcs_pred[i].edges == 0)
 			ready.insert(
-					{ x64mc[i].chain_latency, i });
+			        {x64mc[i].chain_latency, i});
 	}
 
 	if (ready.size() == 0)
@@ -305,11 +305,11 @@ void finish_mc__update_ready_queue(int mc)
 
 		if (mcs_pred[mc].edges == 0)
 			ready.insert(
-					{ x64mc[mc].chain_latency, mc });
+			        {x64mc[mc].chain_latency, mc});
 	}
 }
 
-void mc_schdu()
+static void mc_schdu(Scope *scp)
 {
 	/*
 	 * 	for mc : x64mc
@@ -332,8 +332,12 @@ void mc_schdu()
 	 *				mv mc->edges[i] to ready if dep[i].deps == 0
 	 */
 
-	int cycle = 0;
+	//	LOG("scp %s", scp->name.c_str());
+	printf("scp %s:\n", scp->name.c_str());
+	vector<X64mc> &x64mc = scp->x64mc;
+	vector<X64mc> &x64mc_schedued = scp->x64mc_schedued;
 
+	int cycle = 0;
 	init_ready_queue();
 
 	while (!running.empty() || !ready.empty())
@@ -380,19 +384,48 @@ void mc_schdu()
 	if (t.mcty != MC_RET)
 	{
 		printf("x64mc_scheduled last: %s %s, s1 %%%d, s2 %%%d, cycle: %d-%d\n",
-				t.asm_code.c_str(), t.ori_sem.c_str(),
-				t.s1, t.s2,
-				t.start_cycle, t.chain_latency);
+		        t.asm_code.c_str(), t.ori_sem.c_str(),
+		        t.s1, t.s2,
+		        t.start_cycle, t.chain_latency);
 	}
-}
 
+	for (Scope *p : scp->clds)
+		mc_schdu(p);
+}
+static void dump_scope(Scope *scp)
+{
+//	LOG("scp %s", scp->name.c_str());
+	printf("scp %s:\n", scp->name.c_str());
+
+	dump_mc(scp->x64mc_schedued);
+
+	for (Scope *p : scp->clds)
+		dump_scope(p);
+}
+static void dump_schedued_mc()
+{
+	printf("\n========== mc ==========\n");
+
+	// push rbp
+	// mov rbp, rsp
+	// sub rsp, <num>
+	printf("push rbp\n");
+	printf("mov rbp, rsp\n");
+	printf("sub rsp, %d\n\n", vrm.offset);
+
+	dump_scope(&file_scp);
+
+	printf("\nmov rsp, rbp \n");
+	printf("pop rbp \n");
+	printf("ret \n\n");
+}
 void mc_schedule()
 {
 	gen_use_def_chain();
-//	dump_chain();
+	dump_chain();
 	gen_schdu_chain_latency();
 
-	mc_schdu();
-//	dump_mc(x64mc_scheded);
+	mc_schdu(&file_scp);
+	dump_schedued_mc();
 }
 
