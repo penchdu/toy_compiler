@@ -5,67 +5,66 @@
 
 int main()
 {
-    int a = 8;
-    int b = 3;
-    int c = 0;
+    int a = 6;
+    int b = 9;
+    int c = 2;
+    int d = 0;
 
-    if (a > b)
+    if (a < b)
     {
-        int b = 10;
+        int b = 4;
         c = a + b;
 
-        if (c > 15)
+        if (c <= 10)
         {
-            int a = 2;
-            c = c + a;
+            int a = 3;
+
+            if (a < b)
+            {
+                d = c + a;
+
+                if (d >= 13)
+                    return d + b;
+                else
+                    return d;
+            }
+            else
+            {
+                return c + b;
+            }
         }
         else
         {
-            c = c - 1;
+            return c + 100;
         }
 
-        b = c - 5;
+        return c - b;
     }
     else
     {
-        c = a - b;
-    }
+        int c = 20;
 
-    {
-        int a = 4;
-        int c = 7;
-
-        if (a < c)
-        {
-            int b = 2;
-            c = c + b;
-
-            if (c >= a)
-                a = a + 3;
-        }
-
-        b = b + c;
-    }
-
-    if (c > a)
-    {
-        int c = 2;
-        c = c + b;
-
-        if (c < a)
-            b = b + c;
+        if (c >= b)
+            return c - b;
         else
-            b = b - c;
-
-        if (b == 8)
-            a = a + 10;
+            return b - c;
     }
-    else
+
     {
-        c = c + 100;
+        int a = 100;
+
+        if (a > b)
+        {
+            int c = 30;
+            return a + c;
+        }
+        else
+        {
+            return a - c;
+        }
     }
 
-    return a + b + c;
+    return a + b + c + d;
 }
 
 

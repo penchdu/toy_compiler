@@ -41,7 +41,7 @@ VSC can now handle:
 - control-flow basic blocks
 - conditional branches and jumps
 
-I tested programs containing deeply nested scopes and multiple `if/else` branches, and the generated executables produced the expected results.
+I tested programs containing deeply nested scopes and multiple `if/else` branches, and multiple `return`, the generated executables produced the expected results.
 
 The current implementation is still intentionally simple and self-designed.
 
