@@ -63,10 +63,7 @@ MachineCodeStamp op_to_mc[] = {
 
     [OP_ALL] = MC_INVALID,
 };
-struct Mc2mc {
-	MachineCodeStamp mc_cmp;
-	MachineCodeStamp mc_set;
-};
+
 Mc2mc fake_cmp_mc_to_real_mc[] = {
     [MC_CMP_E] = { MC_CMP, MC_SET_E },
     [MC_CMP_NE] = { MC_CMP, MC_SET_NE },
@@ -105,10 +102,6 @@ static void gen_op_cmp_mc(vector<X64mc> &x64mc, MachineCodeStamp mc, const strin
 	inst = X64mc(mc, tac_dst, tac_s1, tac_s2);
 	inst.ori_sem = ori_sem;
 	x64mc.push_back(inst);
-
-//	inst = X64mc(set_mc, tac_dst);
-//	inst.ori_sem = ori_sem;
-//	x64mc.push_back(inst);
 }
 static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 {

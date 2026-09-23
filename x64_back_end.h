@@ -118,6 +118,11 @@ enum MachineCodeStamp{
 	MC_SAVE_RET_VALUE,	// reg-reg
 	MC_INVALID,
 };
+struct Mc2mc {
+	MachineCodeStamp mc_cmp;
+	MachineCodeStamp mc_set;
+};
+
 struct McInfo{
 	int mc_latency = -1;
 	string mc_code;	// just for print
@@ -180,6 +185,7 @@ struct X64mc{
 	int of2 = -1;
 
 	// alloced for vr
+	int pr_dst = -1;
 	int pr1 = -1;	//todo rename
 	int pr2 = -1;
 
