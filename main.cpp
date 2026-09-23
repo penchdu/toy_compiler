@@ -7,8 +7,10 @@
 
 #include "frontend.h"
 #include "x64_back_end.h"
+//#include "test/test.cpp"
 
 VirtualRegisterManager vrm;
+
 
 int main(int argc, char **argv)
 {
@@ -28,6 +30,8 @@ int main(int argc, char **argv)
 	system("gcc a.s -o a");
 	system("./a");
 
+
+//	test();
 	fclose(fp);
 	return 0;
 }
