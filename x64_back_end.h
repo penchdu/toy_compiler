@@ -11,8 +11,6 @@
 #include "enums.h"
 #include "frontend.h"
 
-
-
 /*
  *
 st[n] = dword ptr [n]
@@ -90,10 +88,17 @@ enum MachineCodeStamp{
 	MC_IMUL,
 	MC_DIV,
 
-	MC_LOGIC_AND,
-	MC_LOGIC_OR,
+//	MC_LOGIC_AND,
+//	MC_LOGIC_OR,
 
 	MC_CMP,	// setl cl
+
+	MC_CMP_E,
+	MC_CMP_NE,
+	MC_CMP_L,
+	MC_CMP_LE,
+	MC_CMP_G,
+	MC_CMP_GE,
 
 	MC_SET_E,
 	MC_SET_NE,
@@ -110,7 +115,7 @@ enum MachineCodeStamp{
 	MC_JG,
 	MC_JGE,
 
-	MC_RET,	// reg-reg
+	MC_SAVE_RET_VALUE,	// reg-reg
 	MC_INVALID,
 };
 struct McInfo{
@@ -121,6 +126,20 @@ extern const McInfo mc_info[];
 extern VirtualRegisterManager vrm;
 
 struct X64mc{
+	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s1, int tac_s2)
+	{
+		mc_stamp = _mc_stamp;
+		dst = tac_dst;
+		s1 = tac_s1;
+		s2 = tac_s2;
+
+		of_dst = vrm.get_vr_off(dst);
+		of1 = vrm.get_vr_off(s1);
+		of2 = vrm.get_vr_off(s2);
+
+		asm_code = mc_info[_mc_stamp].mc_code;
+		latency = mc_info[_mc_stamp].mc_latency;
+	}
 	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s2)
 	{
 		mc_stamp = _mc_stamp;
@@ -142,19 +161,21 @@ struct X64mc{
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
 	}
-	X64mc(MachineCodeStamp _mc_stamp)
-	{
-		mc_stamp = _mc_stamp;
-	}
+//	X64mc(MachineCodeStamp _mc_stamp)
+//	{
+//		mc_stamp = _mc_stamp;
+//	}
 	X64mc(){
 		mc_stamp = MC_INVALID;
 	}
 
 	MachineCodeStamp mc_stamp = MC_INVALID;
 
+	int dst = -1;
 	int s1 = -1;
 	int s2 = -1;
 
+	int of_dst = -1;
 	int of1 = -1;
 	int of2 = -1;
 
@@ -172,8 +193,6 @@ struct X64mc{
 	int start_cycle = -1;
 };
 
-extern vector<McDepend> mcs_pred;
-extern vector<McDepend> mcs_succ;
 
 void dump_mc(vector<X64mc> &v);
 void gen_machine_code();

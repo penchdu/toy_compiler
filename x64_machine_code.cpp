@@ -9,9 +9,6 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-vector<McDepend> mcs_pred;
-vector<McDepend> mcs_succ;
-
 const McInfo mc_info[MC_INVALID + 1] = {
     [MC_LI] = { 1, "mov" },
     [MC_LD] = { 3, "mov" },
@@ -23,9 +20,14 @@ const McInfo mc_info[MC_INVALID + 1] = {
     [MC_IMUL] = { 3, "imul" },
     [MC_DIV] = { 10, "div" },
 
-    [MC_LOGIC_AND] = { 1, "and" },
-
     [MC_CMP] = { 1, "cmp" },
+
+    [MC_CMP_E] = { 1, "cmp" },
+    [MC_CMP_NE] = { 1, "cmp" },
+    [MC_CMP_L] = { 1, "cmp" },
+    [MC_CMP_LE] = { 1, "cmp" },
+    [MC_CMP_G] = { 1, "cmp" },
+    [MC_CMP_GE] = { 1, "cmp" },
 
     [MC_SET_E] = { 1, "sete" },
     [MC_SET_NE] = { 1, "setne" },
@@ -42,32 +44,38 @@ const McInfo mc_info[MC_INVALID + 1] = {
     [MC_JG] = { 0, "jg" },
     [MC_JGE] = { 0, "jge" },
 
-    [MC_RET] = { 0, "ret" },
+    [MC_SAVE_RET_VALUE] = { 1, "ret" },
 };
 
-struct Op2mc {
-	enum SemOperator op;
-	MachineCodeStamp mc;
-	char *mc_code = 0;
-};
-Op2mc op2mc[] = {
-    { OP_ASSIGN, MC_ASSIGN },
-    { OP_ADD, MC_ADD },
-    { OP_SUB, MC_SUB },
-    { OP_MUL, MC_IMUL },
-    { OP_DIV, MC_DIV },
+MachineCodeStamp op_to_mc[] = {
+    [OP_ASSIGN] = MC_ASSIGN,
+    [OP_ADD]= MC_ADD,
+    [OP_SUB] = MC_SUB,
+    [OP_MUL] = MC_IMUL,
+    [OP_DIV] = MC_DIV,
 
-    { OP_CMP_E, MC_SET_E },
-    { OP_CMP_NE, MC_SET_NE },
-    { OP_CMP_L, MC_SET_L },
-    { OP_CMP_LE, MC_SET_LE },
-    { OP_CMP_G, MC_SET_G },
-    { OP_CMP_GE, MC_SET_GE },
+    [OP_CMP_E] = MC_CMP_E,
+    [OP_CMP_NE] = MC_CMP_NE,
+    [OP_CMP_L] = MC_CMP_L,
+    [OP_CMP_LE] = MC_CMP_LE,
+    [OP_CMP_G] = MC_CMP_G,
+    [OP_CMP_GE] = MC_CMP_GE,
 
-    { OP_LOGIC_AND, MC_LOGIC_AND },
-    { OP_LOGIC_OR, MC_LOGIC_OR },
-    { OP_ALL, MC_INVALID },
+    [OP_ALL] = MC_INVALID,
 };
+struct Mc2mc {
+	MachineCodeStamp mc_cmp;
+	MachineCodeStamp mc_set;
+};
+Mc2mc fake_cmp_mc_to_real_mc[] = {
+    [MC_CMP_E] = { MC_CMP, MC_SET_E },
+    [MC_CMP_NE] = { MC_CMP, MC_SET_NE },
+    [MC_CMP_L] = { MC_CMP, MC_SET_L },
+    [MC_CMP_LE] = { MC_CMP, MC_SET_LE },
+    [MC_CMP_G] = { MC_CMP, MC_SET_G },
+    [MC_CMP_GE] = { MC_CMP, MC_SET_GE },
+};
+
 MachineCodeStamp op2jmp_mc[] = {
     [OP_CMP_E] = MC_JE,
     [OP_CMP_NE] = MC_JNE,
@@ -89,18 +97,18 @@ static void gen_op_add_sub_mul_div_mc(vector<X64mc> &x64mc, MachineCodeStamp mc,
 	inst.ori_sem = ori_sem;
 	x64mc.push_back(inst);
 }
-static void gen_op_cmp_mc(vector<X64mc> &x64mc, MachineCodeStamp set_mc, const string &ori_sem,
+static void gen_op_cmp_mc(vector<X64mc> &x64mc, MachineCodeStamp mc, const string &ori_sem,
     int tac_dst, int tac_s1, int tac_s2)
 {
 	X64mc inst;
 
-	inst = X64mc(MC_CMP, tac_s1, tac_s2);
+	inst = X64mc(mc, tac_dst, tac_s1, tac_s2);
 	inst.ori_sem = ori_sem;
 	x64mc.push_back(inst);
 
-	inst = X64mc(set_mc, tac_dst);
-	inst.ori_sem = ori_sem;
-	x64mc.push_back(inst);
+//	inst = X64mc(set_mc, tac_dst);
+//	inst.ori_sem = ori_sem;
+//	x64mc.push_back(inst);
 }
 static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 {
@@ -122,7 +130,7 @@ static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 		case OP_CMP_LE:
 		case OP_CMP_G:
 		case OP_CMP_GE:
-		mc_stamp = op2mc[op].mc;
+		mc_stamp = op_to_mc[op];
 		gen_op_cmp_mc(x64mc, mc_stamp, mc_info[mc_stamp].mc_code, tac.dst, tac.s1, tac.s2);
 		break;
 
@@ -130,7 +138,7 @@ static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 		case OP_SUB:
 		case OP_MUL:
 		case OP_DIV:
-		mc_stamp = op2mc[op].mc;
+		mc_stamp = op_to_mc[op];
 		gen_op_add_sub_mul_div_mc(x64mc, mc_stamp, mc_info[mc_stamp].mc_code, tac.dst, tac.s1, tac.s2);
 		break;
 
@@ -162,9 +170,9 @@ static void gen_mc()
 				bb.x64mc.push_back(mc);
 				break;
 
-			case SEM_RETURN:
-				mc = X64mc(MC_RET, tac.s1);
-				mc.ori_sem = "ret";
+			case SEM_SAVE_RET_VALUE_AND_JMP:
+				mc = X64mc(MC_SAVE_RET_VALUE, tac.s1);
+				mc.ori_sem = "save_ret";
 				bb.x64mc.push_back(mc);
 				break;
 
@@ -188,9 +196,16 @@ static void gen_mc()
 				bb.mc_jmp = op2jmp_mc[cond->op];
 			}
 			else if (bb.exit_jmp->sem == SEM_JMP)
-			{
 				bb.mc_jmp = MC_JMP;
-			}
+			else if (bb.exit_jmp->sem == SEM_SAVE_RET_VALUE_AND_JMP)
+				bb.mc_jmp = MC_JMP;
+			else
+				ERR();
+		}
+
+		if (bb.tacs.size() != bb.x64mc.size())
+		{
+			LOG("%lu %lu", bb.tacs.size(), bb.x64mc.size());
 		}
 	}
 }
@@ -199,6 +214,7 @@ void dump_mc(vector<X64mc> &v)
 	for (auto &mc : v)
 	{
 		MachineCodeStamp mc_stamp = mc.mc_stamp;
+		MachineCodeStamp set_mc;
 
 		switch (mc_stamp)
 		{
@@ -225,18 +241,17 @@ void dump_mc(vector<X64mc> &v)
 			PRINT_MORE
 			break;
 
-		case MC_CMP:
-			printf("%s %%%d, %%%d ", mc.asm_code.c_str(), mc.s1, mc.s2);
-			PRINT_MORE
-			break;
+		case MC_CMP_E:
+			case MC_CMP_NE:
+			case MC_CMP_L:
+			case MC_CMP_LE:
+			case MC_CMP_G:
+			case MC_CMP_GE:
 
-		case MC_SET_E:
-			case MC_SET_NE:
-			case MC_SET_L:
-			case MC_SET_LE:
-			case MC_SET_G:
-			case MC_SET_GE:
-			printf("%s %%%d ", mc.asm_code.c_str(), mc.s1);
+			printf("%s %%%d, %%%d \n", mc.asm_code.c_str(), mc.s1, mc.s2);
+
+			set_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_set;
+			printf("%s %%%d ", mc_info[set_mc].mc_code.c_str(), mc.dst);
 			PRINT_MORE
 			break;
 
@@ -249,7 +264,7 @@ void dump_mc(vector<X64mc> &v)
 			printf("mov %%%d, eax \t div \n", mc.s1);
 			break;
 
-		case MC_RET:
+		case MC_SAVE_RET_VALUE:
 			printf("mov eax, %%%d", mc.s1);
 			PRINT_MORE
 			break;
@@ -280,7 +295,8 @@ static void dump()
 			    bb.exit_jmp->jmp_out->name.c_str());
 		}
 	}
-	printf("\nmov rsp, rbp \n");
+	printf("\n.L_return \n");
+	printf("mov rsp, rbp \n");
 	printf("pop rbp \n");
 	printf("ret \n\n");
 }

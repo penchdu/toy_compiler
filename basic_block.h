@@ -17,6 +17,7 @@ struct BasicBlock {
 	vector<Tac> tacs;
 	vector<X64mc> x64mc;
 	vector<X64mc> x64mc_schedu;
+
 	vector<X64mc> x64mc_alloc;
 
 	Scope *exit_jmp = 0;

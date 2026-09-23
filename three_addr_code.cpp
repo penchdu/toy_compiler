@@ -74,11 +74,11 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 		tacs.push_back(t);
 		return p->vr_id;
 
-	case SEM_RETURN:
+	case SEM_SAVE_RET_VALUE_AND_JMP:
 		t = Tac(p);
-		t.s1 = a;
+		t.s1 = p->left->vr_id;
 		tacs.push_back(t);
-		return -1;
+		break;
 
 	case SEM_VAR_DECLARE:
 		return -1;
@@ -101,7 +101,7 @@ static void gen_tac(Scope *scp)
 {
 	LOG("scp %s", scp->name.c_str());
 
-	if(scp->jmp_in.size() > 0 || scp->sem == SEM_COND_JMP)
+	if (scp->sem == SEM_FUNC_DEFINE || scp->jmp_in.size() > 0 || scp->sem == SEM_COND_JMP)
 	{
 		BasicBlock newbb;
 		newbb.entry_label = scp;
@@ -118,12 +118,23 @@ static void gen_tac(Scope *scp)
 		BasicBlock &bb = basic_blocks.back();
 		bb.exit_jmp = scp;
 
-//		if(scp->sem == SEM_COND_JMP)
-//		{
-//		}
-//		else if(scp->sem == SEM_JMP)
-//		{
-//		}
+		if (scp->sem == SEM_SAVE_RET_VALUE_AND_JMP)
+		{
+			assert(scp->asts.size() == 1);
+			Ast *ret = scp->asts[0];
+			assert(ret->op == OP_SAVE_RET_VALUE);
+			assert(ret->left);	// function just support return int
+
+//			BasicBlock &bb = basic_blocks.back();
+//			Tac t = Tac(ret);
+//			t.s1 = ret->left->vr_id;
+//			bb.tacs.push_back(t);
+
+			bb.exit_jmp = scp;
+//
+//			BasicBlock newbb;
+//			basic_blocks.push_back(newbb);
+		}
 
 		BasicBlock newbb;
 		basic_blocks.push_back(newbb);
@@ -138,7 +149,7 @@ static void dump_tac()
 	printf("\n========== tac ==========\n");
 	for (BasicBlock &bb : basic_blocks)
 	{
-		if(bb.entry_label != 0)
+		if (bb.entry_label != 0)
 			printf("\nlabel %d:\n", bb.entry_label->id);
 
 		for (Tac &r : bb.tacs)
@@ -170,7 +181,7 @@ static void dump_tac()
 				printf("func call:\t %s\n", p->tk.src.c_str());
 				break;
 
-			case SEM_RETURN:
+			case SEM_SAVE_RET_VALUE_AND_JMP:
 				printf("return:\t %s %%%d\n", p->tk.src.c_str(), r.s1);
 				break;
 
@@ -180,18 +191,18 @@ static void dump_tac()
 			}
 		}
 
-		if(bb.exit_jmp != 0)
+		if (bb.exit_jmp != 0)
 		{
-			printf("%s jmp %d->%d:\n\n", Semantic_string[bb.exit_jmp->sem],
-				bb.exit_jmp->id, bb.exit_jmp->jmp_out->id);
+			printf("%s %d->%d:\n\n", Semantic_string[bb.exit_jmp->sem],
+			    bb.exit_jmp->id, bb.exit_jmp->jmp_out->id);
 		}
 	}
 }
 void gen_three_address_code()
 {
-	BasicBlock sct;
-	sct.entry_label = &file_scp;
-	basic_blocks.push_back(sct);
+	BasicBlock bb;
+	bb.entry_label = &file_scp;
+	basic_blocks.push_back(bb);
 
 	gen_tac(&file_scp);
 	dump_ast();

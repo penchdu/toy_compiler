@@ -5,9 +5,9 @@
 // *      Author: x
 // */
 //
-//#include "h.h"
+//#include "frontend.h"
 //#include "x64_back_end.h"
-//#include "scope.h"
+//#include "basic_block.h"
 //
 //enum X64pr
 //{

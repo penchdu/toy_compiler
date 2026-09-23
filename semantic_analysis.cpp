@@ -66,8 +66,10 @@ static int case_sem_op(Ast *p)
 static int case_sem_return(Ast *p)
 {
 	assert(p);
-	assert(p->left);
 	assert(!p->right);
+
+	if(!p->left)
+		ERR("only support return int");
 
 	Semantic ty = p->left->sem;
 	if (!(ty == SEM_VAR
@@ -80,19 +82,6 @@ static int case_sem_return(Ast *p)
 		        p->left->tk.src.c_str());
 	}
 
-	Scope *scp = p->this_scp;
-	while (scp && scp->is_virtual)
-	{
-		scp = scp->parent;
-	}
-
-	if (!scp)
-		ERR();
-	p->sem_home_scp = scp;
-
-	if (p->sem_home_scp->sem != SEM_FUNC_DEFINE)
-		ERR("return not in a func");
-	//		assert(p->this_scp->is_virtual_scope == false);
 	return 0;
 }
 static int case_sem_var(Ast *p)
@@ -183,9 +172,10 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 		case_sem_op(p);
 		break;
 
-	case SEM_RETURN:
+	case SEM_SAVE_RET_VALUE_AND_JMP:
 		case_sem_return(p);
 		break;
+
 	default:
 		ERR("%s, %d", p->tk.src.c_str(), p->sem);
 	}
@@ -274,6 +264,8 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	if (!p || p->sem == SEM_VAR_DECLARE)
 		return -1;
 
+//	if(SEM_SAVE_RET_VALUE_AND_JMP)
+
 	int b = trace_ast_down_up_gen_vr(p->right);
 	int a = trace_ast_down_up_gen_vr(p->left);
 	SymbolVar *symb = 0;
@@ -298,9 +290,10 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	case SEM_OPERATOR:
 		return case_op(p);
 
-	case SEM_RETURN:
+	case SEM_SAVE_RET_VALUE_AND_JMP:
 		if (p->sem_home_scp->return_type != p->left->type)
 			ERR("return type mismatch %d %d", p->sem_home_scp->return_type, p->left->type);
+		assert(p->op == OP_SAVE_RET_VALUE);
 
 		return -1;
 
@@ -342,9 +335,9 @@ static void sem_analysis_gen_vr(Scope *scp)
 void sem_analysis()
 {
 	sem_analysis_named_var(&file_scp);
-	dump_ast();
+//	dump_ast();
 
 	sem_analysis_gen_vr(&file_scp);
-	dump_ast();
+//	dump_ast();
 }
 

@@ -15,7 +15,9 @@ int main()
 	else
 		a = 4;
 
-	
+	;
+	return 5;
+	return 6;
 	return a;
 }
 

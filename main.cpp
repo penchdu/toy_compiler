@@ -20,12 +20,11 @@ int main(int argc, char **argv)
 	sem_analysis();
 	gen_three_address_code();
 	gen_machine_code();
-//	mc_schedule();
+	mc_schedule();
 //	x64_pr_alloc();		// create a.s in current location
 //
 //	system("gcc a.s -o a");
 //	system("./a");
-
 
 	fclose(fp);
 	return 0;

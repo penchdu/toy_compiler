@@ -16,7 +16,7 @@ int scope_id = 0;
 bool in_func_define = 0;
 
 
-static Ast* parse_expr(TokenStamp end_tk_ty);
+static Ast* parse_expr(TokenStamp end_tk_stamp);
 static void parse_file__gen_ast();
 
 static Scope* new_cld_scp(bool is_virtual)
@@ -30,7 +30,7 @@ static Scope* new_cld_scp(bool is_virtual)
 	current_scope_pointer = current_scope_pointer->new_cld();
 	current_scope_pointer->is_virtual = is_virtual;
 	current_scope_pointer->id = scope_id++;
-	current_scope_pointer->name = "b" + std::to_string(current_scope_pointer->id);
+	current_scope_pointer->name = ".L_" + std::to_string(current_scope_pointer->id);
 
 	return current_scope_pointer;
 }
@@ -118,12 +118,15 @@ static int case_tk_func()
 	if (current_scope_pointer->func_table->find(func_name) != current_scope_pointer->func_table->end())
 		ERR("%s already declared", func_name.c_str());
 
-	Scope *fscp = current_scope_pointer;
+	Scope *file_scope = current_scope_pointer;
 
 	new_scope_and_drop_in();
 
 	current_scope_pointer->sem = SEM_FUNC_DEFINE;
 	current_scope_pointer->name = func_name;
+	current_scope_pointer->return_label = new Scope;
+	current_scope_pointer->return_label->id = -1; //scope_id++;
+	current_scope_pointer->return_label->name = ".L_return";
 	current_scope_pointer->return_type = return_type;
 
 	SymbolFunc *sym = new SymbolFunc;
@@ -132,7 +135,7 @@ static int case_tk_func()
 	sym->argc = 0;
 	sym->func_scope = current_scope_pointer;
 
-	fscp->func_table->insert( {func_name, sym});
+	file_scope->func_table->insert( {func_name, sym});
 
 	in_func_define = 1;
 	parse_scope();
@@ -296,9 +299,18 @@ static Ast* _parse_expr(TokenStamp end_tk_ty)
 	assert(operand_queue.size() == 1);
 	return operand_queue.back();
 }
-static Ast* parse_expr(TokenStamp end_tk_ty)
+static Ast* parse_expr(TokenStamp end_tk_stamp)
 {
 	Token tk = tokens.peek();
+
+	if(tk.stamp == TK_SEMICOLON){
+		if(end_tk_stamp != TK_SEMICOLON)
+			ERR();
+
+		tokens.get();
+		return 0;
+	}
+
 	if (tk.stamp < TK_OP_ALL)
 		ERR("unexpect tk %s", TokenStamp_string[tk.stamp]);
 
@@ -307,7 +319,7 @@ static Ast* parse_expr(TokenStamp end_tk_ty)
 	        || tk.stamp == TK_PAREN_L))
 		ERR("unexpect tk %s", TokenStamp_string[tk.stamp]);
 
-	return _parse_expr(end_tk_ty);
+	return _parse_expr(end_tk_stamp);
 }
 //static Ast* case_tk_assign()
 //{
@@ -345,7 +357,9 @@ static Ast* parse_expr(TokenStamp end_tk_ty)
 //}
 static Ast* case_tk_semicolon()
 {
+	// maybe "if(...);" need semicolon to make a empty ast
 	Token tk = tokens.get();
+	return 0;
 	return new Ast(tk);
 }
 void case_tk_eof()
@@ -358,7 +372,7 @@ void case_tk_eof()
 	if (p->sem != SEM_FILE_SCOPE)
 		ERR("EOF in scope %s-%d\n", p->name.c_str(), p->id);
 }
-static Ast* case_tk_return()
+void case_tk_return()
 {
 	Token tk = tokens.get();
 	if (!in_func_define)
@@ -366,12 +380,32 @@ static Ast* case_tk_return()
 
 	PARSER_LOG("%s", tk.src.c_str());
 
-	Ast *pa = new_ast_node(tk);
-	Ast *left = parse_expr(TK_SEMICOLON);
-	pa->left = left;
+	Ast *expr = parse_expr(TK_SEMICOLON);
+//	current_scope_pointer->asts.push_back(expr);
 
-	assert(left);
-	return pa;
+	Scope *func = current_scope_pointer;
+	while (func && func->sem != SEM_FUNC_DEFINE)
+	{
+		func = func->parent;
+	}
+
+	if (!func)
+		ERR();
+
+	new_scope_and_drop_in();
+	current_scope_pointer->sem = SEM_SAVE_RET_VALUE_AND_JMP;
+	current_scope_pointer->name = "ret";
+	current_scope_pointer->jmp_out = func->return_label;
+
+	Ast *p = new_ast_node(tk);
+	p->sem = SEM_SAVE_RET_VALUE_AND_JMP;
+	p->sem_home_scp = func;
+	p->op = OP_SAVE_RET_VALUE;
+	p->left = expr;
+	current_scope_pointer->asts.push_back(p);
+	exit_current_scope();
+
+	return;
 }
 Ast* parse_stmt()
 {
@@ -417,7 +451,8 @@ Ast* parse_stmt()
 		break;
 
 	case TK_RETURN:
-		return case_tk_return();
+		case_tk_return();
+		break;
 
 	case TK_EOF:
 		case_tk_eof();
@@ -493,11 +528,10 @@ Scope* case_tk_right_brace(bool eat)
 	{
 		tail = new_virtual_scp_and_drop_in();
 		tail->sem = SEM_JMP;
-		tail->name = "scp_jmp_lable";
+		tail->name = ".L_" + std::to_string(current_scope_pointer->id);
 	}
 	else
 	{
-
 		assert(tail->clds.size() == 0);
 		tail->sem = SEM_JMP;
 		tail->name = "scp_jmp_lable_reuse";
@@ -507,6 +541,9 @@ Scope* case_tk_right_brace(bool eat)
 		exit_current_scope();
 	assert(current_scope_pointer->is_virtual == false);
 	Scope *scp = current_scope_pointer;
+
+	if(scp->sem == SEM_FUNC_DEFINE)
+		scp->return_label->id = scope_id++;
 
 	if (eat)
 		tokens.get();
@@ -573,7 +610,7 @@ void parser()
 	parse_file__gen_ast();
 
 	sweep_dead_virtual_scopes(&file_scp);
-	dump_ast();
+//	dump_ast();
 
 }
 

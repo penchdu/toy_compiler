@@ -30,7 +30,7 @@ Scope* case_tk_if()
 
 	Scope *cond = new_scope_and_drop_in();
 	current_scope_pointer->sem = SEM_COND_JMP;
-	current_scope_pointer->name = "if";
+	current_scope_pointer->name = ".L_if" + std::to_string(current_scope_pointer->id);
 
 	/////////////////////////////////// if-cond SEM_IF only have one condition express
 	Ast *p = parse_expr_with_paren();
@@ -49,7 +49,7 @@ Scope* case_tk_if()
 	if (tk.stamp == TK_BRACE_L)		// {...}
 	{
 		then_branch = new_scope_and_drop_in();
-		current_scope_pointer->name = "then{}";
+		current_scope_pointer->name = ".L_then" + std::to_string(current_scope_pointer->id);
 		parse_scope();
 	}
 	else // single stmt end with ';'
@@ -57,7 +57,7 @@ Scope* case_tk_if()
 		// only one express, create a real-scope to save it
 		// must use real-scope because the express could be "int a = 0;"
 		then_branch = new_scope_and_drop_in();
-		current_scope_pointer->name = "then";
+		current_scope_pointer->name = ".L_then" + std::to_string(current_scope_pointer->id);
 		Ast *p = parse_stmt();
 		if (p)
 			current_scope_pointer->asts.push_back(p);
@@ -90,7 +90,7 @@ Scope* case_tk_if()
 		{
 			else_branch = new_scope_and_drop_in();
 			// else_branch->sem = SEM_ELSE;
-			// else_branch->name = "else{}";
+			 else_branch->name = ".L_else" + std::to_string(else_branch->id);
 			parse_scope();
 		}
 		else
@@ -99,7 +99,7 @@ Scope* case_tk_if()
 			// must use real-scope because the express could be "int a = 0;"
 			else_branch = new_scope_and_drop_in();
 			else_branch->sem = SEM_ELSE;
-			else_branch->name = "else";
+			else_branch->name = ".L_else" + std::to_string(current_scope_pointer->id);
 			if (tk.stamp == TK_IF)
 				else_branch->sem = SEM_ELSE;
 

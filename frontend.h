@@ -12,6 +12,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <limits.h>
 
 #include <iostream>
 #include <vector>
@@ -223,7 +224,7 @@ public:
 			break;
 
 		case TK_RETURN:
-			sem = SEM_RETURN;
+			sem = SEM_SAVE_RET_VALUE_AND_JMP;
 			break;
 
 		case TK_SEMICOLON:
@@ -265,6 +266,8 @@ public:
 	Scope *parent;
 	vector<Scope*> clds;
 	bool is_virtual;
+
+	Scope *return_label = 0;
 	enum Type return_type = INVALID_TYPE;
 
 	Scope* new_cld()

@@ -46,7 +46,7 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 		printf("[num %d]\n", p->const_value);
 	else if (p->sem == SEM_FUNC_CALL)
 		printf("[func_call %s]\n", p->tk.src.c_str());
-	else if (p->sem == SEM_RETURN)
+	else if (p->sem == SEM_SAVE_RET_VALUE_AND_JMP)
 		printf("[ret %s]\n", p->tk.src.c_str());
 	else if (p->sem == SEM_NONE)
 		printf("[none %s]\n", p->tk.src.c_str());

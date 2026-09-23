@@ -20,7 +20,7 @@
     exit(1);	\
 }while(0)
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 #define LOG(fmt, ...) do{ \
 		printf("%s %d, " fmt "\n", __FUNCTION__, __LINE__ , ##__VA_ARGS__); \
@@ -85,6 +85,7 @@ enum SemOperator{
 	OP_LOGIC_AND,
 	OP_LOGIC_OR,
 
+	OP_SAVE_RET_VALUE,
 	OP_ALL,
 };
 
@@ -106,7 +107,9 @@ enum Semantic {
 	SEM_FUNC_DECLARE,
 	SEM_FUNC_DEFINE,
 	SEM_FUNC_CALL,
-	SEM_RETURN,
+
+	SEM_SAVE_RET_VALUE_AND_JMP,
+
 
 	SEM_FILE_SCOPE,
 	SEM_UNNAMED_SCOPE,
