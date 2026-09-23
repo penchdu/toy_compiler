@@ -245,7 +245,7 @@ int main()
 
 ```
 
-the **vsc** reads the test-file "**t1**" in current location and generate a assembly-file: **a.s**
+the **vsc** reads the test-file "**t1.txt**" in current location and generate a assembly-file: **a.s**
 
 ```
 

@@ -534,7 +534,7 @@ Scope* case_tk_right_brace(bool eat)
 	{
 		assert(tail->clds.size() == 0);
 		tail->sem = SEM_JMP;
-		tail->name = "scp_jmp_lable_reuse" + std::to_string(current_scope_pointer->id);
+		tail->name = ".L_scp_jmp_lable_reuse" + std::to_string(current_scope_pointer->id);
 	}
 
 	if (current_scope_pointer->is_virtual)
