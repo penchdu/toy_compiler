@@ -38,6 +38,28 @@ static const char *pr_name[] =
 //				[eax] = "eax",
     };
 
+const char* pr_name_byte(int pr)
+{
+	switch (pr)
+	{
+	case R10D:
+		return "r10b";
+	case R11D:
+		return "r11b";
+	case R12D:
+		return "r12b";
+	case R13D:
+		return "r13b";
+	case R14D:
+		return "r14b";
+	case R15D:
+		return "r15b";
+	}
+
+	ERR("no byte register");
+	return 0;
+}
+
 enum VrUsage
 {
 	VR_USAGE_READ = 1 << 0,
@@ -234,13 +256,13 @@ static void dump()
 	for (BasicBlock &bb : basic_blocks)
 	{
 		if (bb.entry_label != 0)
-			printf("\nlabel %s:\n", bb.entry_label->name.c_str());
+			printf("\n%s:\n", bb.entry_label->name.c_str());
 
 		dump_mc(bb.x64mc_alloc);
 
 		if (bb.exit_jmp != 0)
 		{
-			printf("%s %s:\n\n", mc_info[bb.mc_jmp].mc_code.c_str(),
+			printf("%s %s\n\n", mc_info[bb.mc_jmp].mc_code.c_str(),
 			    bb.exit_jmp->jmp_out->name.c_str());
 		}
 	}
@@ -294,11 +316,11 @@ static void _dump_bb_asm(FILE *fp, vector<X64mc> &x64mc_alloc)
 			case MC_CMP_G:
 			case MC_CMP_GE:
 
-			fprintf(fp, "%s %%%d, %%%d \n\t", mc.asm_code.c_str(), mc.s1, mc.s2);
+			fprintf(fp, "%s %s, %s \n\t", mc.asm_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2]);
 
 			set_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_set;
-			fprintf(fp, "%s %%%d \n\t", mc_info[set_mc].mc_code.c_str(), mc.dst);
-
+			fprintf(fp, "%s %s \n\t", mc_info[set_mc].mc_code.c_str(), pr_name_byte(mc.pr_dst));
+			fprintf(fp, "movzx %s, %s\n\t", pr_name[mc.pr_dst], pr_name_byte(mc.pr_dst));
 			PRINT_MORE
 			break;
 
@@ -325,14 +347,14 @@ static void _dump_asm(FILE *fp)
 
 	for (BasicBlock &bb : basic_blocks)
 	{
-		if (bb.entry_label != 0)
-			fprintf(fp, "\nlabel %s: \n\t", bb.entry_label->name.c_str());
+		if (bb.entry_label != 0 && bb.entry_label->name != "main")
+			fprintf(fp, "\n%s: \n\t", bb.entry_label->name.c_str());
 
 		_dump_bb_asm(fp, bb.x64mc_alloc);
 
 		if (bb.exit_jmp != 0)
 		{
-			fprintf(fp, "%s %s:\n\n\t", mc_info[bb.mc_jmp].mc_code.c_str(),
+			fprintf(fp, "%s %s\n\n\t", mc_info[bb.mc_jmp].mc_code.c_str(),
 			    bb.exit_jmp->jmp_out->name.c_str());
 		}
 	}
@@ -364,6 +386,7 @@ static void dump_asm()
 
 	_dump_asm(fp);
 
+	fprintf(fp, "\n.L_return: \n");
 	fprintf(fp, "mov rsp, rbp \n\t");
 	fprintf(fp, "pop rbp \n\t");
 	fprintf(fp, "ret \n\n");
