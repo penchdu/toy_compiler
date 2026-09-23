@@ -23,6 +23,8 @@ int main(int argc, char **argv)
 	mc_schedule();
 	x64_pr_alloc();		// create a.s in current location
 
+//	system("rm ./a.s");
+//	system("rm ./a");
 	system("gcc a.s -o a");
 	system("./a");
 

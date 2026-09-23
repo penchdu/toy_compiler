@@ -386,7 +386,7 @@ static void dump_asm()
 
 	_dump_asm(fp);
 
-	fprintf(fp, "\n.L_return: \n");
+	fprintf(fp, "\n.L_return: \n\t");
 	fprintf(fp, "mov rsp, rbp \n\t");
 	fprintf(fp, "pop rbp \n\t");
 	fprintf(fp, "ret \n\n");

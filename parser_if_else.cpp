@@ -122,7 +122,7 @@ Scope* case_tk_if()
 	{
 		tail = new_virtual_scp_and_drop_in();
 //		tail->sem = SEM_JMP;
-		tail->name = "if_jmp_tail";
+		tail->name = "if_jmp_tail" + std::to_string(current_scope_pointer->id);
 	}
 
 	if (else_branch)
