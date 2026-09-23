@@ -16,6 +16,14 @@ vector<McDepend> mcs_succ;	// successor
 
 void create_dependcy(int a, int b)
 {
+    if (b < 0)
+        return;
+
+    auto &pred = mcs_pred[a].mcs;
+
+    if (std::find(pred.begin(), pred.end(), b) != pred.end())
+        return;
+
 	// a depend on b, data flow: b -> a
 	mcs_pred[a].mcs.push_back(b);
 	mcs_succ[b].mcs.push_back(a);
