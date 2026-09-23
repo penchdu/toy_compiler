@@ -16,10 +16,11 @@ struct BasicBlock {
 	Scope *entry_label = 0;
 	vector<Tac> tacs;
 	vector<X64mc> x64mc;
-	vector<X64mc> x64mc_schedued;
-	vector<X64mc> x64mc_alloced;
+	vector<X64mc> x64mc_schedu;
+	vector<X64mc> x64mc_alloc;
 
 	Scope *exit_jmp = 0;
+	MachineCodeStamp mc_jmp = MC_INVALID;
 };
 
 extern vector<BasicBlock> basic_blocks;

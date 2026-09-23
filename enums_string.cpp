@@ -47,17 +47,16 @@ const char *SemOperator_string[OP_ALL + 1] = {
 	[OP_MUL] = "OP_MUL",
 	[OP_DIV] = "OP_DIV",
 
-	[OP_CMP_LT] = "OP_CMP_LT",
-	[OP_CMP_LE] = "OP_CMP_LE",
-	[OP_CMP_EQ] = "OP_CMP_E",
-	[OP_CMP_GE] = "OP_CMP_GE",
-	[OP_CMP_GT] = "OP_CMP_GT",
+	[OP_CMP_E] = "OP_CMP_E",
 	[OP_CMP_NE] = "OP_CMP_NE",
+	[OP_CMP_L] = "OP_CMP_L",
+	[OP_CMP_LE] = "OP_CMP_LE",
+	[OP_CMP_G] = "OP_CMP_G",
+	[OP_CMP_GE] = "OP_CMP_GE",
 
 	[OP_LOGIC_AND] = "OP_LOGIC_AND",
 	[OP_LOGIC_OR] = "OP_LOGIC_OR",
 
-	[OP_JMP] = "OP_JMP",
 	[OP_ALL] = "OP_ALL",
 };
 

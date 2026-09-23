@@ -249,11 +249,11 @@ static int case_op(Ast *p)
 		case OP_DIV:
 
 			// todo, type bool
-	case OP_CMP_LT:
+	case OP_CMP_L:
 		case OP_CMP_LE:
-		case OP_CMP_EQ:
+		case OP_CMP_E:
 		case OP_CMP_GE:
-		case OP_CMP_GT:
+		case OP_CMP_G:
 		case OP_CMP_NE:
 
 	case OP_LOGIC_AND:

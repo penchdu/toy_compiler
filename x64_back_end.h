@@ -90,19 +90,26 @@ enum MachineCodeStamp{
 	MC_IMUL,
 	MC_DIV,
 
-	MC_CMP,	// setl cl
-	MC_SET_EQ,
-	MC_SET_NE,
-
-	MC_SET_LT,
-	MC_SET_LE,
-	MC_SET_GT,
-	MC_SET_GE,
-
 	MC_LOGIC_AND,
 	MC_LOGIC_OR,
 
+	MC_CMP,	// setl cl
+
+	MC_SET_E,
+	MC_SET_NE,
+	MC_SET_L,
+	MC_SET_LE,
+	MC_SET_G,
+	MC_SET_GE,
+
 	MC_JMP,
+	MC_JE,
+	MC_JNE,
+	MC_JL,
+	MC_JLE,
+	MC_JG,
+	MC_JGE,
+
 	MC_RET,	// reg-reg
 	MC_INVALID,
 };
@@ -165,8 +172,6 @@ struct X64mc{
 	int start_cycle = -1;
 };
 
-extern vector<X64mc> x64mc_schedued;
-extern vector<X64mc> x64mc_alloced;
 extern vector<McDepend> mcs_pred;
 extern vector<McDepend> mcs_succ;
 

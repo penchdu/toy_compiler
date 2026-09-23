@@ -170,7 +170,7 @@ public:
 			break;
 
 		case TK_CMP_LT:
-			op = OP_CMP_LT;
+			op = OP_CMP_L;
 			op_prio = OP_CMP_LT_PRIORITY;
 			break;
 		case TK_CMP_LE:
@@ -178,7 +178,7 @@ public:
 			op_prio = OP_CMP_LE_PRIORITY;
 			break;
 		case TK_CMP_E:
-			op = OP_CMP_EQ;
+			op = OP_CMP_E;
 			op_prio = OP_CMP_E_PRIORITY;
 			break;
 		case TK_CMP_GE:
@@ -186,7 +186,7 @@ public:
 			op_prio = OP_CMP_GE_PRIORITY;
 			break;
 		case TK_CMP_GT:
-			op = OP_CMP_GT;
+			op = OP_CMP_G;
 			op_prio = OP_CMP_GT_PRIORITY;
 			break;
 		case TK_CMP_NE:

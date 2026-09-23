@@ -75,17 +75,16 @@ enum SemOperator{
 	OP_MUL,
 	OP_DIV,
 
-	OP_CMP_EQ,
+	OP_CMP_E,
 	OP_CMP_NE,
-	OP_CMP_LT,
+	OP_CMP_L,
 	OP_CMP_LE,
-	OP_CMP_GT,
+	OP_CMP_G,
 	OP_CMP_GE,
 
 	OP_LOGIC_AND,
 	OP_LOGIC_OR,
 
-	OP_JMP,
 	OP_ALL,
 };
 
@@ -147,11 +146,6 @@ enum Type
 	FLOAT,
 	VOID,
 	INVALID_TYPE,
-};
-
-enum BlockType
-{
-
 };
 
 enum SemanticNodeType
@@ -222,9 +216,9 @@ enum SemanticNodeType
 //	vector<vr_off> vr_tbl;
 //};
 
+extern const char *TokenStamp_string[];
 extern const char *Type_string[];
 extern const char *Semantic_string[];
-extern const char *TokenStamp_string[];
 
 enum Type get_declare_type(enum TokenStamp ty);
 

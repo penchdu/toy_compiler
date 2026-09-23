@@ -8,6 +8,15 @@
 #include "basic_block.h"
 #include "parser.h"
 
+SemOperator op_2_negative_cmp[] = {
+    [OP_CMP_E]  = OP_CMP_NE,
+    [OP_CMP_NE] = OP_CMP_E,
+    [OP_CMP_L]  = OP_CMP_GE,
+    [OP_CMP_LE] = OP_CMP_G,
+    [OP_CMP_G]  = OP_CMP_LE,
+    [OP_CMP_GE] = OP_CMP_L,
+};
+
 Scope* case_tk_if()
 {
 	PARSER_LOG();
@@ -27,6 +36,10 @@ Scope* case_tk_if()
 	Ast *p = parse_expr_with_paren();
 	if (!p)
 		ERR();		// todo, must have a available expr
+
+	// assume just one op, no "&&", "||"
+	p->op = op_2_negative_cmp[p->op];
+
 	current_scope_pointer->asts.push_back(p);
 	exit_current_scope();
 

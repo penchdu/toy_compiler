@@ -101,11 +101,11 @@ static void gen_tac(Scope *scp)
 {
 	LOG("scp %s", scp->name.c_str());
 
-	if(scp->jmp_in.size() > 0)
+	if(scp->jmp_in.size() > 0 || scp->sem == SEM_COND_JMP)
 	{
-		BasicBlock t;
-		t.entry_label = scp;
-		basic_blocks.push_back(t);
+		BasicBlock newbb;
+		newbb.entry_label = scp;
+		basic_blocks.push_back(newbb);
 	}
 
 	for (auto *p : scp->asts)
@@ -115,10 +115,18 @@ static void gen_tac(Scope *scp)
 	{
 		// SEM_IF scope have only one ast, SEM_JMP have no ast
 //		Ast *cond = scp->asts[0];
-		basic_blocks.back().exit_jmp = scp;
+		BasicBlock &bb = basic_blocks.back();
+		bb.exit_jmp = scp;
 
-		BasicBlock t;
-		basic_blocks.push_back(t);
+//		if(scp->sem == SEM_COND_JMP)
+//		{
+//		}
+//		else if(scp->sem == SEM_JMP)
+//		{
+//		}
+
+		BasicBlock newbb;
+		basic_blocks.push_back(newbb);
 	}
 
 	for (Scope *p : scp->clds)
@@ -128,12 +136,12 @@ static void gen_tac(Scope *scp)
 static void dump_tac()
 {
 	printf("\n========== tac ==========\n");
-	for (BasicBlock &scpcrs_tac : basic_blocks)
+	for (BasicBlock &bb : basic_blocks)
 	{
-		if(scpcrs_tac.entry_label != 0)
-			printf("\nlabel %d:\n", scpcrs_tac.entry_label->id);
+		if(bb.entry_label != 0)
+			printf("\nlabel %d:\n", bb.entry_label->id);
 
-		for (Tac &r : scpcrs_tac.tacs)
+		for (Tac &r : bb.tacs)
 		{
 			Ast *p = r.ast;
 
@@ -172,10 +180,10 @@ static void dump_tac()
 			}
 		}
 
-		if(scpcrs_tac.exit_jmp != 0)
+		if(bb.exit_jmp != 0)
 		{
-			printf("%s jmp %d->%d:\n\n", Semantic_string[scpcrs_tac.exit_jmp->sem],
-				scpcrs_tac.exit_jmp->id, scpcrs_tac.exit_jmp->jmp_out->id);
+			printf("%s jmp %d->%d:\n\n", Semantic_string[bb.exit_jmp->sem],
+				bb.exit_jmp->id, bb.exit_jmp->jmp_out->id);
 		}
 	}
 }

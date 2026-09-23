@@ -23,17 +23,26 @@ const McInfo mc_info[MC_INVALID + 1] = {
     [MC_IMUL] = { 3, "imul" },
     [MC_DIV] = { 10, "div" },
 
-    [MC_CMP] = { 1, "cmp" },
-    [MC_SET_EQ] = { 1, "sete" },
-    [MC_SET_NE] = { 1, "setne" },
-    [MC_SET_LT] = { 1, "setlt" },
-    [MC_SET_LE] = { 1, "setle" },
-    [MC_SET_GT] = { 1, "setgt" },
-    [MC_SET_GE] = { 1, "setge" },
-
     [MC_LOGIC_AND] = { 1, "and" },
 
-    [MC_RET] = { 1, "ret" },
+    [MC_CMP] = { 1, "cmp" },
+
+    [MC_SET_E] = { 1, "sete" },
+    [MC_SET_NE] = { 1, "setne" },
+    [MC_SET_L] = { 1, "setl" },
+    [MC_SET_LE] = { 1, "setle" },
+    [MC_SET_G] = { 1, "setg" },
+    [MC_SET_GE] = { 1, "setge" },
+
+    [MC_JMP] = { 0, "jmp" },
+    [MC_JE] = { 0, "je" },
+    [MC_JNE] = { 0, "jne" },
+    [MC_JL] = { 0, "jl" },
+    [MC_JLE] = { 0, "jle" },
+    [MC_JG] = { 0, "jg" },
+    [MC_JGE] = { 0, "jge" },
+
+    [MC_RET] = { 0, "ret" },
 };
 
 struct Op2mc {
@@ -48,19 +57,25 @@ Op2mc op2mc[] = {
     { OP_MUL, MC_IMUL },
     { OP_DIV, MC_DIV },
 
-    { OP_CMP_EQ, MC_SET_EQ },
+    { OP_CMP_E, MC_SET_E },
     { OP_CMP_NE, MC_SET_NE },
-    { OP_CMP_LT, MC_SET_LT },
+    { OP_CMP_L, MC_SET_L },
     { OP_CMP_LE, MC_SET_LE },
-    { OP_CMP_GT, MC_SET_GT },
+    { OP_CMP_G, MC_SET_G },
     { OP_CMP_GE, MC_SET_GE },
 
     { OP_LOGIC_AND, MC_LOGIC_AND },
     { OP_LOGIC_OR, MC_LOGIC_OR },
-    { OP_JMP, MC_JMP },
     { OP_ALL, MC_INVALID },
 };
-
+MachineCodeStamp op2jmp_mc[] = {
+    [OP_CMP_E] = MC_JE,
+    [OP_CMP_NE] = MC_JNE,
+    [OP_CMP_L] = MC_JL,
+    [OP_CMP_LE] = MC_JLE,
+    [OP_CMP_G] = MC_JG,
+    [OP_CMP_GE] = MC_JGE,
+};
 static void gen_op_add_sub_mul_div_mc(vector<X64mc> &x64mc, MachineCodeStamp mc, const string &ori_sem,
     int tac_dst, int tac_s1, int tac_s2)
 {
@@ -101,11 +116,11 @@ static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 		x64mc.push_back(mc);
 		break;
 
-	case OP_CMP_EQ:
+	case OP_CMP_E:
 		case OP_CMP_NE:
-		case OP_CMP_LT:
+		case OP_CMP_L:
 		case OP_CMP_LE:
-		case OP_CMP_GT:
+		case OP_CMP_G:
 		case OP_CMP_GE:
 		mc_stamp = op2mc[op].mc;
 		gen_op_cmp_mc(x64mc, mc_stamp, mc_info[mc_stamp].mc_code, tac.dst, tac.s1, tac.s2);
@@ -164,6 +179,19 @@ static void gen_mc()
 				break;
 			}
 		}
+
+		if (bb.exit_jmp)
+		{
+			if (bb.exit_jmp->sem == SEM_COND_JMP)
+			{
+				Ast *cond = bb.exit_jmp->asts[0];
+				bb.mc_jmp = op2jmp_mc[cond->op];
+			}
+			else if (bb.exit_jmp->sem == SEM_JMP)
+			{
+				bb.mc_jmp = MC_JMP;
+			}
+		}
 	}
 }
 void dump_mc(vector<X64mc> &v)
@@ -202,11 +230,11 @@ void dump_mc(vector<X64mc> &v)
 			PRINT_MORE
 			break;
 
-		case MC_SET_EQ:
+		case MC_SET_E:
 			case MC_SET_NE:
-			case MC_SET_LT:
+			case MC_SET_L:
 			case MC_SET_LE:
-			case MC_SET_GT:
+			case MC_SET_G:
 			case MC_SET_GE:
 			printf("%s %%%d ", mc.asm_code.c_str(), mc.s1);
 			PRINT_MORE
@@ -242,14 +270,14 @@ static void dump()
 	for (BasicBlock &bb : basic_blocks)
 	{
 		if (bb.entry_label != 0)
-			printf("\nlabel %d:\n", bb.entry_label->id);
+			printf("\nlabel %s:\n", bb.entry_label->name.c_str());
 
 		dump_mc(bb.x64mc);
 
 		if (bb.exit_jmp != 0)
 		{
-			printf("%s jmp %d->%d:\n\n", Semantic_string[bb.exit_jmp->sem],
-			    bb.exit_jmp->id, bb.exit_jmp->jmp_out->id);
+			printf("%s %s:\n\n", mc_info[bb.mc_jmp].mc_code.c_str(),
+			    bb.exit_jmp->jmp_out->name.c_str());
 		}
 	}
 	printf("\nmov rsp, rbp \n");
