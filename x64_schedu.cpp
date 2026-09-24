@@ -11,23 +11,23 @@
 
 vector<int> prev_write_mc;
 vector<int> prev_read_mc;
-vector<McDepend> mcs_pred;	// predecessor
-vector<McDepend> mcs_succ;	// successor
+vector<McDepend> mcs_predecessor;
+vector<McDepend> mcs_successor;
 
 void create_dependcy(int a, int b)
 {
     if (b < 0)
         return;
 
-    auto &pred = mcs_pred[a].mcs;
+    auto &pred = mcs_predecessor[a].mcs;
 
     if (std::find(pred.begin(), pred.end(), b) != pred.end()){
         return;
     }
 
 	// a depend on b, data flow: b -> a
-	mcs_pred[a].mcs.push_back(b);
-	mcs_succ[b].mcs.push_back(a);
+	mcs_predecessor[a].mcs.push_back(b);
+	mcs_successor[b].mcs.push_back(a);
 }
 
 void gen_use_def_chain(vector<X64mc> &x64mc)
@@ -35,10 +35,10 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 	memset(prev_write_mc.data(), 0xFF, prev_write_mc.size() * sizeof(int));
 	memset(prev_read_mc.data(), 0xFF, prev_read_mc.size() * sizeof(int));
 
-	mcs_pred.clear();
-	mcs_succ.clear();
-	mcs_pred.resize(x64mc.size());
-	mcs_succ.resize(x64mc.size());
+	mcs_predecessor.clear();
+	mcs_successor.clear();
+	mcs_predecessor.resize(x64mc.size());
+	mcs_successor.resize(x64mc.size());
 
 	LOG("%zu, %zu\n", x64mc.size(), prev_write_mc.size());
 	int prev_ret = -1;
@@ -173,18 +173,18 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 		}
 	}
 
-	for (auto &r : mcs_pred)
+	for (auto &r : mcs_predecessor)
 		r.edges = r.mcs.size();
-	for (auto &r : mcs_succ)
+	for (auto &r : mcs_successor)
 		r.edges = r.mcs.size();
 
 }
 static void dump_chain()
 {
 	printf("dep\n");
-	for (int i = 0; i < mcs_pred.size(); i++)
+	for (int i = 0; i < mcs_predecessor.size(); i++)
 	{
-		auto &v = mcs_pred[i].mcs;
+		auto &v = mcs_predecessor[i].mcs;
 
 		std::sort(v.begin(), v.end());
 		auto it = std::adjacent_find(v.begin(), v.end());
@@ -196,9 +196,9 @@ static void dump_chain()
 	}
 
 	printf("\nbdep\n");
-	for (int i = 0; i < mcs_succ.size(); i++)
+	for (int i = 0; i < mcs_successor.size(); i++)
 	{
-		auto &v = mcs_succ[i].mcs;
+		auto &v = mcs_successor[i].mcs;
 
 		std::sort(v.begin(), v.end());
 		auto it = std::adjacent_find(v.begin(), v.end());
@@ -221,7 +221,7 @@ int get_mc_latency(vector<X64mc> &x64mc, int mc_id)
 	assert(n >= 0);
 	c = n;
 
-	auto &mcs = mcs_succ[mc_id].mcs;
+	auto &mcs = mcs_successor[mc_id].mcs;
 	int mx = 0;
 	for (int i = 0; i < mcs.size(); i++)
 	{
@@ -235,7 +235,7 @@ int get_mc_latency(vector<X64mc> &x64mc, int mc_id)
 }
 void gen_schdu_chain_latency(vector<X64mc> &x64mc)
 {
-	for (int i = 0; i < mcs_succ.size(); i++)
+	for (int i = 0; i < mcs_successor.size(); i++)
 	{
 		get_mc_latency(x64mc, i);
 	}
@@ -362,22 +362,22 @@ int mc_select(vector<X64mc> &x64mc)
 
 void init_ready_queue(vector<X64mc> &x64mc)
 {
-	for (int i = 0; i < mcs_pred.size(); i++)
+	for (int i = 0; i < mcs_predecessor.size(); i++)
 	{
-		if (mcs_pred[i].edges == 0)
+		if (mcs_predecessor[i].edges == 0)
 			ready.insert(
 			    { x64mc[i].chain_latency, i });
 	}
 }
 void finish_mc__update_ready_queue(vector<X64mc> &x64mc, int mc)
 {
-	auto &v = mcs_succ[mc].mcs;
+	auto &v = mcs_successor[mc].mcs;
 	for (auto mc : v)
 	{
-		mcs_pred[mc].edges--;
-		assert(mcs_pred[mc].edges >= 0);
+		mcs_predecessor[mc].edges--;
+		assert(mcs_predecessor[mc].edges >= 0);
 
-		if (mcs_pred[mc].edges == 0)
+		if (mcs_predecessor[mc].edges == 0)
 			ready.insert(
 			    { x64mc[mc].chain_latency, mc });
 	}
