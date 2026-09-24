@@ -10,7 +10,7 @@ if [[ $# -eq 0 ]]; then
 fi
 
 printf "\n"
-echo "commit -m " "$*"
+echo "commit -m " "\"$*\""
 printf "\n"
 
 git status
