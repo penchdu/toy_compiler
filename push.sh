@@ -9,8 +9,9 @@ if [[ $# -eq 0 ]]; then
     exit 1
 fi
 
-echo "\ncommit -m " "$*"
-echo "\n"
+printf "\n"
+echo "commit -m " "$*"
+printf "\n"
 
 git status
 git add .
