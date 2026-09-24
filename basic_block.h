@@ -21,9 +21,11 @@ struct BasicBlock {
 	vector<X64mc> x64mc_alloc;
 
 	Scope *exit_jmp = 0;
+	Scope *jmp_to = 0;
 	MachineCodeStamp mc_jmp = MC_INVALID;
 };
 
 extern vector<BasicBlock> basic_blocks;
+void dump_mc(BasicBlock &bb, vector<X64mc> &v);
 
 #endif /* BASIC_BLOCK_H_ */

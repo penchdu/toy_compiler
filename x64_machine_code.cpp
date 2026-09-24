@@ -202,8 +202,15 @@ static void gen_mc()
 		}
 	}
 }
-void dump_mc(vector<X64mc> &v)
+
+#define PRINT_ASM_HEAD(fmt, ...) printf(fmt "\n", ##__VA_ARGS__);
+#define PRINT_ASM(fmt, ...) printf("\t" fmt "\n", ##__VA_ARGS__);
+
+void dump_mc(BasicBlock &bb, vector<X64mc> &v)
 {
+	if (bb.entry_label != 0)
+		printf("\n%s:\n", bb.entry_label->name.c_str());
+
 	for (auto &mc : v)
 	{
 		MachineCodeStamp mc_stamp = mc.mc_stamp;
@@ -212,17 +219,17 @@ void dump_mc(vector<X64mc> &v)
 		switch (mc_stamp)
 		{
 		case MC_LI:
-			printf("%s %%%d, num %d ", mc.asm_code.c_str(), mc.s1, mc.const_num);
+			PRINT_ASM("%s %%%d, num %d", mc.asm_code.c_str(), mc.s1, mc.const_num);
 			PRINT_MORE
 			break;
 
 		case MC_LD:
-			printf("%s %%%d, dword ptr [%d] ", mc.asm_code.c_str(), mc.s1, mc.of1);
+			PRINT_ASM("%s %%%d, dword ptr [%d]", mc.asm_code.c_str(), mc.s1, mc.of1);
 			PRINT_MORE
 			break;
 
 		case MC_ST:
-			printf("%s dword ptr [%d], %%%d ", mc.asm_code.c_str(), mc.of1, mc.s1);
+			PRINT_ASM("%s dword ptr [%d], %%%d", mc.asm_code.c_str(), mc.of1, mc.s1);
 			PRINT_MORE
 			break;
 
@@ -230,7 +237,7 @@ void dump_mc(vector<X64mc> &v)
 			case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
-			printf("%s %%%d, %%%d ", mc.asm_code.c_str(), mc.s1, mc.s2);
+			PRINT_ASM("%s %%%d, %%%d", mc.asm_code.c_str(), mc.s1, mc.s2);
 			PRINT_MORE
 			break;
 
@@ -241,24 +248,24 @@ void dump_mc(vector<X64mc> &v)
 			case MC_CMP_G:
 			case MC_CMP_GE:
 
-			printf("%s %%%d, %%%d \n", mc.asm_code.c_str(), mc.s1, mc.s2);
+			PRINT_ASM("%s %%%d, %%%d", mc.asm_code.c_str(), mc.s1, mc.s2);
 
 			set_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_set;
-			printf("%s %%%d ", mc_info[set_mc].mc_code.c_str(), mc.dst);
+			PRINT_ASM("%s %%%d", mc_info[set_mc].mc_code.c_str(), mc.dst);
 			PRINT_MORE
 			break;
 
 		case MC_DIV:
-			printf("mov eax, %%%d", mc.s1);
+			PRINT_ASM("mov eax, %%%d", mc.s1);
 			PRINT_MORE
 
-			printf("cdq \n");
-			printf("idiv %%%d \t div \n", mc.s2);
-			printf("mov %%%d, eax \t div \n", mc.s1);
+			PRINT_ASM("cdq");
+			PRINT_ASM("idiv %%%d \t div", mc.s2);
+			PRINT_ASM("mov %%%d, eax \t div", mc.s1);
 			break;
 
 		case MC_SAVE_RET_VALUE:
-			printf("mov eax, %%%d", mc.s1);
+			PRINT_ASM("mov eax, %%%d", mc.s1);
 			PRINT_MORE
 			break;
 
@@ -267,32 +274,23 @@ void dump_mc(vector<X64mc> &v)
 			break;
 		}
 	}
+
+	if (bb.exit_jmp != 0)
+	{
+		printf("%s %s\n\n", mc_info[bb.mc_jmp].mc_code.c_str(),
+			bb.exit_jmp->jmp_out->name.c_str());
+	}
 }
 static void dump()
 {
-	printf("\n========== mc ==========\n");
-	printf("push rbp\n");
-	printf("mov rbp, rsp\n");
-	printf("sub rsp, %d\n\n", vrm.offset);
+	PRINT_ASM_HEAD("========== mc ==========");
 
 	for (BasicBlock &bb : basic_blocks)
-	{
-		if (bb.entry_label != 0)
-			printf("\n%s:\n", bb.entry_label->name.c_str());
-
-		dump_mc(bb.x64mc);
-
-		if (bb.exit_jmp != 0)
-		{
-			printf("%s %s\n\n", mc_info[bb.mc_jmp].mc_code.c_str(),
-			    bb.exit_jmp->jmp_out->name.c_str());
-		}
-	}
-	printf("\n.L_return: \n");
-	printf("mov rsp, rbp \n");
-	printf("pop rbp \n");
-	printf("ret \n\n");
+		dump_mc(bb, bb.x64mc);
 }
+#undef PRINT_ASM_HEAD
+#undef PRINT_ASM
+
 void gen_machine_code()
 {
 	gen_mc();

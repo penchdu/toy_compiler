@@ -475,27 +475,9 @@ static void mc_schdu(BasicBlock &bb)
 static void dump()
 {
 	printf("\n========== mc schedu ==========\n");
-	printf("push rbp\n");
-	printf("mov rbp, rsp\n");
-	printf("sub rsp, %d\n\n", vrm.offset);
 
 	for (BasicBlock &bb : basic_blocks)
-	{
-		if (bb.entry_label != 0)
-			printf("\n%s: \n", bb.entry_label->name.c_str());
-
-		dump_mc(bb.x64mc_schedu);
-
-		if (bb.exit_jmp != 0)
-		{
-			printf("%s %s:\n\n", mc_info[bb.mc_jmp].mc_code.c_str(),
-			    bb.exit_jmp->jmp_out->name.c_str());
-		}
-	}
-	printf("\n.L_return \n");
-	printf("mov rsp, rbp \n");
-	printf("pop rbp \n");
-	printf("ret \n\n");
+		dump_mc(bb, bb.x64mc_schedu);
 }
 
 void mc_schedule()

@@ -67,7 +67,7 @@ sem_return
 //			printf(", off %d\n", mc.of1);
 #else
 	#define PRINT_MORE	\
-		printf("\n");
+//		printf("\n");
 #endif
 
 struct McDepend
@@ -200,7 +200,6 @@ struct X64mc{
 };
 
 
-void dump_mc(vector<X64mc> &v);
 void gen_machine_code();
 void mc_schedule();
 void x64_pr_alloc();
