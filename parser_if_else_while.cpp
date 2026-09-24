@@ -263,16 +263,17 @@ void case_tk_while()
 	while_cond->jmp_in.push_back(while_body_inner_tail);
 
 	/////////////////////////////////
-	for (Scope *p : while_body->_continue)
+	for (Scope *p : while_body->_continue_break)
 	{
-		assert(p->sem == SEM_CONTINUE);
-		p->jmp_out = while_cond;
-		p->sem = SEM_JMP;
-	}
-	for (Scope *p : while_body->_break)
-	{
-		assert(p->sem == SEM_BREAK);
-		p->jmp_out = tail;
+		if (p->sem == SEM_CONTINUE)
+			p->jmp_out = while_cond;
+
+		else if (p->sem == SEM_BREAK)
+			p->jmp_out = tail;
+
+		else
+			ERR();
+
 		p->sem = SEM_JMP;
 	}
 
@@ -282,10 +283,10 @@ void case_tk_while()
 
 	return;
 }
-void case_tk_continue()
+static Scope* case_tk_continue_break()
 {
 	Token tk = tokens.get();
-	PARSER_LOG("%s", tk.src.c_str());
+	PARSER_LOG("%s", tk.src);
 
 	Scope *while_body = current_scope_pointer;
 	while (while_body && while_body->sem != SEM_WHILE_BODY)
@@ -296,34 +297,23 @@ void case_tk_continue()
 	if (!while_body)
 		ERR();
 
-	new_scope_and_drop_in();
-	current_scope_pointer->sem = SEM_CONTINUE;
-	current_scope_pointer->name = "continue";
-	while_body->_continue.push_back(current_scope_pointer);
+	Scope *scp = new_scope_and_drop_in();
+	while_body->_continue_break.push_back(current_scope_pointer);
 
 	exit_current_scope();
 	new_virtual_scp_and_drop_in();
+	return scp;
+}
+void case_tk_continue()
+{
+	Scope *scp = case_tk_continue_break();
+	scp->sem = SEM_CONTINUE;
+	scp->name = "continue";
 }
 void case_tk_break()
 {
-	Token tk = tokens.get();
-	PARSER_LOG("%s", tk.src.c_str());
-
-	Scope *while_body = current_scope_pointer;
-	while (while_body && while_body->sem != SEM_WHILE_BODY)
-	{
-		while_body = while_body->parent;
-	}
-
-	if (!while_body)
-		ERR();
-
-	new_scope_and_drop_in();
-	current_scope_pointer->sem = SEM_BREAK;
-	current_scope_pointer->name = "break";
-	while_body->_break.push_back(current_scope_pointer);
-
-	exit_current_scope();
-	new_virtual_scp_and_drop_in();
+	Scope *scp = case_tk_continue_break();
+	scp->sem = SEM_BREAK;
+	scp->name = "break";
 }
 
