@@ -163,11 +163,10 @@ void x64_pr_alloc_o0()
 	{
 		vector<X64mc> &x64mc_alloc = bb.x64mc_alloc;
 
-		for (X64mc &x64mc_schedu : bb.x64mc_schedu)
+		for (X64mc &mc_schedu : bb.x64mc_schedu)
 		{
-			X64mc mc = x64mc_schedu;
+			X64mc mc = mc_schedu;
 			MachineCodeStamp mc_stamp = mc.mc_stamp;
-			MachineCodeStamp set_mc;
 
 			switch (mc_stamp)
 			{
@@ -203,22 +202,13 @@ void x64_pr_alloc_o0()
 				case MC_CMP_LE:
 				case MC_CMP_G:
 				case MC_CMP_GE:
-
 				mc.pr_dst = get_pr__load_vr(x64mc_alloc, mc.dst, VR_USAGE_WRITE);
 				mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_READ);
 				mc.pr2 = get_pr__load_vr(x64mc_alloc, mc.s2, VR_USAGE_READ);
 
 				x64mc_alloc.push_back(mc);
-
-//				set_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_set;
-//				inst = X64mc(set_mc, mc.dst);
-//				inst.ori_sem = mc_info[mc_stamp].mc_code;
-//
-//				x64mc_alloc.push_back(inst);
-
 				spill_pr(x64mc_alloc, mc.dst);
 				spill_pr(x64mc_alloc, mc.s1, mc.s2);
-
 				PRINT_MORE
 				break;
 

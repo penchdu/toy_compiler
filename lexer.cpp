@@ -297,6 +297,12 @@ static Token get_a_token_from_file(FILE *fp)
 		else if (word == "while")
 			tk.stamp = TK_WHILE;
 
+		else if (word == "continue")
+			tk.stamp = TK_CONTINUE;
+
+		else if (word == "break")
+			tk.stamp = TK_BREAK;
+
 		else if (word == "return")
 			tk.stamp = TK_RETURN;
 

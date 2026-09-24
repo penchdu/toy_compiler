@@ -54,6 +54,8 @@ enum TokenStamp {
 	TK_IF,
 	TK_ELSE,
 	TK_WHILE,
+	TK_CONTINUE,
+	TK_BREAK,
 
 	TK_PAREN_L,
 	TK_PAREN_R,
@@ -100,7 +102,9 @@ enum Semantic {
 	SEM_JMP,
 	SEM_ELSE,
 //	SEM_ELIF,
-	SEM_WHILE,
+	SEM_WHILE_BODY,
+	SEM_CONTINUE,
+	SEM_BREAK,
 
 	SEM_LABEL,
 

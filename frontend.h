@@ -263,6 +263,10 @@ public:
 	vector<Scope*> jmp_in;
 	Scope *jmp_out = 0;
 
+	// continue, break
+	vector<Scope*> _continue;
+	vector<Scope*> _break;
+
 	Scope *parent;
 	vector<Scope*> clds;
 	bool is_virtual;

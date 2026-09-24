@@ -21,8 +21,9 @@ void create_dependcy(int a, int b)
 
     auto &pred = mcs_pred[a].mcs;
 
-    if (std::find(pred.begin(), pred.end(), b) != pred.end())
+    if (std::find(pred.begin(), pred.end(), b) != pred.end()){
         return;
+    }
 
 	// a depend on b, data flow: b -> a
 	mcs_pred[a].mcs.push_back(b);
@@ -58,6 +59,7 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 			s2_prev_write_mc = prev_write_mc[s2];
 			s2_prev_read_mc = prev_read_mc[s2];
 		}
+		(void)s2_prev_read_mc;
 
 		int dst = x64mc[i].dst;
 		int dst_prev_write_mc = -1;

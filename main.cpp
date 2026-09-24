@@ -30,7 +30,6 @@ int main(int argc, char **argv)
 	system("gcc a.s -o a");
 	system("./a");
 
-
 //	test();
 	fclose(fp);
 	return 0;

@@ -142,7 +142,41 @@ static int case_tk_func()
 	in_func_define = 0;
 	return 0;
 }
+void case_tk_return()
+{
+	Token tk = tokens.get();
+	if (!in_func_define)
+		ERR("%s not in func", tk.src.c_str());
 
+	PARSER_LOG("%s", tk.src.c_str());
+
+	Ast *expr = parse_expr(TK_SEMICOLON);
+//	current_scope_pointer->asts.push_back(expr);
+
+	Scope *func = current_scope_pointer;
+	while (func && func->sem != SEM_FUNC_DEFINE)
+	{
+		func = func->parent;
+	}
+
+	if (!func)
+		ERR();
+
+	new_scope_and_drop_in();
+	current_scope_pointer->sem = SEM_SAVE_RET_VALUE_AND_JMP;
+	current_scope_pointer->name = "ret";
+	current_scope_pointer->jmp_out = func->return_label;
+
+	Ast *p = new_ast_node(tk);
+	p->sem = SEM_SAVE_RET_VALUE_AND_JMP;
+	p->sem_home_scp = func;
+	p->op = OP_SAVE_RET_VALUE;
+	p->left = expr;
+	current_scope_pointer->asts.push_back(p);
+	exit_current_scope();
+
+	return;
+}
 static Ast* case_tk_declare()
 {
 	Token ttk = tokens.get();
@@ -372,41 +406,7 @@ void case_tk_eof()
 	if (p->sem != SEM_FILE_SCOPE)
 		ERR("EOF in scope %s-%d\n", p->name.c_str(), p->id);
 }
-void case_tk_return()
-{
-	Token tk = tokens.get();
-	if (!in_func_define)
-		ERR("%s not in func", tk.src.c_str());
 
-	PARSER_LOG("%s", tk.src.c_str());
-
-	Ast *expr = parse_expr(TK_SEMICOLON);
-//	current_scope_pointer->asts.push_back(expr);
-
-	Scope *func = current_scope_pointer;
-	while (func && func->sem != SEM_FUNC_DEFINE)
-	{
-		func = func->parent;
-	}
-
-	if (!func)
-		ERR();
-
-	new_scope_and_drop_in();
-	current_scope_pointer->sem = SEM_SAVE_RET_VALUE_AND_JMP;
-	current_scope_pointer->name = "ret";
-	current_scope_pointer->jmp_out = func->return_label;
-
-	Ast *p = new_ast_node(tk);
-	p->sem = SEM_SAVE_RET_VALUE_AND_JMP;
-	p->sem_home_scp = func;
-	p->op = OP_SAVE_RET_VALUE;
-	p->left = expr;
-	current_scope_pointer->asts.push_back(p);
-	exit_current_scope();
-
-	return;
-}
 Ast* parse_stmt()
 {
 	Token tk = tokens.peek();
@@ -437,7 +437,15 @@ Ast* parse_stmt()
 		break;
 
 	case TK_WHILE:
-		ERR();
+		case_tk_while();
+		break;
+
+	case TK_CONTINUE:
+		case_tk_continue();
+		break;
+
+	case TK_BREAK:
+		case_tk_break();
 		break;
 
 	case TK_BRACE_L:
@@ -472,7 +480,7 @@ Ast* parse_stmt()
 	return 0;
 }
 
-Scope* parse_scope(bool eat)
+void parse_scope(bool eat)
 {
 	/*
 	 * 1. eat '{', call new_scope(false);
@@ -492,14 +500,12 @@ Scope* parse_scope(bool eat)
 		ERR("tk_left_brace not in func");
 	assert(current_scope_pointer->is_virtual == false);
 
-	Scope *scp = 0;
-
 	while (!tokens.empty())
 	{
 		Token tk = tokens.peek();
 		if (tk.stamp == TK_BRACE_R)
 		{
-			scp = case_tk_right_brace();
+			case_tk_right_brace();
 			break;
 		}
 
@@ -516,9 +522,9 @@ Scope* parse_scope(bool eat)
 //	Token tk = tokens.prev();		// }
 //	if (tk.type != TK_BRACE_R)
 //		ERR("tk: %s, except }", tk.src.c_str());
-	return scp;
+	return;
 }
-Scope* case_tk_right_brace(bool eat)
+void case_tk_right_brace(bool eat)
 {
 	PARSER_LOG();
 	Scope *tail;
@@ -561,7 +567,7 @@ Scope* case_tk_right_brace(bool eat)
 	}
 
 	PARSER_LOG();
-	return scp;
+	return;
 }
 
 static void parse_file__gen_ast()

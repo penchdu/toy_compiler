@@ -36,14 +36,13 @@ Plan to go on: SSA, -O1 reg-alloc, maybe a riscv backend, also keep everything s
 VSC can now handle:
 
 - nested `if/else`
+- nested `while` `continue` `break`
 - nested block scopes
 - variable shadowing
 - control-flow basic blocks
 - conditional branches and jumps
 
 I tested programs containing deeply nested scopes and multiple `if/else` branches, and multiple `return`, the generated executables produced the expected results.
-
-The current implementation is still intentionally simple and self-designed.
 
 Next steps: SSA, -O1 register allocation.
 
@@ -72,7 +71,7 @@ Next steps: SSA, -O1 register allocation.
 
 
 - `=` `+` `-` `*` `/` `(` `)` `{` `}` `;` `<` `<=` `>` `>=` `==` `!=`
-- `int` `return` `if` `else`
+- `int` `return` `if` `else` `while` `continue` `break`
 
 
 ## Language Restrictions

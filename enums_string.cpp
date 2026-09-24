@@ -26,6 +26,8 @@ const char *TokenStamp_string[TK_EOF + 1] = {
 	[TK_IF] = "TK_IF",
 	[TK_ELSE] = "TK_ELSE",
 	[TK_WHILE] = "TK_WHILE",
+	[TK_CONTINUE] = "TK_CONTINUE",
+	[TK_BREAK] = "TK_BREAK",
 
 	[TK_PAREN_L] = "TK_PAREN_L",
 	[TK_PAREN_R] = "TK_PAREN_R",
@@ -71,7 +73,9 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 	[SEM_COND_JMP] = "SEM_COND_JMP",
 	[SEM_JMP] = "SEM_JMP",
 	[SEM_ELSE] = "SEM_ELSE",
-	[SEM_WHILE] = "SEM_WHILE",
+	[SEM_WHILE_BODY] = "SEM_WHILE_BODY",
+	[SEM_CONTINUE] = "SEM_CONTINUE",
+	[SEM_BREAK] = "SEM_BREAK",
 
 	[SEM_LABEL] = "SEM_LABEL",
 

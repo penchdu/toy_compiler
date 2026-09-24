@@ -34,15 +34,18 @@ extern bool in_func_define;
 
 Scope* new_scope_and_drop_in();
 Scope* new_virtual_scp_and_drop_in();
-Scope* parse_scope(bool eat = true);
-Scope* case_tk_right_brace(bool eat = true);
+void  parse_scope(bool eat = true);
+void case_tk_right_brace(bool eat = true);
 void exit_current_scope();
 
 
 Ast* parse_stmt();
 Ast* parse_expr_with_paren();
 
-Scope* case_tk_else();
 Scope* case_tk_if();
+void case_tk_while();
+void case_tk_continue();
+void case_tk_break();
+
 
 #endif /* PARSER_H_ */

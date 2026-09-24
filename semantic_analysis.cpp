@@ -269,6 +269,8 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	int b = trace_ast_down_up_gen_vr(p->right);
 	int a = trace_ast_down_up_gen_vr(p->left);
 	SymbolVar *symb = 0;
+	(void)a;
+	(void)b;
 
 	switch (p->sem)
 	{
