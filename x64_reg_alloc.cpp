@@ -156,7 +156,7 @@ void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
 
 void x64_pr_alloc_o0()
 {
-	vr2pr.resize(vrm.id + 1);
+	vr2pr.resize(vregm.id + 1);
 	X64mc inst;
 
 	for (BasicBlock &bb : basic_blocks)
@@ -323,13 +323,13 @@ static void dump_bb_asm(FILE *fp, BasicBlock &bb)
 
 	if (bb.exit_jmp != 0)
 	{
-		PRINT_ASM("%s %s\n", mc_info[bb.mc_jmp].mc_code.c_str(),
+		PRINT_ASM("%s %s", mc_info[bb.mc_jmp].mc_code.c_str(),
 			bb.exit_jmp->jmp_out->name.c_str());
 	}
 }
 static void dump_asm()
 {
-	int rsp_of = vrm.offset;
+	int rsp_of = vregm.offset;
 	align16(rsp_of);
 	//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 
@@ -350,7 +350,7 @@ static void dump_asm()
 	PRINT_ASM_HEAD("\nmain:");
 	PRINT_ASM("push rbp");
 	PRINT_ASM("mov rbp, rsp");
-	PRINT_ASM("sub rsp, %d \n", rsp_of);
+	PRINT_ASM("sub rsp, %d", rsp_of);
 
 
 	for (BasicBlock &bb : basic_blocks)

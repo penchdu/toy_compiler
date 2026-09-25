@@ -26,6 +26,7 @@ using std::vector;
 using std::string;
 using std::map;
 using std::deque;
+using std::to_string;
 
 #include "enums.h"
 
@@ -120,10 +121,10 @@ struct SymbolFunc
 };
 struct Ast {
 public:
-	Semantic sem;
+	Semantic sem_stamp;
 
 	// op
-	SemOperator op = OP_ALL;
+	Operator op = OP_ALL;
 	OpPriority op_prio;
 	// for op, vr is temp vr
 	int vr_id = -1;
@@ -140,9 +141,9 @@ public:
 	Ast *right = 0;
 
 	Scope *this_scp = 0;
-	Scope *sem_home_scp = 0;
+	Scope *home_scp = 0;
 
-	Ast(Token &_token)
+	Ast(const Token &_token)
 	{
 		tk = _token;
 
@@ -201,34 +202,34 @@ public:
 			break;
 
 		case TK_IF:
-			sem = SEM_COND_JMP;
+			sem_stamp = SEM_COND_JMP;
 			break;
 		case TK_ELSE:
-			sem = SEM_ELSE;
+//			sem_stamp = SEM_ELSE;
 			break;
 
 		case TK_INT:
-			sem = SEM_VAR_DECLARE;
+			sem_stamp = SEM_VAR_DECLARE;
 			type = get_declare_type(tk.stamp);
 			break;
 
 		case TK_VAR:
-			sem = SEM_VAR;
+			sem_stamp = SEM_VAR;
 			type = INT;
 			break;
 
 		case TK_CONST_NUM:
-			sem = SEM_CONST_NUM;
+			sem_stamp = SEM_CONST_NUM;
 			type = INT;
 			const_value = atoi(_token.src.c_str());
 			break;
 
 		case TK_RETURN:
-			sem = SEM_SAVE_RET_VALUE_AND_JMP;
+			sem_stamp = SEM_SAVE_RET_VALUE_AND_JMP;
 			break;
 
 		case TK_SEMICOLON:
-			sem = SEM_NONE;
+			sem_stamp = SEM_NONE;
 			break;
 
 		default:
@@ -237,7 +238,7 @@ public:
 		}
 
 		if (op != OP_ALL)
-			sem = SEM_OPERATOR;
+			sem_stamp = SEM_OPERATOR;
 	}
 };
 
@@ -246,7 +247,7 @@ struct Scope
 public:
 	int id;
 	string name;
-	Semantic sem = SEM_INVALID;
+	Semantic sem_stamp = SEM_INVALID;
 
 	vector<Ast*> asts;
 	map<string, SymbolVar*> _var_table;
@@ -255,21 +256,20 @@ public:
 	map<string, SymbolFunc*> *func_table = &_func_table;
 	//	Sem_type region_header = sem_none;
 
-	// ifc
-//	Scope *jmp_then = 0;
-//	Scope *jmp_else = 0;
-
-	// ift, iff
-	vector<Scope*> jmp_in;
-	Scope *jmp_out = 0;
-
-	// continue, break
-	vector<Scope*> _continue_break;
-
 	Scope *parent;
 	vector<Scope*> clds;
 	bool is_virtual;
 
+	// for if
+//	Scope *jmp_then = 0;
+//	Scope *jmp_else = 0;
+	vector<Scope*> jmp_in;
+	Scope *jmp_out = 0;
+
+	// continue, break
+	vector<Scope*> continue__break;
+
+	// for function
 	Scope *return_label = 0;
 	enum Type return_type = INVALID_TYPE;
 
@@ -328,7 +328,6 @@ struct Tac {
 //	};
 //};
 
-// virtual register
 struct VirtualRegisterManager
 {
 	int new_vr(Ast *p, int size = 4)
@@ -354,7 +353,7 @@ struct VirtualRegisterManager
 	vector<int> vr_off;
 };
 
-extern VirtualRegisterManager vrm;
+extern VirtualRegisterManager vregm;
 
 int lexer(FILE *fp);
 void dump_ast();

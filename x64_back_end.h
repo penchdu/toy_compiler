@@ -128,7 +128,7 @@ struct McInfo{
 	string mc_code;	// just for print
 };
 extern const McInfo mc_info[];
-extern VirtualRegisterManager vrm;
+extern VirtualRegisterManager vregm;
 
 struct X64mc{
 	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s1, int tac_s2)
@@ -138,9 +138,9 @@ struct X64mc{
 		s1 = tac_s1;
 		s2 = tac_s2;
 
-		of_dst = vrm.get_vr_off(dst);
-		of1 = vrm.get_vr_off(s1);
-		of2 = vrm.get_vr_off(s2);
+		of_dst = vregm.get_vr_off(dst);
+		of1 = vregm.get_vr_off(s1);
+		of2 = vregm.get_vr_off(s2);
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
@@ -151,8 +151,8 @@ struct X64mc{
 		s1 = tac_dst;
 		s2 = tac_s2;
 
-		of1 = vrm.get_vr_off(s1);
-		of2 = vrm.get_vr_off(s2);
+		of1 = vregm.get_vr_off(s1);
+		of2 = vregm.get_vr_off(s2);
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
@@ -161,7 +161,7 @@ struct X64mc{
 	{
 		mc_stamp = _mc_stamp;
 		s1 = tac_s1;
-		of1 = vrm.get_vr_off(tac_s1);
+		of1 = vregm.get_vr_off(tac_s1);
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;

@@ -18,10 +18,10 @@ static int case_sem_assign(Ast *p)
 	assert(p->right);
 
 	Ast *left = p->left;
-	if (left->sem != SEM_VAR)
-		ERR("semty %d", left->sem);
+	if (left->sem_stamp != SEM_VAR)
+		ERR("semty %d", left->sem_stamp);
 
-	Semantic ty = p->right->sem;
+	Semantic ty = p->right->sem_stamp;
 
 	if (!(ty == SEM_VAR
 	        || ty == SEM_CONST_NUM
@@ -45,21 +45,21 @@ static int case_sem_op(Ast *p)
 
 	assert(p);
 	assert(p->left);
-	Semantic ty = p->left->sem;
+	Semantic ty = p->left->sem_stamp;
 	assert(ty == SEM_VAR
 	        || ty == SEM_CONST_NUM
 	        || ty == SEM_OPERATOR
 	        || ty == SEM_FUNC_CALL);
 
 	assert(p->right);
-	ty = p->right->sem;
+	ty = p->right->sem_stamp;
 	assert(ty == SEM_VAR
 	        || ty == SEM_CONST_NUM
 	        || ty == SEM_OPERATOR
 	        || ty == SEM_FUNC_CALL);
 
 //	p->vr = vrid++;
-//	p->vr_name = "%" + std::to_string(p->vr);
+//	p->vr_name = "%" + to_string(p->vr);
 //	assert(p->left->var_type == p->right->var_type);
 	return 0;
 }
@@ -71,7 +71,7 @@ static int case_sem_return(Ast *p)
 	if(!p->left)
 		ERR("only support return int");
 
-	Semantic ty = p->left->sem;
+	Semantic ty = p->left->sem_stamp;
 	if (!(ty == SEM_VAR
 	        || ty == SEM_CONST_NUM
 	        || ty == SEM_OPERATOR
@@ -142,10 +142,10 @@ static int case_sem_variable_declare(Ast *ty)
 	else
 	{
 		// a scope declared var->src_name before this point
-		symb->unique_name = "b" + std::to_string(scp->id) + "_" + var->tk.src;
+		symb->unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
 	}
 
-	symb->explicit_unique_name = "b" + std::to_string(scp->id) + "_" + var->tk.src;
+	symb->explicit_unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
 	var->symb_var = symb;
 	tbl->insert( {var->tk.src, symb});
 	return 0;
@@ -155,7 +155,7 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 	if (!p)
 		return 0;
 
-	switch (p->sem)
+	switch (p->sem_stamp)
 	{
 	case SEM_VAR_DECLARE:
 		case_sem_variable_declare(p);
@@ -177,7 +177,7 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 		break;
 
 	default:
-		ERR("%s, %d", p->tk.src.c_str(), p->sem);
+		ERR("%s, %d", p->tk.src.c_str(), p->sem_stamp);
 	}
 
 	trace_ast_up_down__named_variable_declare(p->left);
@@ -252,7 +252,7 @@ static int case_op(Ast *p)
 			ERR("op type mismatch %d %d", p->left->type, p->right->type);
 
 		p->type = p->left->type;
-		p->vr_id = vrm.new_vr(p);
+		p->vr_id = vregm.new_vr(p);
 		return p->vr_id;
 
 	default:
@@ -261,7 +261,7 @@ static int case_op(Ast *p)
 }
 static int trace_ast_down_up_gen_vr(Ast *p)
 {
-	if (!p || p->sem == SEM_VAR_DECLARE)
+	if (!p || p->sem_stamp == SEM_VAR_DECLARE)
 		return -1;
 
 //	if(SEM_SAVE_RET_VALUE_AND_JMP)
@@ -272,29 +272,29 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	(void)a;
 	(void)b;
 
-	switch (p->sem)
+	switch (p->sem_stamp)
 	{
 	// leaf node
 	case SEM_VAR:
 		symb = p->symb_var;
 		assert(symb);
 		if (symb->vr < 0)
-			symb->vr = vrm.new_vr(p);
+			symb->vr = vregm.new_vr(p);
 
 		// todo symb->vr to be defined in "new =" to gen ssa
 		p->vr_id = symb->vr;
 		return symb->vr;
 
 	case SEM_CONST_NUM:
-		p->vr_id = vrm.new_vr(p);
+		p->vr_id = vregm.new_vr(p);
 		return p->vr_id;
 
 	case SEM_OPERATOR:
 		return case_op(p);
 
 	case SEM_SAVE_RET_VALUE_AND_JMP:
-		if (p->sem_home_scp->return_type != p->left->type)
-			ERR("return type mismatch %d %d", p->sem_home_scp->return_type, p->left->type);
+		if (p->home_scp->return_type != p->left->type)
+			ERR("return type mismatch %d %d", p->home_scp->return_type, p->left->type);
 		assert(p->op == OP_SAVE_RET_VALUE);
 
 		return -1;
@@ -305,11 +305,11 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	case SEM_FUNC_DECLARE:
 		case SEM_FUNC_DEFINE:
 		case SEM_FUNC_CALL:
-		printf("todo sem_func* semty %d \n", p->sem);
+		printf("todo sem_func* semty %d \n", p->sem_stamp);
 		return -1;
 
 	default:
-		ERR("%d", p->sem);
+		ERR("%d", p->sem_stamp);
 		break;
 	}
 

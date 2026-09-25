@@ -8,12 +8,12 @@ const char *TokenStamp_string[TK_EOF + 1] = {
 	[TK_MUL] = "TK_MUL",
 	[TK_DIV] = "TK_DIV",
 
-	[TK_CMP_LT] = "TK_CMP_LT",
-	[TK_CMP_LE] = "TK_CMP_LE",
-	[TK_CMP_GE] = "TK_CMP_GE",
-	[TK_CMP_GT] = "TK_CMP_GT",
 	[TK_CMP_E] = "TK_CMP_E",
 	[TK_CMP_NE] = "TK_CMP_NE",
+	[TK_CMP_LT] = "TK_CMP_LT",
+	[TK_CMP_LE] = "TK_CMP_LE",
+	[TK_CMP_GT] = "TK_CMP_GT",
+	[TK_CMP_GE] = "TK_CMP_GE",
 
 	[TK_LOGIC_AND] = "TK_LOGIC_AND",
 	[TK_OP_ALL] = "TK_OP_ALL",
@@ -42,7 +42,7 @@ const char *TokenStamp_string[TK_EOF + 1] = {
 	[TK_EOF] = "TK_EOF",
 };
 
-const char *SemOperator_string[OP_ALL + 1] = {
+const char *Operator_string[OP_ALL + 1] = {
 	[OP_ASSIGN] = "OP_ASSIGN",
 	[OP_ADD] = "OP_ADD",
 	[OP_SUB] = "OP_SUB",
@@ -72,12 +72,9 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 
 	[SEM_COND_JMP] = "SEM_COND_JMP",
 	[SEM_JMP] = "SEM_JMP",
-	[SEM_ELSE] = "SEM_ELSE",
-	[SEM_WHILE_BODY] = "SEM_WHILE_BODY",
-	[SEM_CONTINUE] = "SEM_CONTINUE",
-	[SEM_BREAK] = "SEM_BREAK",
-
 	[SEM_LABEL] = "SEM_LABEL",
+
+	[SEM_WHILE_BODY] = "SEM_WHILE_BODY",
 
 	[SEM_FUNC_DECLARE] = "SEM_FUNC_DECLARE",
 	[SEM_FUNC_DEFINE] = "SEM_FUNC_DEFINE",
@@ -87,7 +84,6 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 
 	[SEM_FILE_SCOPE] = "SEM_FILE_SCOPE",
 	[SEM_UNNAMED_SCOPE] = "SEM_UNNAMED_SCOPE",
-
 	[SEM_NONE] = "SEM_NONE",
 	[SEM_INVALID] = "SEM_INVALID",
 };

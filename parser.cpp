@@ -110,7 +110,7 @@ static int case_tk_func()
 	tk = tokens.peek();
 	assert(tk.stamp == TK_BRACE_L);
 
-	assert(current_scope_pointer->sem == SEM_FILE_SCOPE);
+	assert(current_scope_pointer->sem_stamp == SEM_FILE_SCOPE);
 
 	if (current_scope_pointer->var_table->find(func_name) != current_scope_pointer->var_table->end())
 		ERR("%s already declared", func_name.c_str());
@@ -122,7 +122,7 @@ static int case_tk_func()
 
 	new_scope_and_drop_in();
 
-	current_scope_pointer->sem = SEM_FUNC_DEFINE;
+	current_scope_pointer->sem_stamp = SEM_FUNC_DEFINE;
 	current_scope_pointer->name = func_name;
 	current_scope_pointer->return_label = new Scope;
 	current_scope_pointer->return_label->id = -1; //scope_id++;
@@ -154,7 +154,7 @@ void case_tk_return()
 //	current_scope_pointer->asts.push_back(expr);
 
 	Scope *func = current_scope_pointer;
-	while (func && func->sem != SEM_FUNC_DEFINE)
+	while (func && func->sem_stamp != SEM_FUNC_DEFINE)
 	{
 		func = func->parent;
 	}
@@ -163,13 +163,13 @@ void case_tk_return()
 		ERR();
 
 	new_scope_and_drop_in();
-	current_scope_pointer->sem = SEM_SAVE_RET_VALUE_AND_JMP;
+	current_scope_pointer->sem_stamp = SEM_SAVE_RET_VALUE_AND_JMP;
 	current_scope_pointer->name = "ret";
 	current_scope_pointer->jmp_out = func->return_label;
 
 	Ast *p = new_ast_node(tk);
-	p->sem = SEM_SAVE_RET_VALUE_AND_JMP;
-	p->sem_home_scp = func;
+	p->sem_stamp = SEM_SAVE_RET_VALUE_AND_JMP;
+	p->home_scp = func;
 	p->op = OP_SAVE_RET_VALUE;
 	p->left = expr;
 	current_scope_pointer->asts.push_back(p);
@@ -403,10 +403,90 @@ void case_tk_eof()
 	if (current_scope_pointer->is_virtual)
 		p = current_scope_pointer->parent;
 
-	if (p->sem != SEM_FILE_SCOPE)
+	if (p->sem_stamp != SEM_FILE_SCOPE)
 		ERR("EOF in scope %s-%d\n", p->name.c_str(), p->id);
 }
 
+void parse_scope(bool eat)
+{
+	/*
+	 * 1. eat '{', call new_scope(false);
+	 * 2. set the cur_scp attribute
+	 * 3. call parse_scope()
+	 */
+
+	if (eat)
+	{
+		Token tk = tokens.get();
+		if (tk.stamp != TK_BRACE_L)
+			ERR();
+	}
+
+	PARSER_LOG();
+	if (!in_func_define)
+		ERR("tk_left_brace not in func");
+	assert(current_scope_pointer->is_virtual == false);
+
+	while (!tokens.empty())
+	{
+		Token tk = tokens.peek();
+		if (tk.stamp == TK_BRACE_R)
+		{
+			case_tk_right_brace();
+			break;
+		}
+
+		Ast *p = parse_stmt();
+		if (p)
+			current_scope_pointer->asts.push_back(p);
+	}
+}
+void case_tk_right_brace(bool eat)
+{
+	PARSER_LOG();
+
+	Scope *tail = current_scope_pointer;
+	if (tail->is_virtual == false /* real scope, have never create virtual scope */
+		|| tail->asts.size() > 0  /* virtual scope contains Ast */
+		)
+	{
+		tail = new_virtual_scp_and_drop_in();
+		tail->sem_stamp = SEM_JMP;
+		tail->name = ".L_" + std::to_string(current_scope_pointer->id);
+	}
+	else
+	{
+		assert(tail->clds.size() == 0);	// todo, virtual scope have no cld, it must be 0, not need assert
+		tail->sem_stamp = SEM_JMP;
+		tail->name = ".L_scp_jmp_lable_reuse" + std::to_string(current_scope_pointer->id);
+	}
+
+	if (current_scope_pointer->is_virtual)
+		exit_current_scope();
+	assert(current_scope_pointer->is_virtual == false);
+	Scope *scp = current_scope_pointer;
+
+	if(scp->sem_stamp == SEM_FUNC_DEFINE)
+		scp->return_label->id = scope_id++;
+
+	if (eat)
+		tokens.get();	// '}'
+	exit_current_scope();
+
+	Token tk = tokens.peek();
+	if (!(tk.stamp == TK_BRACE_L || tk.stamp == TK_BRACE_R
+	        || tk.stamp == TK_EOF
+	        //	    || tk.type == TK_INVALID
+	        || tk.stamp == TK_IF || tk.stamp == TK_ELSE
+	        || tk.stamp == TK_WHILE
+	))
+	{
+		new_virtual_scp_and_drop_in();
+	}
+
+	PARSER_LOG();
+	return;
+}
 Ast* parse_stmt()
 {
 	Token tk = tokens.peek();
@@ -479,97 +559,6 @@ Ast* parse_stmt()
 
 	return 0;
 }
-
-void parse_scope(bool eat)
-{
-	/*
-	 * 1. eat '{', call new_scope(false);
-	 * 2. set the cur_scp attribute
-	 * 3. call parse_scope()
-	 */
-
-	if (eat)
-	{
-		Token tk = tokens.get();
-		if (tk.stamp != TK_BRACE_L)
-			ERR();
-	}
-
-	PARSER_LOG();
-	if (!in_func_define)
-		ERR("tk_left_brace not in func");
-	assert(current_scope_pointer->is_virtual == false);
-
-	while (!tokens.empty())
-	{
-		Token tk = tokens.peek();
-		if (tk.stamp == TK_BRACE_R)
-		{
-			case_tk_right_brace();
-			break;
-		}
-
-		Ast *p = parse_stmt();
-		if (p)
-			current_scope_pointer->asts.push_back(p);
-
-//		if (!current_scope_pointer->is_virtual_scope){
-//			if(tk.type == TK_IF)
-//				new_virtual_scp_and_drop_in();
-//		}
-	}
-
-//	Token tk = tokens.prev();		// }
-//	if (tk.type != TK_BRACE_R)
-//		ERR("tk: %s, except }", tk.src.c_str());
-	return;
-}
-void case_tk_right_brace(bool eat)
-{
-	PARSER_LOG();
-	Scope *tail;
-	tail = current_scope_pointer;
-
-	if (tail->is_virtual == false || tail->asts.size() > 0)
-	{
-		tail = new_virtual_scp_and_drop_in();
-		tail->sem = SEM_JMP;
-		tail->name = ".L_" + std::to_string(current_scope_pointer->id);
-	}
-	else
-	{
-		assert(tail->clds.size() == 0);
-		tail->sem = SEM_JMP;
-		tail->name = ".L_scp_jmp_lable_reuse" + std::to_string(current_scope_pointer->id);
-	}
-
-	if (current_scope_pointer->is_virtual)
-		exit_current_scope();
-	assert(current_scope_pointer->is_virtual == false);
-	Scope *scp = current_scope_pointer;
-
-	if(scp->sem == SEM_FUNC_DEFINE)
-		scp->return_label->id = scope_id++;
-
-	if (eat)
-		tokens.get();
-	exit_current_scope();
-
-	Token tk = tokens.peek();
-	if (!(tk.stamp == TK_BRACE_L || tk.stamp == TK_BRACE_R
-	        || tk.stamp == TK_EOF
-	        //	    || tk.type == TK_INVALID
-	        || tk.stamp == TK_IF || tk.stamp == TK_ELSE
-	        || tk.stamp == TK_WHILE
-	))
-	{
-		new_virtual_scp_and_drop_in();
-	}
-
-	PARSER_LOG();
-	return;
-}
-
 static void parse_file__gen_ast()
 {
 	while (!tokens.empty())
@@ -581,10 +570,10 @@ static void parse_file__gen_ast()
 }
 /*
  */
-static void sweep_dead_virtual_scopes(Scope *scp)
+static void sweep_dead_virtual_scope(Scope *scp)
 {
 	for (auto c : scp->clds)
-		sweep_dead_virtual_scopes(c);
+		sweep_dead_virtual_scope(c);
 
 	int i = 0;
 	while (i < (int) scp->clds.size())
@@ -607,7 +596,7 @@ static void sweep_dead_virtual_scopes(Scope *scp)
 void parser()
 {
 	current_scope_pointer = &file_scp;
-	current_scope_pointer->sem = SEM_FILE_SCOPE;
+	current_scope_pointer->sem_stamp = SEM_FILE_SCOPE;
 	current_scope_pointer->id = scope_id++;
 	current_scope_pointer->name = "b" + std::to_string(current_scope_pointer->id);
 	current_scope_pointer->is_virtual = false;
@@ -615,7 +604,7 @@ void parser()
 
 	parse_file__gen_ast();
 
-	sweep_dead_virtual_scopes(&file_scp);
+	sweep_dead_virtual_scope(&file_scp);
 //	dump_ast();
 
 }

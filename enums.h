@@ -36,12 +36,12 @@ enum TokenStamp {
 	TK_MUL,
 	TK_DIV,
 
-	TK_CMP_LT,
-	TK_CMP_LE,
-	TK_CMP_GE,
-	TK_CMP_GT,
 	TK_CMP_E,
 	TK_CMP_NE,
+	TK_CMP_LT,
+	TK_CMP_LE,
+	TK_CMP_GT,
+	TK_CMP_GE,
 
 	TK_LOGIC_AND,
 	TK_OP_ALL,
@@ -70,7 +70,7 @@ enum TokenStamp {
 	TK_EOF
 };
 
-enum SemOperator{
+enum Operator{
 	OP_ASSIGN,
 	OP_ADD,
 	OP_SUB,
@@ -99,14 +99,13 @@ enum Semantic {
 	SEM_CONST_NUM,
 
 	SEM_COND_JMP,
+//	SEM_ELSE,
 	SEM_JMP,
-	SEM_ELSE,
-//	SEM_ELIF,
-	SEM_WHILE_BODY,
-	SEM_CONTINUE,
-	SEM_BREAK,
-
 	SEM_LABEL,
+
+	SEM_WHILE_BODY,
+//	SEM_CONTINUE,
+//	SEM_BREAK,
 
 	SEM_FUNC_DECLARE,
 	SEM_FUNC_DEFINE,
@@ -114,10 +113,8 @@ enum Semantic {
 
 	SEM_SAVE_RET_VALUE_AND_JMP,
 
-
 	SEM_FILE_SCOPE,
 	SEM_UNNAMED_SCOPE,
-
 	SEM_NONE,
 	SEM_INVALID
 };

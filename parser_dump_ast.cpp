@@ -31,24 +31,24 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 	string line_prefix = prefix + (is_last ? "└── " : "├── ");
 
 	printf("%s", line_prefix.c_str());
-	if (p->sem == SEM_VAR_DECLARE)
+	if (p->sem_stamp == SEM_VAR_DECLARE)
 		printf("[del %s]\n", Type_string[p->type]);
-	else if (p->sem == SEM_OPERATOR)	// OP_ALL
+	else if (p->sem_stamp == SEM_OPERATOR)	// OP_ALL
 		printf("[op %s %%%d]\n", p->tk.src.c_str(), p->vr_id);
-	else if (p->sem == SEM_VAR)
+	else if (p->sem_stamp == SEM_VAR)
 	{
 		if (!p->symb_var)
 			printf("[var %s]\n", p->tk.src.c_str());
 		else
 			printf("[var %s %%%d]\n", p->symb_var->unique_name.c_str(), p->symb_var->vr);
 	}
-	else if (p->sem == SEM_CONST_NUM)
+	else if (p->sem_stamp == SEM_CONST_NUM)
 		printf("[num %d]\n", p->const_value);
-	else if (p->sem == SEM_FUNC_CALL)
+	else if (p->sem_stamp == SEM_FUNC_CALL)
 		printf("[func_call %s]\n", p->tk.src.c_str());
-	else if (p->sem == SEM_SAVE_RET_VALUE_AND_JMP)
+	else if (p->sem_stamp == SEM_SAVE_RET_VALUE_AND_JMP)
 		printf("[ret %s]\n", p->tk.src.c_str());
-	else if (p->sem == SEM_NONE)
+	else if (p->sem_stamp == SEM_NONE)
 		printf("[none %s]\n", p->tk.src.c_str());
 	else
 		ERR();
@@ -86,7 +86,7 @@ static void dump_scope(Scope *s, int depth)
 //		    s->jmp_else ? s->jmp_else->id : 0);
 
 	printf("====== %s out=%d",
-		    s->sem == SEM_INVALID ? "" : Semantic_string[s->sem],
+		    s->sem_stamp == SEM_INVALID ? "" : Semantic_string[s->sem_stamp],
 		    s->jmp_out ? s->jmp_out->id : 0);
 
 	if (s->jmp_in.size())

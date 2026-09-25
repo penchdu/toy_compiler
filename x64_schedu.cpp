@@ -484,8 +484,8 @@ static void dump()
 
 void mc_schedule()
 {
-	prev_write_mc.resize(vrm.id + 1, -1);
-	prev_read_mc.resize(vrm.id + 1, -1);
+	prev_write_mc.resize(vregm.id + 1, -1);
+	prev_read_mc.resize(vregm.id + 1, -1);
 
 	for (BasicBlock &bb : basic_blocks)
 	{

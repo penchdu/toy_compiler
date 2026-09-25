@@ -27,7 +27,7 @@ vector<BasicBlock> basic_blocks;
 
 static int trace_ast_down_up_gen_3_address_code(Ast *p)
 {
-	if (!p || p->sem == SEM_VAR_DECLARE)
+	if (!p || p->sem_stamp == SEM_VAR_DECLARE)
 		return -1;
 
 	vector<Tac> &tacs = basic_blocks.back().tacs;
@@ -37,7 +37,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 	SymbolVar *symb = 0;
 	Tac t;
 
-	switch (p->sem)
+	switch (p->sem_stamp)
 	{
 	// leaf node
 	case SEM_VAR:
@@ -87,11 +87,11 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 	case SEM_FUNC_DECLARE:
 		case SEM_FUNC_DEFINE:
 		case SEM_FUNC_CALL:
-		printf("todo sem_func* semty %d \n", p->sem);
+		printf("todo sem_func* semty %d \n", p->sem_stamp);
 		return -1;
 
 	default:
-		ERR("%d \n", p->sem);
+		ERR("%d \n", p->sem_stamp);
 		break;
 	}
 
@@ -101,7 +101,7 @@ static void gen_tac(Scope *scp)
 {
 	LOG("scp %s", scp->name.c_str());
 
-	if (scp->sem == SEM_FUNC_DEFINE || scp->jmp_in.size() > 0 || scp->sem == SEM_COND_JMP)
+	if (scp->sem_stamp == SEM_FUNC_DEFINE || scp->jmp_in.size() > 0 || scp->sem_stamp == SEM_COND_JMP)
 	{
 		BasicBlock newbb;
 		newbb.entry_label = scp;
@@ -118,7 +118,7 @@ static void gen_tac(Scope *scp)
 		BasicBlock &bb = basic_blocks.back();
 		bb.exit_jmp = scp;
 
-		if (scp->sem == SEM_SAVE_RET_VALUE_AND_JMP)
+		if (scp->sem_stamp == SEM_SAVE_RET_VALUE_AND_JMP)
 		{
 			assert(scp->asts.size() == 1);
 			Ast *ret = scp->asts[0];
@@ -156,7 +156,7 @@ static void dump_tac()
 		{
 			Ast *p = r.ast;
 
-			switch (p->sem)
+			switch (p->sem_stamp)
 			{
 			case SEM_CONST_NUM:
 				printf("const:\t %%%d num %d\n", r.dst, p->const_value);
@@ -193,7 +193,7 @@ static void dump_tac()
 
 		if (bb.exit_jmp != 0)
 		{
-			printf("%s %d->%d:\n\n", Semantic_string[bb.exit_jmp->sem],
+			printf("%s %d->%d:\n\n", Semantic_string[bb.exit_jmp->sem_stamp],
 			    bb.exit_jmp->id, bb.exit_jmp->jmp_out->id);
 		}
 	}
