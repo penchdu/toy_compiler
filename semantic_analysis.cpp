@@ -63,9 +63,10 @@ static int case_sem_op(Ast *p)
 //	assert(p->left->var_type == p->right->var_type);
 	return 0;
 }
-static int case_sem_return(Ast *p)
+static int case_sem_save_retuen_up_down(Ast *p)
 {
 	assert(p);
+	assert(p->left);
 	assert(!p->right);
 
 	if(!p->left)
@@ -172,8 +173,8 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 		case_sem_op(p);
 		break;
 
-	case SEM_SAVE_RET_VALUE_AND_JMP:
-		case_sem_return(p);
+	case SEM_SAVE_RET_VALUE:
+		case_sem_save_retuen_up_down(p);
 		break;
 
 	default:
@@ -259,12 +260,26 @@ static int case_op(Ast *p)
 		ERR();
 	}
 }
+static void case_save_return_down_up(Ast *p)
+{
+	LOG("%s", p->tk.src.c_str());
+
+	Scope *func = p->this_scp;
+	while (func && func->sem_stamp != SEM_FUNC_DEFINE)
+		func = func->parent;
+
+	if (!func)
+		ERR();
+
+	if(p->left->type != func->return_type)
+		ERR("return type mismatch %d %d", p->home_scp->return_type, p->left->type);
+
+	assert(p->right == 0);
+}
 static int trace_ast_down_up_gen_vr(Ast *p)
 {
 	if (!p || p->sem_stamp == SEM_VAR_DECLARE)
 		return -1;
-
-//	if(SEM_SAVE_RET_VALUE_AND_JMP)
 
 	int b = trace_ast_down_up_gen_vr(p->right);
 	int a = trace_ast_down_up_gen_vr(p->left);
@@ -292,11 +307,9 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	case SEM_OPERATOR:
 		return case_op(p);
 
-	case SEM_SAVE_RET_VALUE_AND_JMP:
-		if (p->home_scp->return_type != p->left->type)
-			ERR("return type mismatch %d %d", p->home_scp->return_type, p->left->type);
-		assert(p->op == OP_SAVE_RET_VALUE);
-
+	case SEM_SAVE_RET_VALUE:
+		p->vr_id = a;
+		case_save_return_down_up(p);
 		return -1;
 
 	case SEM_VAR_DECLARE:

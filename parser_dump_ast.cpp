@@ -33,8 +33,10 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 	printf("%s", line_prefix.c_str());
 	if (p->sem_stamp == SEM_VAR_DECLARE)
 		printf("[del %s]\n", Type_string[p->type]);
+
 	else if (p->sem_stamp == SEM_OPERATOR)	// OP_ALL
-		printf("[op %s %%%d]\n", p->tk.src.c_str(), p->vr_id);
+		printf("[%s %%%d]\n", Operator_string[p->op], p->vr_id);
+
 	else if (p->sem_stamp == SEM_VAR)
 	{
 		if (!p->symb_var)
@@ -44,10 +46,13 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 	}
 	else if (p->sem_stamp == SEM_CONST_NUM)
 		printf("[num %d]\n", p->const_value);
+
 	else if (p->sem_stamp == SEM_FUNC_CALL)
 		printf("[func_call %s]\n", p->tk.src.c_str());
-	else if (p->sem_stamp == SEM_SAVE_RET_VALUE_AND_JMP)
-		printf("[ret %s]\n", p->tk.src.c_str());
+
+	else if (p->sem_stamp == SEM_SAVE_RET_VALUE)
+		printf("[save-ret(%s) %%%d]\n", p->tk.src.c_str(), p->vr_id);
+
 	else if (p->sem_stamp == SEM_NONE)
 		printf("[none %s]\n", p->tk.src.c_str());
 	else
@@ -86,8 +91,8 @@ static void dump_scope(Scope *s, int depth)
 //		    s->jmp_else ? s->jmp_else->id : 0);
 
 	printf("====== %s out=%d",
-		    s->sem_stamp == SEM_INVALID ? "" : Semantic_string[s->sem_stamp],
-		    s->jmp_out ? s->jmp_out->id : 0);
+	    s->sem_stamp == SEM_INVALID ? "" : Semantic_string[s->sem_stamp],
+	    s->jmp_out ? s->jmp_out->id : 0);
 
 	if (s->jmp_in.size())
 		printf("  in=");

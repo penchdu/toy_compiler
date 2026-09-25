@@ -8,6 +8,8 @@
 #include "basic_block.h"
 #include "parser.h"
 
+const bool enable_bb_terminate = 1;
+
 Operator cmp_op_to_negative[] = {
     [OP_CMP_E] = OP_CMP_NE,
     [OP_CMP_NE] = OP_CMP_E,
@@ -73,7 +75,7 @@ static Scope* body_of_if__while(enum Semantic sem_stamp = SEM_LABEL)
 		// if not have this, code hehand will not have virtual-scp to store
 		case_tk_right_brace(false);
 	}
-	branch->name = ".L_"+ branch->name;
+	branch->name = ".L_" + branch->name;
 	return branch;
 }
 static Scope* new_jmp_tail_for_cond_imp(Scope *cond)
@@ -129,7 +131,7 @@ void case_tk_if()
 	// then branch
 	Scope *then_branch = body_of_if__while();
 //	then_branch->sem_stamp = SEM_LABEL;
-	then_branch->name += "_then";// + to_string(cond->id);
+	then_branch->name += "_then";	// + to_string(cond->id);
 
 	// else branch
 	Scope *else_branch = 0;
@@ -207,6 +209,20 @@ void case_tk_while()
 	rm_duplicit_jmp_in(tail);
 	return;
 }
+void make_bb_terminate()
+{
+	// bb_terminate can eliminate some dead code
+	if (!enable_bb_terminate)
+		return;
+
+	Scope *parent = current_scope_pointer;
+	Scope *scp_terminate = new_scope_and_drop_in();
+	scp_terminate->sem_stamp = SEM_bb_terminate;
+	scp_terminate->name += "_SEM_bb_terminate";
+//	scp_terminate->jmp_out = parent;
+	exit_current_scope();
+
+}
 static Scope* case_tk_continue_break()
 {
 	Token tk = tokens.get();
@@ -219,9 +235,12 @@ static Scope* case_tk_continue_break()
 	assert(while_body);
 
 	Scope *scp = new_scope_and_drop_in();
-	while_body->continue__break.push_back(current_scope_pointer);
-
+	while_body->continue__break.push_back(scp);
 	exit_current_scope();
+
+	if (enable_bb_terminate)
+		make_bb_terminate();
+
 	new_virtual_scp_and_drop_in();
 	return scp;
 }

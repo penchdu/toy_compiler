@@ -87,7 +87,6 @@ enum Operator{
 	OP_LOGIC_AND,
 	OP_LOGIC_OR,
 
-	OP_SAVE_RET_VALUE,
 	OP_ALL,
 };
 
@@ -99,20 +98,18 @@ enum Semantic {
 	SEM_CONST_NUM,
 
 	SEM_COND_JMP,
-//	SEM_ELSE,
 	SEM_JMP,
 	SEM_LABEL,
 
 	SEM_WHILE_BODY,
-//	SEM_CONTINUE,
-//	SEM_BREAK,
 
 	SEM_FUNC_DECLARE,
 	SEM_FUNC_DEFINE,
 	SEM_FUNC_CALL,
 
-	SEM_SAVE_RET_VALUE_AND_JMP,
+	SEM_SAVE_RET_VALUE,
 
+	SEM_bb_terminate,
 	SEM_FILE_SCOPE,
 	SEM_UNNAMED_SCOPE,
 	SEM_NONE,
@@ -223,6 +220,7 @@ enum SemanticNodeType
 extern const char *TokenStamp_string[];
 extern const char *Type_string[];
 extern const char *Semantic_string[];
+extern const char *Operator_string[];
 
 enum Type get_declare_type(enum TokenStamp ty);
 

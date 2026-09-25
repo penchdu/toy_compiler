@@ -74,9 +74,9 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 		tacs.push_back(t);
 		return p->vr_id;
 
-	case SEM_SAVE_RET_VALUE_AND_JMP:
+	case SEM_SAVE_RET_VALUE:
 		t = Tac(p);
-		t.s1 = p->left->vr_id;
+		t.s1 = a;
 		tacs.push_back(t);
 		break;
 
@@ -97,9 +97,15 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 
 	return -1;
 }
-static void gen_tac(Scope *scp)
+static bool gen_tac(Scope *scp)
 {
 	LOG("scp %s", scp->name.c_str());
+
+	if(scp->sem_stamp == SEM_bb_terminate)
+	{
+		printf("%s have a SEM_bb_terminate scope %s\n", scp->parent->name.c_str(), scp->name.c_str());
+		return true;
+	}
 
 	if (scp->sem_stamp == SEM_FUNC_DEFINE
 		|| scp->sem_stamp == SEM_COND_JMP	// if, while
@@ -124,11 +130,11 @@ static void gen_tac(Scope *scp)
 		bb.exit_jmp = scp;
 		bb.jmp_to = bb.exit_jmp->jmp_out;
 
-		if (scp->sem_stamp == SEM_SAVE_RET_VALUE_AND_JMP)
+		if (scp->sem_stamp == SEM_SAVE_RET_VALUE)
 		{
+			ERR();
 			assert(scp->asts.size() == 1);
 			Ast *ret = scp->asts[0];
-			assert(ret->op == OP_SAVE_RET_VALUE);
 			assert(ret->left);	// function just support return int
 
 //			BasicBlock &bb = basic_blocks.back();
@@ -144,8 +150,26 @@ static void gen_tac(Scope *scp)
 		basic_blocks.push_back(newbb);
 	}
 
+	bool bb_terminated = 0;
 	for (Scope *p : scp->clds)
-		gen_tac(p);
+	{
+		bb_terminated = gen_tac(p);
+
+		if(enable_bb_terminate && bb_terminated)
+			break;
+	}
+
+	if(enable_bb_terminate && bb_terminated)
+	{
+		if(scp->sem_stamp == SEM_INVALID
+			//scp->jmp_in.size() == 0
+//			scp->sem_stamp != SEM_COND_JMP
+//			&& scp->sem_stamp != SEM_WHILE_BODY
+//			&& scp->sem_stamp != SEM_JMP
+			)
+			return true;
+	}
+	return false;
 }
 
 static void dump_tac()
@@ -185,8 +209,8 @@ static void dump_tac()
 				printf("func call:\t %s\n", p->tk.src.c_str());
 				break;
 
-			case SEM_SAVE_RET_VALUE_AND_JMP:
-				printf("return:\t %s %%%d\n", p->tk.src.c_str(), r.s1);
+			case SEM_SAVE_RET_VALUE:
+				printf("save_ret:\t %s %%%d\n", p->tk.src.c_str(), r.s1);
 				break;
 
 			default:

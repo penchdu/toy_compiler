@@ -41,7 +41,6 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 	mcs_successor.resize(x64mc.size());
 
 	LOG("%zu, %zu\n", x64mc.size(), prev_write_mc.size());
-	int prev_ret = -1;
 
 	for (int i = 0; i < x64mc.size(); i++)
 	{
@@ -157,14 +156,6 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 				create_dependcy(i, s1_prev_w_mc);
 
 			prev_read_mc[s1] = i;
-
-			for (int j = prev_ret + 1; j < i; j++)
-			{
-				if (j == s1_prev_w_mc)
-					continue;
-				create_dependcy(i, j);
-			}
-			prev_ret = i;
 			break;
 
 		default:

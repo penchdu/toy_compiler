@@ -110,24 +110,23 @@ static int case_tk_func()
 	tk = tokens.peek();
 	assert(tk.stamp == TK_BRACE_L);
 
-	assert(current_scope_pointer->sem_stamp == SEM_FILE_SCOPE);
+	Scope *cur_file_scope = current_scope_pointer;
+	assert(cur_file_scope->sem_stamp == SEM_FILE_SCOPE);
 
-	if (current_scope_pointer->var_table->find(func_name) != current_scope_pointer->var_table->end())
+	if (cur_file_scope->var_table->find(func_name) != cur_file_scope->var_table->end())
 		ERR("%s already declared", func_name.c_str());
 
-	if (current_scope_pointer->func_table->find(func_name) != current_scope_pointer->func_table->end())
+	if (cur_file_scope->func_table->find(func_name) != cur_file_scope->func_table->end())
 		ERR("%s already declared", func_name.c_str());
 
-	Scope *file_scope = current_scope_pointer;
-
-	new_scope_and_drop_in();
-
-	current_scope_pointer->sem_stamp = SEM_FUNC_DEFINE;
-	current_scope_pointer->name = func_name;
-	current_scope_pointer->return_label = new Scope;
-	current_scope_pointer->return_label->id = -1; //scope_id++;
-	current_scope_pointer->return_label->name = ".L_return";
-	current_scope_pointer->return_type = return_type;
+	Scope *func = new_scope_and_drop_in();
+	func->sem_stamp = SEM_FUNC_DEFINE;
+	func->name = func_name;
+	func->return_type = return_type;
+	func->return_label = new Scope;
+	func->return_label->id = -1; //scope_id++;
+	func->return_label->name = ".L_return";
+	func->return_label->parent = func;
 
 	SymbolFunc *sym = new SymbolFunc;
 	sym->return_type = return_type;
@@ -135,7 +134,7 @@ static int case_tk_func()
 	sym->argc = 0;
 	sym->func_scope = current_scope_pointer;
 
-	file_scope->func_table->insert( {func_name, sym});
+	cur_file_scope->func_table->insert( {func_name, sym});
 
 	in_func_define = 1;
 	parse_scope();
@@ -150,30 +149,30 @@ void case_tk_return()
 
 	PARSER_LOG("%s", tk.src.c_str());
 
-	Ast *expr = parse_expr(TK_SEMICOLON);
-//	current_scope_pointer->asts.push_back(expr);
-
 	Scope *func = current_scope_pointer;
 	while (func && func->sem_stamp != SEM_FUNC_DEFINE)
-	{
 		func = func->parent;
-	}
 
 	if (!func)
 		ERR();
 
-	new_scope_and_drop_in();
-	current_scope_pointer->sem_stamp = SEM_SAVE_RET_VALUE_AND_JMP;
-	current_scope_pointer->name = "ret";
-	current_scope_pointer->jmp_out = func->return_label;
-
+	Ast *expr = parse_expr(TK_SEMICOLON);
+	if(!expr)
+		ERR("only support return int");
+//	current_scope_pointer->asts.push_back(expr);
 	Ast *p = new_ast_node(tk);
-	p->sem_stamp = SEM_SAVE_RET_VALUE_AND_JMP;
-	p->home_scp = func;
-	p->op = OP_SAVE_RET_VALUE;
+//	p->home_scp = func;		// Ast(return) not create a vr. let home_scp = func;
 	p->left = expr;
 	current_scope_pointer->asts.push_back(p);
+
+	Scope *jmp = new_scope_and_drop_in();
+	jmp->sem_stamp = SEM_JMP;
+	jmp->name = "jmp_to_ret";
+	jmp->jmp_out = func->return_label;
 	exit_current_scope();
+
+	if (enable_bb_terminate)
+		make_bb_terminate();
 
 	return;
 }

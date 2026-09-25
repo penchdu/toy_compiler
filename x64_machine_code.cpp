@@ -44,7 +44,7 @@ const McInfo mc_info[MC_INVALID + 1] = {
     [MC_JG] = { 0, "jg" },
     [MC_JGE] = { 0, "jge" },
 
-    [MC_SAVE_RET_VALUE] = { 1, "ret" },
+    [MC_SAVE_RET_VALUE] = { 1, "save_ret" },
 };
 
 MachineCodeStamp op_to_mc[] = {
@@ -163,7 +163,7 @@ static void gen_mc()
 				bb.x64mc.push_back(mc);
 				break;
 
-			case SEM_SAVE_RET_VALUE_AND_JMP:
+			case SEM_SAVE_RET_VALUE:
 				mc = X64mc(MC_SAVE_RET_VALUE, tac.s1);
 				mc.ori_sem = "save_ret";
 				bb.x64mc.push_back(mc);
@@ -174,7 +174,6 @@ static void gen_mc()
 				ERR("todo sem_func* semty %d \n", sem);
 				break;
 
-			case SEM_OPERATOR:
 				default:
 				ERR("%d \n", sem);
 				break;
@@ -190,8 +189,11 @@ static void gen_mc()
 			}
 			else if (bb.exit_jmp->sem_stamp == SEM_JMP)
 				bb.mc_jmp = MC_JMP;
-			else if (bb.exit_jmp->sem_stamp == SEM_SAVE_RET_VALUE_AND_JMP)
+			else if (bb.exit_jmp->sem_stamp == SEM_SAVE_RET_VALUE)
+			{
+				ERR();
 				bb.mc_jmp = MC_JMP;
+			}
 			else
 				ERR();
 		}

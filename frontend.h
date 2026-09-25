@@ -224,12 +224,13 @@ public:
 			const_value = atoi(_token.src.c_str());
 			break;
 
-		case TK_RETURN:
-			sem_stamp = SEM_SAVE_RET_VALUE_AND_JMP;
-			break;
-
 		case TK_SEMICOLON:
 			sem_stamp = SEM_NONE;
+			break;
+
+		case TK_RETURN:
+			sem_stamp = SEM_SAVE_RET_VALUE;
+//			op = OP_SAVE_RET_VALUE;
 			break;
 
 		default:
@@ -268,6 +269,7 @@ public:
 
 	// continue, break
 	vector<Scope*> continue__break;
+	bool bb_terminated;
 
 	// for function
 	Scope *return_label = 0;
@@ -354,11 +356,13 @@ struct VirtualRegisterManager
 };
 
 extern VirtualRegisterManager vregm;
+extern const bool enable_bb_terminate;
 
 int lexer(FILE *fp);
 void dump_ast();
 void parser();
 void sem_analysis();
 void gen_three_address_code();
+void make_bb_terminate();
 
 #endif /* FRONTEND_H_ */

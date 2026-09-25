@@ -59,7 +59,6 @@ const char *Operator_string[OP_ALL + 1] = {
 	[OP_LOGIC_AND] = "OP_LOGIC_AND",
 	[OP_LOGIC_OR] = "OP_LOGIC_OR",
 
-	[OP_SAVE_RET_VALUE] = "OP_SAVE_RET_VALUE",
 	[OP_ALL] = "OP_ALL",
 };
 
@@ -80,8 +79,9 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 	[SEM_FUNC_DEFINE] = "SEM_FUNC_DEFINE",
 	[SEM_FUNC_CALL] = "SEM_FUNC_CALL",
 
-	[SEM_SAVE_RET_VALUE_AND_JMP] = "SEM_SAVE_RET_VALUE_AND_JMP",
+	[SEM_SAVE_RET_VALUE] = "SEM_SAVE_RET_VALUE",
 
+	[SEM_bb_terminate] = "SEM_bb_terminate",
 	[SEM_FILE_SCOPE] = "SEM_FILE_SCOPE",
 	[SEM_UNNAMED_SCOPE] = "SEM_UNNAMED_SCOPE",
 	[SEM_NONE] = "SEM_NONE",
