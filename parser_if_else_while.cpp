@@ -8,8 +8,6 @@
 #include "basic_block.h"
 #include "parser.h"
 
-const bool enable_bb_terminate = 1;
-
 Operator cmp_op_to_negative[] = {
     [OP_CMP_E] = OP_CMP_NE,
     [OP_CMP_NE] = OP_CMP_E,
@@ -211,17 +209,15 @@ void case_tk_while()
 }
 void make_bb_terminate()
 {
-	// bb_terminate can eliminate some dead code
+	// bb_terminate can eliminate some dead code, and dead jmp-label
 	if (!enable_bb_terminate)
 		return;
 
 	Scope *parent = current_scope_pointer;
-	Scope *scp_terminate = new_scope_and_drop_in();
+	Scope *scp_terminate = new_virtual_scp_and_drop_in();
 	scp_terminate->sem_stamp = SEM_bb_terminate;
 	scp_terminate->name += "_SEM_bb_terminate";
-//	scp_terminate->jmp_out = parent;
 	exit_current_scope();
-
 }
 static Scope* case_tk_continue_break()
 {

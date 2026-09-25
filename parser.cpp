@@ -571,9 +571,10 @@ static void sweep_dead_virtual_scope(Scope *scp)
 		        && c->asts.empty()
 		        && c->clds.empty()
 		        && c->jmp_in.empty()
-		        && c->jmp_out == 0)
+		        && c->jmp_out == 0
+		        && c->sem_stamp != SEM_bb_terminate)
 		{
-			printf("sweep dead scope: id=%d name=%s\n", c->id, c->name.c_str());
+			printf("sweep_dead_virtual_scope: id=%d name=%s\n", c->id, c->name.c_str());
 			scp->clds.erase(scp->clds.begin() + i);
 			delete c;
 			continue;

@@ -243,6 +243,8 @@ public:
 	}
 };
 
+constexpr bool enable_bb_terminate = 1;
+
 struct Scope
 {
 public:
@@ -356,7 +358,6 @@ struct VirtualRegisterManager
 };
 
 extern VirtualRegisterManager vregm;
-extern const bool enable_bb_terminate;
 
 int lexer(FILE *fp);
 void dump_ast();
