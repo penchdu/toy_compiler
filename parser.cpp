@@ -30,7 +30,7 @@ static Scope* new_cld_scp(bool is_virtual)
 	current_scope_pointer = current_scope_pointer->new_cld();
 	current_scope_pointer->is_virtual = is_virtual;
 	current_scope_pointer->id = scope_id++;
-	current_scope_pointer->name = ".L_" + std::to_string(current_scope_pointer->id);
+	current_scope_pointer->name = "b" + std::to_string(current_scope_pointer->id);
 
 	return current_scope_pointer;
 }
@@ -445,24 +445,13 @@ void case_tk_right_brace(bool eat)
 {
 	PARSER_LOG();
 
-	Scope *tail = current_scope_pointer;
-	if (tail->is_virtual == false /* real scope, have never create virtual scope */
-		|| tail->asts.size() > 0  /* virtual scope contains Ast */
-		)
-	{
-		tail = new_virtual_scp_and_drop_in();
-		tail->sem_stamp = SEM_JMP;
-		tail->name = ".L_" + std::to_string(current_scope_pointer->id);
-	}
-	else
-	{
-		assert(tail->clds.size() == 0);	// todo, virtual scope have no cld, it must be 0, not need assert
-		tail->sem_stamp = SEM_JMP;
-		tail->name = ".L_scp_jmp_lable_reuse" + std::to_string(current_scope_pointer->id);
-	}
+	Scope *tail = new_virtual_scp_and_drop_in();
+	tail->sem_stamp = SEM_JMP;
+	tail->name += "_scp_tail";
+	exit_current_scope();
 
-	if (current_scope_pointer->is_virtual)
-		exit_current_scope();
+//	if (current_scope_pointer->is_virtual)
+//		exit_current_scope();
 	assert(current_scope_pointer->is_virtual == false);
 	Scope *scp = current_scope_pointer;
 

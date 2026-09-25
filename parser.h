@@ -42,7 +42,7 @@ void exit_current_scope();
 Ast* parse_stmt();
 Ast* parse_expr_with_paren();
 
-Scope* case_tk_if();
+void case_tk_if();
 void case_tk_while();
 void case_tk_continue();
 void case_tk_break();

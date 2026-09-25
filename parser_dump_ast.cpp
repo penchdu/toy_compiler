@@ -12,7 +12,7 @@
 static string indent_str(int n)
 {
 	n = std::max(n, 0);
-	return string(n * 6, ' ');
+	return string(n * 8, ' ');
 }
 static void print_blank(int n)
 {

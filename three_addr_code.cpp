@@ -101,7 +101,12 @@ static void gen_tac(Scope *scp)
 {
 	LOG("scp %s", scp->name.c_str());
 
-	if (scp->sem_stamp == SEM_FUNC_DEFINE || scp->jmp_in.size() > 0 || scp->sem_stamp == SEM_COND_JMP)
+	if (scp->sem_stamp == SEM_FUNC_DEFINE
+		|| scp->sem_stamp == SEM_COND_JMP	// if, while
+		|| scp->sem_stamp == SEM_WHILE_BODY
+		|| scp->sem_stamp == SEM_LABEL
+		|| scp->jmp_in.size() > 0
+		)
 	{
 		BasicBlock newbb;
 		newbb.entry_label = scp;
@@ -117,6 +122,7 @@ static void gen_tac(Scope *scp)
 //		Ast *cond = scp->asts[0];
 		BasicBlock &bb = basic_blocks.back();
 		bb.exit_jmp = scp;
+		bb.jmp_to = bb.exit_jmp->jmp_out;
 
 		if (scp->sem_stamp == SEM_SAVE_RET_VALUE_AND_JMP)
 		{
@@ -131,9 +137,7 @@ static void gen_tac(Scope *scp)
 //			bb.tacs.push_back(t);
 
 			bb.exit_jmp = scp;
-//
-//			BasicBlock newbb;
-//			basic_blocks.push_back(newbb);
+			bb.jmp_to = bb.exit_jmp->jmp_out;
 		}
 
 		BasicBlock newbb;
