@@ -10,32 +10,16 @@
 #include "basic_block.h"
 
 extern Mc2mc fake_cmp_mc_to_real_mc[];
+vector<int> x64pr_state(X64PR_MAX, 1);
 
-enum X64pr
-{
-	R10D,
-	R11D,
-	R12D,
-	R13D,
-	R14D,
-	R15D,
-
-//	eax,
-
-	x64pr_max,
-};
-vector<int> x64pr_state(x64pr_max, 1);
-
-static const char *pr_name[] =
-    {
-        [R10D] = "r10d",
-        [R11D] = "r11d",
-        [R12D] = "r12d",
-        [R13D] = "r13d",
-        [R14D] = "r14d",
-        [R15D] = "r15d",
-
-//				[eax] = "eax",
+static const char *pr_name[] = {
+    [R10D] = "r10d",
+    [R11D] = "r11d",
+    [R12D] = "r12d",
+    [R13D] = "r13d",
+    [R14D] = "r14d",
+    [R15D] = "r15d",
+//	[eax] = "eax",
     };
 
 const char* pr_name_byte(int pr)
@@ -70,14 +54,14 @@ enum VrUsage
 };
 struct Vr2Pr
 {
-	X64pr pr = x64pr_max;
+	X64pr pr = X64PR_MAX;
 	int u = VR_USEAGE_INVALID;
 };
 vector<Vr2Pr> vr2pr;
 
 static X64pr get_pr()
 {
-	for (int i = R10D; i < x64pr_max; i++)
+	for (int i = R10D; i < X64PR_MAX; i++)
 	{
 		if (x64pr_state[i] == 1)
 		{
@@ -87,7 +71,7 @@ static X64pr get_pr()
 	}
 
 	ERR("-O0");
-	return x64pr_max;
+	return X64PR_MAX;
 }
 X64pr get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 {
@@ -97,7 +81,7 @@ X64pr get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 	 * s1 == s2
 	 */
 	bool need_load = 0;
-	if (vr2pr[vr].pr == x64pr_max)
+	if (vr2pr[vr].pr == X64PR_MAX)
 	{
 		vr2pr[vr].pr = get_pr();
 		vr2pr[vr].u = u;
@@ -126,7 +110,7 @@ void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 	X64pr pr = vr2pr[vr].pr;
 	int u = vr2pr[vr].u;
 
-	assert(pr != x64pr_max);
+	assert(pr != X64PR_MAX);
 	assert(u != VR_USEAGE_INVALID);
 
 	if (u & VR_USAGE_WRITE)
@@ -137,7 +121,7 @@ void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 		x64mc_alloced.push_back(mc);
 	}
 
-	vr2pr[vr].pr = x64pr_max;
+	vr2pr[vr].pr = X64PR_MAX;
 	vr2pr[vr].u = VR_USEAGE_INVALID;
 
 	assert(x64pr_state[pr] == 0);
@@ -244,7 +228,6 @@ static void dump()
 		dump_mc(bb, bb.x64mc_alloc);
 }
 
-
 #define PRINT_ASM_HEAD(fmt, ...) fprintf(fp, fmt "\n", ##__VA_ARGS__);
 #define PRINT_ASM(fmt, ...) fprintf(fp, "\t" fmt "\n", ##__VA_ARGS__);
 
@@ -263,30 +246,38 @@ static void dump_bb_asm(FILE *fp, BasicBlock &bb)
 		switch (mc_stamp)
 		{
 		case MC_LD:
-			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_name[mc.pr1], mc.of1);
+			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_name[mc.pr1], mc.of1)
+			;
 			break;
 
 		case MC_ST:
-			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc.asm_code.c_str(), mc.of1, pr_name[mc.pr1]);
+			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc.asm_code.c_str(), mc.of1, pr_name[mc.pr1])
+			;
 			break;
 
 		case MC_LI:
-			PRINT_ASM("%s %s, %d", mc.asm_code.c_str(), pr_name[mc.pr1], mc.const_num);
+			PRINT_ASM("%s %s, %d", mc.asm_code.c_str(), pr_name[mc.pr1], mc.const_num)
+			;
 			break;
 
 		case MC_ASSIGN:
 			case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
-			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2]);
+			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2])
+			;
 			break;
 
 		case MC_DIV:
-			PRINT_ASM("mov eax, %s", pr_name[mc.pr1]);
+			PRINT_ASM("mov eax, %s", pr_name[mc.pr1])
+			;
 
-			PRINT_ASM("cdq");
-			PRINT_ASM("idiv %s", pr_name[mc.pr2]);
-			PRINT_ASM("mov %s, eax", pr_name[mc.pr1]);
+			PRINT_ASM("cdq")
+			;
+			PRINT_ASM("idiv %s", pr_name[mc.pr2])
+			;
+			PRINT_ASM("mov %s, eax", pr_name[mc.pr1])
+			;
 			break;
 
 		case MC_CMP_E:
@@ -297,22 +288,32 @@ static void dump_bb_asm(FILE *fp, BasicBlock &bb)
 			case MC_CMP_GE:
 
 			cmp_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_cmp;
-			PRINT_ASM("%s %s, %s", mc_info[cmp_mc].mc_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2]);
+			PRINT_ASM("%s %s, %s", mc_info[cmp_mc].mc_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2])
+			;
 
 			set_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_set;
-			PRINT_ASM("%s %s", mc_info[set_mc].mc_code.c_str(), pr_name_byte(mc.pr_dst));
-			PRINT_ASM("movzx %s, %s", pr_name[mc.pr_dst], pr_name_byte(mc.pr_dst));
+			PRINT_ASM("%s %s", mc_info[set_mc].mc_code.c_str(), pr_name_byte(mc.pr_dst))
+			;
+			PRINT_ASM("movzx %s, %s", pr_name[mc.pr_dst], pr_name_byte(mc.pr_dst))
+			;
 			break;
 
 		case MC_SAVE_RET_VALUE:
-			PRINT_ASM("#---------------- print return value ----------------#");
-			PRINT_ASM("mov esi, %s", pr_name[mc.pr1]);
-			PRINT_ASM("lea rdi, [rip + fmt]");
-			PRINT_ASM("mov eax, 0");
-			PRINT_ASM("call printf@PLT");
-			PRINT_ASM("#------------------------------------------#");
+			PRINT_ASM("#---------------- print return value ----------------#")
+			;
+			PRINT_ASM("mov esi, %s", pr_name[mc.pr1])
+			;
+			PRINT_ASM("lea rdi, [rip + fmt]")
+			;
+			PRINT_ASM("mov eax, 0")
+			;
+			PRINT_ASM("call printf@PLT")
+			;
+			PRINT_ASM("#------------------------------------------#")
+			;
 
-			PRINT_ASM("mov eax, %s", pr_name[mc.pr1]);
+			PRINT_ASM("mov eax, %s", pr_name[mc.pr1])
+			;
 			break;
 
 		default:
@@ -324,7 +325,7 @@ static void dump_bb_asm(FILE *fp, BasicBlock &bb)
 	if (bb.exit_jmp != 0)
 	{
 		PRINT_ASM("%s %s", mc_info[bb.mc_jmp].mc_code.c_str(),
-			bb.exit_jmp->jmp_out->name.c_str());
+		    bb.exit_jmp->jmp_out->name.c_str());
 	}
 }
 static void dump_asm()
@@ -352,10 +353,8 @@ static void dump_asm()
 	PRINT_ASM("mov rbp, rsp");
 	PRINT_ASM("sub rsp, %d", rsp_of);
 
-
 	for (BasicBlock &bb : basic_blocks)
 		dump_bb_asm(fp, bb);
-
 
 	PRINT_ASM_HEAD("\n.L_return:");
 	PRINT_ASM("mov rsp, rbp");

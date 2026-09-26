@@ -70,6 +70,18 @@ sem_return
 //		printf("\n");
 #endif
 
+enum X64pr
+{
+	R10D,
+	R11D,
+	R12D,
+	R13D,
+	R14D,
+	R15D,
+//	eax,
+	X64PR_MAX,
+};
+
 struct McDepend
 {
 	vector<int> mcs;
@@ -128,7 +140,7 @@ struct McInfo{
 	string mc_code;	// just for print
 };
 extern const McInfo mc_info[];
-extern VirtualRegisterManager vregm;
+extern VirtualRegManager vregm;
 
 struct X64mc{
 	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s1, int tac_s2)

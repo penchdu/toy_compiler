@@ -101,18 +101,19 @@ static bool gen_tac(Scope *scp)
 {
 	LOG("scp %s", scp->name.c_str());
 
-	if(scp->sem_stamp == SEM_bb_terminate)
+	if (scp->sem_stamp == SEM_bb_terminate)
 	{
 		printf("%s have a SEM_bb_terminate scope %s\n", scp->parent->name.c_str(), scp->name.c_str());
 		return true;
 	}
 
-	if (scp->sem_stamp == SEM_FUNC_DEFINE
-		|| scp->sem_stamp == SEM_COND_JMP	// if, while
-		|| scp->sem_stamp == SEM_WHILE_BODY
-		|| scp->sem_stamp == SEM_LABEL
-		|| scp->jmp_in.size() > 0
-		)
+	BasicBlock &bb = basic_blocks.back();
+	if (bb.exit_jmp != nullptr
+		|| scp->sem_stamp == SEM_FUNC_DEFINE
+	    || scp->sem_stamp == SEM_COND_JMP	// if, while
+	    || scp->sem_stamp == SEM_WHILE_BODY
+	    || scp->sem_stamp == SEM_LABEL
+	    || scp->jmp_in.size() > 0)
 	{
 		BasicBlock newbb;
 		newbb.entry_label = scp;
@@ -124,50 +125,26 @@ static bool gen_tac(Scope *scp)
 
 	if (scp->jmp_out != 0)	// || scp->sem == SEM_COND_JMP || scp->sem == SEM_JMP)
 	{
-		// SEM_IF scope have only one ast, SEM_JMP have no ast
-//		Ast *cond = scp->asts[0];
 		BasicBlock &bb = basic_blocks.back();
 		bb.exit_jmp = scp;
 		bb.jmp_to = bb.exit_jmp->jmp_out;
-
-		if (scp->sem_stamp == SEM_SAVE_RET_VALUE)
-		{
-			ERR();
-			assert(scp->asts.size() == 1);
-			Ast *ret = scp->asts[0];
-			assert(ret->left);	// function just support return int
-
-//			BasicBlock &bb = basic_blocks.back();
-//			Tac t = Tac(ret);
-//			t.s1 = ret->left->vr_id;
-//			bb.tacs.push_back(t);
-
-			bb.exit_jmp = scp;
-			bb.jmp_to = bb.exit_jmp->jmp_out;
-		}
-
-		BasicBlock newbb;
-		basic_blocks.push_back(newbb);
 	}
 
 	bool bb_terminated = 0;
 	for (Scope *p : scp->clds)
 	{
 		bb_terminated = gen_tac(p);
-
-		if(enable_bb_terminate && bb_terminated)
+		if (enable_bb_terminate && bb_terminated)
 			break;
 	}
 
-	if(enable_bb_terminate && bb_terminated)
+	if (enable_bb_terminate && bb_terminated && scp->sem_stamp == SEM_INVALID)
 	{
-		if(scp->sem_stamp == SEM_INVALID
-			//scp->jmp_in.size() == 0
+		//scp->jmp_in.size() == 0
 //			scp->sem_stamp != SEM_COND_JMP
 //			&& scp->sem_stamp != SEM_WHILE_BODY
 //			&& scp->sem_stamp != SEM_JMP
-			)
-			return true;
+		return true;
 	}
 	return false;
 }

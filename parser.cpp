@@ -5,7 +5,6 @@
  *      Author: x
  */
 
-#include "parser.h"
 
 #include "basic_block.h"
 #include "frontend.h"
@@ -39,7 +38,7 @@ Scope* new_scope_and_drop_in()
 	PARSER_LOG();
 	return new_cld_scp(false);
 }
-Scope* new_virtual_scp_and_drop_in()
+Scope* new_virtual_scope_and_drop_in()
 {
 	PARSER_LOG();
 //	Token tk = tokens.peek();
@@ -171,9 +170,7 @@ void case_tk_return()
 	jmp->jmp_out = func->return_label;
 	exit_current_scope();
 
-	if (enable_bb_terminate)
-		make_bb_terminate();
-
+	make_bb_terminate();
 	return;
 }
 static Ast* case_tk_declare()
@@ -444,7 +441,7 @@ void case_tk_right_brace(bool eat)
 {
 	PARSER_LOG();
 
-	Scope *tail = new_virtual_scp_and_drop_in();
+	Scope *tail = new_virtual_scope_and_drop_in();
 	tail->sem_stamp = SEM_JMP;
 	tail->name += "_scp_tail";
 	exit_current_scope();
@@ -469,7 +466,7 @@ void case_tk_right_brace(bool eat)
 	        || tk.stamp == TK_WHILE
 	))
 	{
-		new_virtual_scp_and_drop_in();
+		new_virtual_scope_and_drop_in();
 	}
 
 	PARSER_LOG();

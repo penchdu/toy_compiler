@@ -7,7 +7,6 @@
 
 #include "basic_block.h"
 #include "frontend.h"
-#include "parser.h"
 
 static string indent_str(int n)
 {

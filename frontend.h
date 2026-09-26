@@ -243,8 +243,6 @@ public:
 	}
 };
 
-constexpr bool enable_bb_terminate = 1;
-
 struct Scope
 {
 public:
@@ -321,7 +319,6 @@ struct Tac {
 //
 //	Scope *parent;
 //};
-
 //struct SemanticNode
 //{
 //	SemanticNodeType nodety;
@@ -332,7 +329,7 @@ struct Tac {
 //	};
 //};
 
-struct VirtualRegisterManager
+struct VirtualRegManager
 {
 	int new_vr(Ast *p, int size = 4)
 	{
@@ -357,13 +354,50 @@ struct VirtualRegisterManager
 	vector<int> vr_off;
 };
 
-extern VirtualRegisterManager vregm;
+
+
+#if 0
+#define PARSER_LOG(fmt, ...) do{ \
+		printf("%s %d, scope-%s-%d,        " fmt "\n",	\
+	__FUNCTION__, __LINE__ , \
+	current_scope_pointer->name.c_str(), \
+	current_scope_pointer->id, \
+	##__VA_ARGS__); \
+	}while(0)
+#else
+	#define PARSER_LOG(fmt, ...)
+#endif
+
+
+constexpr bool enable_bb_terminate = 1;
+
+extern Tokens tokens;
+extern Scope file_scp;
+extern Scope *current_scope_pointer;
+extern int scope_id;
+extern bool in_func_define;
+extern VirtualRegManager vregm;
+
+
+
+Scope* new_scope_and_drop_in();
+Scope* new_virtual_scope_and_drop_in();
+void exit_current_scope();
+
+Ast* parse_stmt();
+Ast* parse_expr_with_paren();
+void parse_scope(bool eat = true);
+void case_tk_right_brace(bool eat = true);
+void case_tk_if();
+void case_tk_while();
+void case_tk_continue();
+void case_tk_break();
+void make_bb_terminate();
 
 int lexer(FILE *fp);
 void dump_ast();
 void parser();
 void sem_analysis();
 void gen_three_address_code();
-void make_bb_terminate();
 
 #endif /* FRONTEND_H_ */

@@ -6,7 +6,6 @@
  */
 
 #include "basic_block.h"
-#include "parser.h"
 
 Operator cmp_op_to_negative[] = {
     [OP_CMP_E] = OP_CMP_NE,
@@ -82,7 +81,7 @@ static Scope* new_jmp_tail_for_cond_imp(Scope *cond)
 //	assert((!tail->is_virtual && tail == cond->parent)
 //	        || (tail->is_virtual && tail->parent == cond->parent));
 
-	Scope *tail = new_virtual_scp_and_drop_in();
+	Scope *tail = new_virtual_scope_and_drop_in();
 	tail->sem_stamp = SEM_LABEL;
 	tail->name = ".L_" + tail->name + "_jmp_tail";
 
@@ -213,8 +212,8 @@ void make_bb_terminate()
 	if (!enable_bb_terminate)
 		return;
 
-	Scope *parent = current_scope_pointer;
-	Scope *scp_terminate = new_virtual_scp_and_drop_in();
+//	Scope *parent = current_scope_pointer;
+	Scope *scp_terminate = new_virtual_scope_and_drop_in();
 	scp_terminate->sem_stamp = SEM_bb_terminate;
 	scp_terminate->name += "_SEM_bb_terminate";
 	exit_current_scope();
@@ -230,14 +229,13 @@ static Scope* case_tk_continue_break()
 
 	assert(while_body);
 
-	Scope *scp = new_scope_and_drop_in();
+	Scope *scp = new_virtual_scope_and_drop_in();
 	while_body->continue__break.push_back(scp);
 	exit_current_scope();
 
-	if (enable_bb_terminate)
-		make_bb_terminate();
+	make_bb_terminate();
 
-	new_virtual_scp_and_drop_in();
+	new_virtual_scope_and_drop_in();
 	return scp;
 }
 void case_tk_continue()

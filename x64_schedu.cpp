@@ -227,19 +227,20 @@ int get_mc_latency(vector<X64mc> &x64mc, int mc_id)
 void gen_schdu_chain_latency(vector<X64mc> &x64mc)
 {
 	for (int i = 0; i < mcs_successor.size(); i++)
-	{
 		get_mc_latency(x64mc, i);
-	}
 }
 
+/////////////////////////////////////////////////////////////////////////////////////////
 using std::multimap;
 multimap<int, int> ready;
 vector<int> running;
 
-const int alu_unit = 2;
-const int imul_unit = 1;
+const int reg_limit = X64PR_MAX;
+const int alu_unit = 4;
+const int imul_unit = 2;
 const int div_unit = 1;
 
+int free_reg = reg_limit;
 int free_alu_unit = alu_unit;
 int free_imul_unit = imul_unit;
 int free_div_unit = div_unit;
@@ -484,7 +485,7 @@ void mc_schedule()
 			continue;
 
 		gen_use_def_chain(bb.x64mc);
-		dump_chain();
+//		dump_chain();
 		gen_schdu_chain_latency(bb.x64mc);
 
 		mc_schdu(bb);

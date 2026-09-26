@@ -9,7 +9,7 @@
 #include "x64_back_end.h"
 //#include "test/test.cpp"
 
-VirtualRegisterManager vregm;
+VirtualRegManager vregm;
 
 
 int main(int argc, char **argv)
