@@ -13,52 +13,51 @@
 
 /*
  *
-st[n] = dword ptr [n]
+ st[n] = dword ptr [n]
 
-push rbp
-mov rbp, rsp
-sub rsp, N
+ push rbp
+ mov rbp, rsp
+ sub rsp, N
 
 
-li
-sem_const_num,
-					load %s1, st[s1]
-					mov %dst, <num>
+ li
+ sem_const_num,
+ load %s1, st[s1]
+ mov %dst, <num>
 
-load,
-					mov %dst, st[dst]
+ load,
+ mov %dst, st[dst]
 
-store,
-					mov st[dst], %dst
+ store,
+ mov st[dst], %dst
 
-op_assign,
-%dst = %s1
-					mov %dst, %s1
+ op_assign,
+ %dst = %s1
+ mov %dst, %s1
 
-op_+-*,
-%dst = %s1 + %s2
-					mov %dst, %s1
-					add %dst, %s2
+ op_+-*,
+ %dst = %s1 + %s2
+ mov %dst, %s1
+ add %dst, %s2
 
-op_+-*,
-%dst = %s1 + %s2	mov %dst, st[s1]
-					add %dst, st[s2]
+ op_+-*,
+ %dst = %s1 + %s2	mov %dst, st[s1]
+ add %dst, st[s2]
 
-op_div,
-%dst = %s1 / %s2
-					mov %dst, %s1
-					mov eax, %dst
-					cdq
-					idiv %s2
-					mov %dst, eax
+ op_div,
+ %dst = %s1 / %s2
+ mov %dst, %s1
+ mov eax, %dst
+ cdq
+ idiv %s2
+ mov %dst, eax
 
-sem_return
-					mov eax, %dst
-					mov rsp, rbp
-					pop rbp
-					ret
+ sem_return
+ mov eax, %dst
+ mov rsp, rbp
+ pop rbp
+ ret
  */
-
 
 #if 0
 	#define PRINT_MORE	\
@@ -66,29 +65,84 @@ sem_return
 			printf(", cyc %d", mc.start_cycle);	\
 //			printf(", off %d\n", mc.of1);
 #else
-	#define PRINT_MORE	\
+#define PRINT_MORE	\
 //		printf("\n");
 #endif
 
-enum X64pr
-{
+enum X64pr {
 	R10D,
 	R11D,
 	R12D,
 	R13D,
 	R14D,
 	R15D,
-//	eax,
+	//	eax,
 	X64PR_MAX,
 };
 
-struct McDepend
+static const char *pr_name[] = {
+    [R10D] = "r10d",
+    [R11D] = "r11d",
+    [R12D] = "r12d",
+    [R13D] = "r13d",
+    [R14D] = "r14d",
+    [R15D] = "r15d",
+//	[eax] = "eax",
+    };
+
+static const char* pr_name_byte(int pr)
 {
+	switch (pr)
+	{
+	case R10D:
+		return "r10b";
+	case R11D:
+		return "r11b";
+	case R12D:
+		return "r12b";
+	case R13D:
+		return "r13b";
+	case R14D:
+		return "r14b";
+	case R15D:
+		return "r15b";
+	}
+
+	ERR("no byte register");
+	return 0;
+}
+
+
+enum VrUsage
+{
+	VR_USAGE_READ = 1 << 0,
+	VR_USAGE_WRITE = 1 << 1,
+	VR_USAGE_READ_WRITE = VR_USAGE_READ | VR_USAGE_WRITE,
+
+	VR_USEAGE_INVALID = 0,
+};
+
+struct VrToPr
+{
+	int pr = X64PR_MAX;
+	int u = VR_USEAGE_INVALID;
+	bool allow_spill = 1;
+};
+
+constexpr int invalid_vr = -1;
+struct PrToVr
+{
+	int vr = invalid_vr;
+//	int u = VR_USEAGE_INVALID;
+};
+
+
+struct McDepend {
 	vector<int> mcs;
 	int edges = 0;
 };
 
-enum MachineCodeStamp{
+enum MachineCodeStamp {
 	MC_LI,	// reg-num
 
 	MC_LD,	// reg <- ptr
@@ -135,14 +189,15 @@ struct Mc2mc {
 	MachineCodeStamp mc_set;
 };
 
-struct McInfo{
+
+struct McInfo {
 	int mc_latency = -1;
 	string mc_code;	// just for print
 };
 extern const McInfo mc_info[];
 extern VirtualRegManager vregm;
 
-struct X64mc{
+struct X64mc {
 	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s1, int tac_s2)
 	{
 		mc_stamp = _mc_stamp;
@@ -182,16 +237,21 @@ struct X64mc{
 //	{
 //		mc_stamp = _mc_stamp;
 //	}
-	X64mc(){
+	X64mc()
+	{
 		mc_stamp = MC_INVALID;
 	}
 
 	MachineCodeStamp mc_stamp = MC_INVALID;
 
-	int dst = -1;
-	int s1 = -1;
-	int s2 = -1;
-
+	union {
+		struct {
+			int dst = -1;
+			int s1 = -1;
+			int s2 = -1;
+		};
+		int vr[3];
+	};
 	int of_dst = -1;
 	int of1 = -1;
 	int of2 = -1;
@@ -212,8 +272,15 @@ struct X64mc{
 };
 
 
+//void spill_pr(vector<X64mc> &x64mc_alloced, int vr);
+//void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2);
+
+
 void gen_machine_code();
 void mc_schedule();
-void x64_pr_alloc();
+void x64_reg_alloc();
+void wave_reg_alloc();
+
+
 
 #endif /* X64_BACK_END_H_ */

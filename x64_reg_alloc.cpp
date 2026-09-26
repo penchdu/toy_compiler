@@ -10,62 +10,16 @@
 #include "basic_block.h"
 
 extern Mc2mc fake_cmp_mc_to_real_mc[];
-vector<int> x64pr_state(X64PR_MAX, 1);
 
-static const char *pr_name[] = {
-    [R10D] = "r10d",
-    [R11D] = "r11d",
-    [R12D] = "r12d",
-    [R13D] = "r13d",
-    [R14D] = "r14d",
-    [R15D] = "r15d",
-//	[eax] = "eax",
-    };
-
-const char* pr_name_byte(int pr)
-{
-	switch (pr)
-	{
-	case R10D:
-		return "r10b";
-	case R11D:
-		return "r11b";
-	case R12D:
-		return "r12b";
-	case R13D:
-		return "r13b";
-	case R14D:
-		return "r14b";
-	case R15D:
-		return "r15b";
-	}
-
-	ERR("no byte register");
-	return 0;
-}
-
-enum VrUsage
-{
-	VR_USAGE_READ = 1 << 0,
-	VR_USAGE_WRITE = 1 << 1,
-	VR_USAGE_READ_WRITE = VR_USAGE_READ | VR_USAGE_WRITE,
-
-	VR_USEAGE_INVALID = 0,
-};
-struct Vr2Pr
-{
-	X64pr pr = X64PR_MAX;
-	int u = VR_USEAGE_INVALID;
-};
-vector<Vr2Pr> vr2pr;
+static vector<VrToPr> vr2pr;
+static vector<PrToVr> pr2vr(X64PR_MAX, {invalid_vr});
 
 static X64pr get_pr()
 {
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
-		if (x64pr_state[i] == 1)
+		if (pr2vr[i].vr == invalid_vr)
 		{
-			x64pr_state[i] = 0;
 			return (X64pr) i;
 		}
 	}
@@ -73,7 +27,9 @@ static X64pr get_pr()
 	ERR("-O0");
 	return X64PR_MAX;
 }
-X64pr get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
+
+//X64pr (*ptr_get_pr)();
+static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 {
 	/*
 	 * todo
@@ -83,8 +39,10 @@ X64pr get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 	bool need_load = 0;
 	if (vr2pr[vr].pr == X64PR_MAX)
 	{
-		vr2pr[vr].pr = get_pr();
+		int pr = get_pr();
+		vr2pr[vr].pr = pr;
 		vr2pr[vr].u = u;
+		pr2vr[pr].vr = vr;
 		need_load = (u & VR_USAGE_READ);
 	}
 	else if (!(vr2pr[vr].u & VR_USAGE_READ)
@@ -105,9 +63,9 @@ X64pr get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 	return vr2pr[vr].pr;
 }
 
-void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
+static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 {
-	X64pr pr = vr2pr[vr].pr;
+	int pr = vr2pr[vr].pr;
 	int u = vr2pr[vr].u;
 
 	assert(pr != X64PR_MAX);
@@ -124,10 +82,10 @@ void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 	vr2pr[vr].pr = X64PR_MAX;
 	vr2pr[vr].u = VR_USEAGE_INVALID;
 
-	assert(x64pr_state[pr] == 0);
-	x64pr_state[pr] = 1;
+	assert(pr2vr[pr].vr == vr);
+	pr2vr[pr].vr = invalid_vr;
 }
-void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
+static void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
 {
 	if (vr1 == vr2)
 	{
@@ -138,7 +96,7 @@ void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
 	spill_pr(x64mc_alloced, vr2);
 }
 
-void x64_pr_alloc_o0()
+static void _x64_reg_alloc_o0()
 {
 	vr2pr.resize(vregm.id + 1);
 	X64mc inst;
@@ -328,13 +286,13 @@ static void dump_bb_asm(FILE *fp, BasicBlock &bb)
 		    bb.exit_jmp->jmp_out->name.c_str());
 	}
 }
-static void dump_asm()
+void dump_asm(char *asm_file)
 {
 	int rsp_of = vregm.offset;
 	align16(rsp_of);
 	//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 
-	FILE *fp = fopen("a.s", "w");
+	FILE *fp = fopen(asm_file, "w");
 	assert(fp);
 
 	PRINT_ASM_HEAD("#========== asm ==========#");
@@ -367,13 +325,22 @@ static void dump_asm()
 #undef PRINT_ASM_HEAD
 #undef PRINT_ASM
 
-void x64_pr_alloc()
+void x64_reg_alloc()
 {
-	x64_pr_alloc_o0();
-	dump();
+	_x64_reg_alloc_o0();
+	dump_asm("a0.s");
 
-	dump_asm();
+	system("gcc a0.s -o a0");
+	system("./a0");
 
-//	system("gcc a.s -o a");
-//	system("./a");
+	for (BasicBlock &bb : basic_blocks)
+		bb.x64mc_alloc.clear();
+
+	usleep(500);
+
+	wave_reg_alloc();
+	dump_asm("a1.s");
+	system("gcc a1.s -o a1");
+	system("./a1");
+
 }

@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include <iostream>
 #include <vector>

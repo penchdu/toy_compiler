@@ -23,12 +23,8 @@ int main(int argc, char **argv)
 	gen_three_address_code();
 	gen_machine_code();
 	mc_schedule();
-	x64_pr_alloc();		// create a.s in current location
+	x64_reg_alloc();		// create a.s in current location
 
-//	system("rm ./a.s");
-//	system("rm ./a");
-	system("gcc a.s -o a");
-	system("./a");
 
 //	test();
 	fclose(fp);

@@ -296,5 +296,5 @@ static void dump()
 void gen_machine_code()
 {
 	gen_mc();
-	dump();
+//	dump();
 }

@@ -16,14 +16,15 @@ vector<McDepend> mcs_successor;
 
 void create_dependcy(int a, int b)
 {
-    if (b < 0)
-        return;
+	if (b < 0)
+		return;
 
-    auto &pred = mcs_predecessor[a].mcs;
+	auto &pred = mcs_predecessor[a].mcs;
 
-    if (std::find(pred.begin(), pred.end(), b) != pred.end()){
-        return;
-    }
+	if (std::find(pred.begin(), pred.end(), b) != pred.end())
+	{
+		return;
+	}
 
 	// a depend on b, data flow: b -> a
 	mcs_predecessor[a].mcs.push_back(b);
@@ -58,7 +59,7 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 			s2_prev_write_mc = prev_write_mc[s2];
 			s2_prev_read_mc = prev_read_mc[s2];
 		}
-		(void)s2_prev_read_mc;
+		(void) s2_prev_read_mc;
 
 		int dst = x64mc[i].dst;
 		int dst_prev_write_mc = -1;
@@ -236,8 +237,8 @@ multimap<int, int> ready;
 vector<int> running;
 
 const int reg_limit = X64PR_MAX;
-const int alu_unit = 4;
-const int imul_unit = 2;
+const int alu_unit = 2;
+const int imul_unit = 1;
 const int div_unit = 1;
 
 int free_reg = reg_limit;
@@ -358,7 +359,7 @@ void init_ready_queue(vector<X64mc> &x64mc)
 	{
 		if (mcs_predecessor[i].edges == 0)
 			ready.insert(
-			    { x64mc[i].chain_latency, i });
+			    {x64mc[i].chain_latency, i});
 	}
 }
 void finish_mc__update_ready_queue(vector<X64mc> &x64mc, int mc)
@@ -371,7 +372,7 @@ void finish_mc__update_ready_queue(vector<X64mc> &x64mc, int mc)
 
 		if (mcs_predecessor[mc].edges == 0)
 			ready.insert(
-			    { x64mc[mc].chain_latency, mc });
+			    {x64mc[mc].chain_latency, mc});
 	}
 }
 
@@ -442,6 +443,13 @@ static void mc_schdu(BasicBlock &bb)
 
 			x64mc[mc].start_cycle = cycle;
 			x64mc_schedu.push_back(x64mc[mc]);
+
+			for (int vr : x64mc[mc].vr)
+			{
+				if (vr >= 0)
+					bb.vrids.push_back(vr);
+			}
+
 			running.push_back(mc);
 
 			assert(x64mc[mc].start_cycle >= 0);
@@ -491,5 +499,5 @@ void mc_schedule()
 		mc_schdu(bb);
 	}
 
-	dump();
+//	dump();
 }

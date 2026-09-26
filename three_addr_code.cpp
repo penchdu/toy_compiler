@@ -210,6 +210,6 @@ void gen_three_address_code()
 	basic_blocks.push_back(bb);
 
 	gen_tac(&file_scp);
-	dump_ast();
-	dump_tac();
+//	dump_ast();
+//	dump_tac();
 }

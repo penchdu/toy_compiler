@@ -5,7 +5,12 @@
 *.exe
 *.a
 *.so
+a.s
+a0.s
+a1.s
 a
+a0
+a1
 build/
 *.log
 .vscode/
