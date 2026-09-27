@@ -9,229 +9,12 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-vector<int> prev_write_mc;
-vector<int> prev_read_mc;
-vector<McDepend> mcs_predecessor;
-vector<McDepend> mcs_successor;
+extern vector<int> prev_write;
+extern vector<vector<int>> prev_read;
+extern vector<McDepend> mcs_predecessor;
+extern vector<McDepend> mcs_successor;
 
-void create_dependcy(int a, int b)
-{
-	if (b < 0)
-		return;
 
-	auto &pred = mcs_predecessor[a].mcs;
-
-	if (std::find(pred.begin(), pred.end(), b) != pred.end())
-	{
-		return;
-	}
-
-	// a depend on b, data flow: b -> a
-	mcs_predecessor[a].mcs.push_back(b);
-	mcs_successor[b].mcs.push_back(a);
-}
-
-void gen_use_def_chain(vector<X64mc> &x64mc)
-{
-	memset(prev_write_mc.data(), 0xFF, prev_write_mc.size() * sizeof(int));
-	memset(prev_read_mc.data(), 0xFF, prev_read_mc.size() * sizeof(int));
-
-	mcs_predecessor.clear();
-	mcs_successor.clear();
-	mcs_predecessor.resize(x64mc.size());
-	mcs_successor.resize(x64mc.size());
-
-	LOG("%zu, %zu\n", x64mc.size(), prev_write_mc.size());
-
-	for (int i = 0; i < x64mc.size(); i++)
-	{
-		MachineCodeStamp mc_stamp = x64mc[i].mc_stamp;
-
-		int s1 = x64mc[i].s1;
-		int s1_prev_w_mc = prev_write_mc[s1];	// write and write ?
-		int s1_prev_read_mc = prev_read_mc[s1];
-
-		int s2 = x64mc[i].s2;
-		int s2_prev_write_mc = -1;
-		int s2_prev_read_mc = -1;
-		if (s2 >= 0)
-		{
-			s2_prev_write_mc = prev_write_mc[s2];
-			s2_prev_read_mc = prev_read_mc[s2];
-		}
-		(void) s2_prev_read_mc;
-
-		int dst = x64mc[i].dst;
-		int dst_prev_write_mc = -1;
-		int dst_prev_read_mc = -1;
-		if (dst >= 0)
-		{
-			dst_prev_write_mc = prev_write_mc[dst];
-			dst_prev_read_mc = prev_read_mc[dst];
-		}
-
-		switch (mc_stamp)
-		{
-		case MC_LI:
-			prev_write_mc[s1] = i;
-			break;
-
-		case MC_ASSIGN:
-			if (s1_prev_w_mc >= 0)
-				create_dependcy(i, s1_prev_w_mc);
-
-			if (s1_prev_read_mc >= 0)
-				create_dependcy(i, s1_prev_read_mc);
-
-			prev_write_mc[s1] = i;
-
-			if (s2_prev_write_mc >= 0)
-				create_dependcy(i, s2_prev_write_mc);
-
-			prev_read_mc[s2] = i;
-			break;
-
-		case MC_ADD:
-			case MC_SUB:
-			case MC_IMUL:
-			case MC_DIV:
-			if (s1_prev_w_mc >= 0)
-				create_dependcy(i, s1_prev_w_mc);
-
-			if (s1_prev_read_mc >= 0)
-				create_dependcy(i, s1_prev_read_mc);
-
-			prev_write_mc[s1] = i;
-			prev_read_mc[s1] = i;
-
-			if (s2_prev_write_mc >= 0)
-				create_dependcy(i, s2_prev_write_mc);
-
-			prev_read_mc[s2] = i;
-			break;
-
-		case MC_CMP_E:	// ???
-		case MC_CMP_NE:
-			case MC_CMP_L:
-			case MC_CMP_LE:
-			case MC_CMP_G:
-			case MC_CMP_GE:
-			if (s1_prev_w_mc >= 0)
-				create_dependcy(i, s1_prev_w_mc);
-
-			prev_read_mc[s1] = i;
-
-			if (s2_prev_write_mc >= 0)
-				create_dependcy(i, s2_prev_write_mc);
-
-			prev_read_mc[s2] = i;
-
-			if (dst_prev_write_mc >= 0)
-				create_dependcy(i, dst_prev_write_mc);
-
-			if (dst_prev_read_mc >= 0)
-				create_dependcy(i, dst_prev_read_mc);
-
-			prev_write_mc[dst] = i;
-			break;
-
-//		case MC_SET_E:
-//			case MC_SET_NE:
-//			case MC_SET_L:
-//			case MC_SET_LE:
-//			case MC_SET_G:
-//			case MC_SET_GE:
-//			if (s1_prev_w_mc >= 0)
-//				create_dependcy(i, s1_prev_w_mc);
-//
-//			if (s1_prev_read_mc >= 0)
-//				create_dependcy(i, s1_prev_read_mc);
-//
-//			prev_write_mc[s1] = i;
-//
-//			assert((s2_prev_write_mc < 0));
-//			break;
-
-		case MC_SAVE_RET_VALUE:
-			if (s1_prev_w_mc >= 0)
-				create_dependcy(i, s1_prev_w_mc);
-
-			prev_read_mc[s1] = i;
-			break;
-
-		default:
-			ERR("%d \n", mc_stamp);
-			break;
-		}
-	}
-
-	for (auto &r : mcs_predecessor)
-		r.edges = r.mcs.size();
-	for (auto &r : mcs_successor)
-		r.edges = r.mcs.size();
-
-}
-static void dump_chain()
-{
-	printf("dep\n");
-	for (int i = 0; i < mcs_predecessor.size(); i++)
-	{
-		auto &v = mcs_predecessor[i].mcs;
-
-		std::sort(v.begin(), v.end());
-		auto it = std::adjacent_find(v.begin(), v.end());
-		if (it != v.end())
-			ERR();
-
-		for (auto r : v)
-			printf("%d %d, ", i, r);
-	}
-
-	printf("\nbdep\n");
-	for (int i = 0; i < mcs_successor.size(); i++)
-	{
-		auto &v = mcs_successor[i].mcs;
-
-		std::sort(v.begin(), v.end());
-		auto it = std::adjacent_find(v.begin(), v.end());
-		if (it != v.end())
-			ERR();
-
-		for (auto r : v)
-			printf("%d %d, ", i, r);
-	}
-	printf("\n");
-
-}
-int get_mc_latency(vector<X64mc> &x64mc, int mc_id)
-{
-	int &c = x64mc[mc_id].chain_latency;
-	if (c >= 0)
-		return c;
-
-	int &n = x64mc[mc_id].latency;
-	assert(n >= 0);
-	c = n;
-
-	auto &mcs = mcs_successor[mc_id].mcs;
-	int mx = 0;
-	for (int i = 0; i < mcs.size(); i++)
-	{
-		int mc = mcs[i];
-		int r = get_mc_latency(x64mc, mc);
-		mx = std::max(mx, r);
-	}
-
-	c += mx;
-	return c;
-}
-void gen_schdu_chain_latency(vector<X64mc> &x64mc)
-{
-	for (int i = 0; i < mcs_successor.size(); i++)
-		get_mc_latency(x64mc, i);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////////
 using std::multimap;
 multimap<int, int> ready;
 vector<int> running;
@@ -458,11 +241,11 @@ static void mc_schdu(BasicBlock &bb)
 				ERR("%d, %s", x64mc[mc].mc_stamp, x64mc[mc].asm_code.c_str());
 			}
 		}
-
-//		if (x64mc_scheduled.size() == x64mc.size())
-//			break;
 		cycle++;
 	}
+
+	if (bb.x64mc_schedu.size() != bb.x64mc.size())
+		ERR("%lu %lu", bb.x64mc.size(), bb.x64mc_schedu.size());
 //	printf("max cycle: %d \n", cycle);
 
 //	auto &t = *x64mc_schedu.rbegin();
@@ -484,8 +267,8 @@ static void dump()
 
 void mc_schedule()
 {
-	prev_write_mc.resize(vregm.id + 1, -1);
-	prev_read_mc.resize(vregm.id + 1, -1);
+	prev_write.resize(vregm.id + 1, -1);
+	prev_read.resize(vregm.id + 1);
 
 	for (BasicBlock &bb : basic_blocks)
 	{

@@ -189,7 +189,7 @@ static void dump()
 #define PRINT_ASM_HEAD(fmt, ...) fprintf(fp, fmt "\n", ##__VA_ARGS__)
 #define PRINT_ASM(fmt, ...) fprintf(fp, "\t" fmt , ##__VA_ARGS__)
 #define PRINT_ASM_sem	\
-	fprintf(fp, "\t\t#%s", mc.ori_sem.c_str());	\
+	fprintf(fp, "\t\t#%s, idx %d", mc.ori_sem.c_str(), mc.idx);	\
 	fprintf(fp, ", cyc %d", mc.start_cycle);		\
 	fprintf(fp, "\n");
 
@@ -327,7 +327,7 @@ void x64_reg_alloc()
 
 	system("gcc a0.s -o a0");
 	system("./a0");
-	return;
+
 
 	for (BasicBlock &bb : basic_blocks)
 		bb.x64mc_alloc.clear();

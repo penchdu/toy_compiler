@@ -57,6 +57,8 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 	case SEM_OPERATOR:
 		if (p->op == OP_ASSIGN)
 		{
+			if(a == b)
+				return a;
 			// x = y : return x
 			t = Tac(p);
 			t.dst = a;

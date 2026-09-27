@@ -198,6 +198,7 @@ struct McInfo {
 extern const McInfo mc_info[];
 extern VirtualRegManager vregm;
 
+static int mcidx = 0;
 struct X64mc {
 	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s1, int tac_s2)
 	{
@@ -212,6 +213,7 @@ struct X64mc {
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
+		idx = mcidx++;
 	}
 	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s2)
 	{
@@ -224,6 +226,7 @@ struct X64mc {
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
+		idx = mcidx++;
 	}
 	X64mc(MachineCodeStamp _mc_stamp, int tac_s1)
 	{
@@ -233,6 +236,7 @@ struct X64mc {
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
+		idx = mcidx++;
 	}
 //	X64mc(MachineCodeStamp _mc_stamp)
 //	{
@@ -270,6 +274,7 @@ struct X64mc {
 	int latency = -1;
 	int chain_latency = -1;
 	int start_cycle = -1;
+	int idx = -1;
 };
 
 
@@ -278,6 +283,11 @@ struct X64mc {
 
 
 void gen_machine_code();
+
+void gen_use_def_chain(vector<X64mc> &x64mc);
+void dump_chain();
+void gen_schdu_chain_latency(vector<X64mc> &x64mc);
+
 void mc_schedule();
 void x64_reg_alloc();
 void wave_reg_alloc();
