@@ -206,7 +206,7 @@ static void gen_mc()
 }
 
 #define PRINT_ASM_HEAD(fmt, ...) printf(fmt "\n", ##__VA_ARGS__);
-#define PRINT_ASM(fmt, ...) printf("\t" fmt "\n", ##__VA_ARGS__);
+#define PRINT_ASM(fmt, ...) printf("\t" fmt , ##__VA_ARGS__);
 
 void dump_mc(BasicBlock &bb, vector<X64mc> &v)
 {
@@ -261,9 +261,9 @@ void dump_mc(BasicBlock &bb, vector<X64mc> &v)
 			PRINT_ASM("mov eax, %%%d", mc.s1);
 			PRINT_MORE
 
-			PRINT_ASM("cdq");
-			PRINT_ASM("idiv %%%d \t div", mc.s2);
-			PRINT_ASM("mov %%%d, eax \t div", mc.s1);
+			PRINT_ASM("cdq \n");
+			PRINT_ASM("idiv %%%d div \n", mc.s2);
+			PRINT_ASM("mov %%%d, eax div \n", mc.s1);
 			break;
 
 		case MC_SAVE_RET_VALUE:
@@ -279,7 +279,7 @@ void dump_mc(BasicBlock &bb, vector<X64mc> &v)
 
 	if (bb.exit_jmp != 0)
 	{
-		PRINT_ASM("%s %s", mc_info[bb.mc_jmp].mc_code.c_str(),
+		PRINT_ASM("%s %s \n", mc_info[bb.mc_jmp].mc_code.c_str(),
 			bb.exit_jmp->jmp_out->name.c_str());
 	}
 }
@@ -296,5 +296,5 @@ static void dump()
 void gen_machine_code()
 {
 	gen_mc();
-//	dump();
+	dump();
 }

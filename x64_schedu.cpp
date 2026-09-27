@@ -237,7 +237,7 @@ multimap<int, int> ready;
 vector<int> running;
 
 const int reg_limit = X64PR_MAX;
-const int alu_unit = 2;
+const int alu_unit = 1;
 const int imul_unit = 1;
 const int div_unit = 1;
 
@@ -493,11 +493,11 @@ void mc_schedule()
 			continue;
 
 		gen_use_def_chain(bb.x64mc);
-//		dump_chain();
+		dump_chain();
 		gen_schdu_chain_latency(bb.x64mc);
 
 		mc_schdu(bb);
 	}
 
-//	dump();
+	dump();
 }

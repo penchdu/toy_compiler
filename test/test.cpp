@@ -144,10 +144,58 @@ int f3()
 
     return b;
 }
-void test()
-{
-	int r = f3();
 
-	printf("test: %d\n", r);
+int schedu()
+{
+    int a = 1;
+    int b = 2;
+    int c = 3;
+    int d = 4;
+    int e = 5;
+
+    a = a + b;
+    a = a + c;
+    a = a + b;
+    a = a + c;
+    a = a + b;
+    a = a + c;
+    a = a + b;
+    a = a + c;
+//	a = a;
+//	a;
+
+
+
+    b = b + 10;
+    b = b + 20;
+
+    a = a + d;
+    a = a + e;
+    a = a + d;
+    a = a + e;
+
+    c = c + d;
+    c = c + e;
+    c = c + d;
+
+    b = b + c;
+    b = b + a;
+    b = b + c;
+
+    a = a + d;
+    b = b + d;
+    c = c + d;
+    e = e + d;
+
+    return a + b + c + d + e;
+}
+
+#include "../t1.txt"
+
+void test__print()
+{
+	int r = test();
+
+	printf("test__print: %d\n", r);
 }
 

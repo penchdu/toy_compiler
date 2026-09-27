@@ -7,7 +7,7 @@
 
 #include "frontend.h"
 #include "x64_back_end.h"
-//#include "test/test.cpp"
+#include "test/test.cpp"
 
 VirtualRegManager vregm;
 
@@ -26,7 +26,7 @@ int main(int argc, char **argv)
 	x64_reg_alloc();		// create a.s in current location
 
 
-//	test();
+	test__print();
 	fclose(fp);
 	return 0;
 }

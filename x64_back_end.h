@@ -59,11 +59,12 @@
  ret
  */
 
-#if 0
+#if 1
 	#define PRINT_MORE	\
-			printf("\t%s", mc.ori_sem.c_str());	\
+			printf("\t\t#%s", mc.ori_sem.c_str());	\
 			printf(", cyc %d", mc.start_cycle);	\
-//			printf(", off %d\n", mc.of1);
+		/*	PRINT_ASM(", off %d\n", mc.of1);	*/	\
+			printf("\n");
 #else
 #define PRINT_MORE	\
 //		printf("\n");
@@ -126,7 +127,7 @@ struct VrToPr
 {
 	int pr = X64PR_MAX;
 	int u = VR_USEAGE_INVALID;
-	bool allow_spill = 1;
+//	bool allow_spill = 1;
 };
 
 constexpr int invalid_vr = -1;

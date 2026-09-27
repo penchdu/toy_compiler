@@ -75,7 +75,7 @@ static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 
 static vector<int> x64pr_state(X64PR_MAX, invalid_vr);
 
-static int get_pr(vector<X64mc> &x64mc_alloced, int mc_idx)
+static int get_pr(BasicBlock &bb, int mc_idx)
 {
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
@@ -91,7 +91,9 @@ static int get_pr(vector<X64mc> &x64mc_alloced, int mc_idx)
 	for (int pr = R10D; pr < X64PR_MAX; pr++)
 	{
 		int vr = pr2vr[pr].vr;
-		if(vr2pr[vr].allow_spill == false)
+		if (vr == bb.x64mc_schedu[mc_idx].dst
+			|| vr == bb.x64mc_schedu[mc_idx].s1
+			|| vr == bb.x64mc_schedu[mc_idx].s2)
 			continue;
 
 		float score = vrwave[vr].score[mc_idx];
@@ -104,11 +106,11 @@ static int get_pr(vector<X64mc> &x64mc_alloced, int mc_idx)
 	assert(min_score_vr != invalid_vr);
 
 	int pr = vr2pr[min_score_vr].pr;
-	spill_pr(x64mc_alloced, min_score_vr);
+	spill_pr(bb.x64mc_alloc, min_score_vr);
 
 	return pr;
 }
-static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u, int mc_idx)
+static int get_pr__load_vr(BasicBlock &bb, int vr, int u, int mc_idx)
 {
 	/*
 	 * todo
@@ -118,30 +120,30 @@ static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u, int mc_i
 	bool need_load = 0;
 	if (vr2pr[vr].pr == X64PR_MAX)
 	{
-		int pr = get_pr(x64mc_alloced, mc_idx);
+		int pr = get_pr(bb, mc_idx);
 		vr2pr[vr].pr = pr;
 		vr2pr[vr].u = u;
-		vr2pr[vr].allow_spill = false;
 		pr2vr[pr].vr = vr;
 		need_load = (u & VR_USAGE_READ);
 	}
+	// todo, if (!(vr2pr[vr].u & VR_USAGE_WRITE) && (u & VR_USAGE_WRITE) ?
 // 	// else: VR 已经在寄存器中，值有效 —— 永远不需要 MC_LD！
 // 	else if (!(vr2pr[vr].u & VR_USAGE_READ)
 // 	    && (u & VR_USAGE_READ))
 // 	{
 // 		need_load = 1;
-// //		ERR();
 // 	}
-
-	vr2pr[vr].u |= u;
-	vr2pr[vr].allow_spill = false;
+	else
+	{
+		vr2pr[vr].u |= u;
+	}
 
 	if (need_load)
 	{
 		X64mc mc(MC_LD, vr);
 		mc.pr1 = vr2pr[vr].pr;
 		mc.ori_sem = "alloc";
-		x64mc_alloced.push_back(mc);
+		bb.x64mc_alloc.push_back(mc);
 	}
 
 	return vr2pr[vr].pr;
@@ -161,19 +163,17 @@ void _x64_reg_alloc_wave(BasicBlock &bb)
 		switch (mc_stamp)
 		{
 		case MC_LI:
-			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_WRITE, i);
+			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
 			x64mc_alloc.push_back(mc);
-			vr2pr[mc.s1].allow_spill = true;
 			break;
 
 		case MC_ASSIGN:
-			//			if (mc.s1 == mc.s2)
-//			    break;
-			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_WRITE, i);
-			mc.pr2 = get_pr__load_vr(x64mc_alloc, mc.s2, VR_USAGE_READ, i);
+			if (mc.s1 == mc.s2)
+				break;
+
+			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
+			mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
 			x64mc_alloc.push_back(mc);
-			vr2pr[mc.s1].allow_spill = true;
-			vr2pr[mc.s2].allow_spill = true;
 			break;
 
 		case MC_ADD:
@@ -181,11 +181,9 @@ void _x64_reg_alloc_wave(BasicBlock &bb)
 			case MC_IMUL:
 			case MC_DIV:
 
-			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_READ_WRITE, i);
-			mc.pr2 = get_pr__load_vr(x64mc_alloc, mc.s2, VR_USAGE_READ, i);
+			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ_WRITE, i);
+			mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
 			x64mc_alloc.push_back(mc);
-			vr2pr[mc.s1].allow_spill = true;
-			vr2pr[mc.s2].allow_spill = true;
 			break;
 
 		case MC_CMP_E:
@@ -194,21 +192,16 @@ void _x64_reg_alloc_wave(BasicBlock &bb)
 			case MC_CMP_LE:
 			case MC_CMP_G:
 			case MC_CMP_GE:
-			mc.pr_dst = get_pr__load_vr(x64mc_alloc, mc.dst, VR_USAGE_WRITE, i);
-			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_READ, i);
-			mc.pr2 = get_pr__load_vr(x64mc_alloc, mc.s2, VR_USAGE_READ, i);
+			mc.pr_dst = get_pr__load_vr(bb, mc.dst, VR_USAGE_WRITE, i);
+			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
+			mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
 
 			x64mc_alloc.push_back(mc);
-			vr2pr[mc.s1].allow_spill = true;
-			vr2pr[mc.s2].allow_spill = true;
-			vr2pr[mc.dst].allow_spill = true;
-			PRINT_MORE
 			break;
 
 		case MC_SAVE_RET_VALUE:
-			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_READ, i);
+			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
 			x64mc_alloc.push_back(mc);
-			vr2pr[mc.s1].allow_spill = true;
 			break;
 
 		default:
