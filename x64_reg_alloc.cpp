@@ -186,12 +186,13 @@ static void dump()
 		dump_mc(bb, bb.x64mc_alloc);
 }
 
+int _asm_len = 0;
 #define PRINT_ASM_HEAD(fmt, ...) fprintf(fp, fmt "\n", ##__VA_ARGS__)
-#define PRINT_ASM(fmt, ...) fprintf(fp, "\t" fmt , ##__VA_ARGS__)
-#define PRINT_ASM_sem	\
-	fprintf(fp, "\t\t#%s, idx %d", mc.ori_sem.c_str(), mc.idx);	\
-	fprintf(fp, ", cyc %d", mc.start_cycle);		\
-	fprintf(fp, "\n");
+#define PRINT_ASM(fmt, ...) _asm_len = 8 + fprintf(fp, "\t" fmt , ##__VA_ARGS__)
+#define PRINT_ASM_sem	fprintf(fp, "%*s#%s, idx %d, cyc %d", \
+	        (_asm_len < 48) ? (48 - _asm_len) : 2, "", \
+	        mc.ori_sem.c_str(), mc.idx, mc.start_cycle);	\
+	        fprintf(fp, "\n");
 
 static void dump_bb_asm(FILE *fp, BasicBlock &bb)
 {
@@ -300,7 +301,7 @@ void dump_asm(char *asm_file)
 	PRINT_ASM_HEAD(".section .text");
 	PRINT_ASM_HEAD(".global main");
 
-	PRINT_ASM_HEAD("\nmain: \n");
+	PRINT_ASM_HEAD("\nmain:");
 	PRINT_ASM("push rbp \n");
 	PRINT_ASM("mov rbp, rsp \n");
 	PRINT_ASM("sub rsp, %d \n", rsp_of);

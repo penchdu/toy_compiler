@@ -1,48 +1,45 @@
-
-
-
-
-int test()
-{
+int test() {
     int a = 1;
-    int b = 2;
-    int c = 3;
-    int d = 4;
-    int e = 5;
-	
-    a = a + b;
-    a = a + c;
-    a = a + b;
-    a = a + c;
-    a = a + b;
-    a = a + c;
-    a = a + b;
-    a = a + c;
-	a = a;
-	a;
-	
-	
-	
-    b = b + 10;
-    b = b + 20;
+    int b = 10;
+    int c = 100;
+    int d = 1000;
+    int e = 0;
+    int f = 0;
+    int sum = 0;
+    int i = 0;
 
-    a = a + d;
-    a = a + e;
-    a = a + d;
-    a = a + e;
+    while (i < 12) {
+        // 外层 if-else
+        if (a < b) {
+            a = a + 3;
+            e = e + 1;
+            // 内层嵌套 if-else
+            if (c < d) {
+                c = c + 5;
+                f = f + 1;
+            } else {
+                d = d - 2;
+                f = f + 2;
+            }
+        } else {
+            b = b - 2;
+            e = e + 2;
+            if (c > d) {
+                c = c - 3;
+                f = f + 3;
+            } else {
+                d = d + 4;
+                f = f + 4;
+            }
+        }
 
-    c = c + d;
-    c = c + e;
-    c = c + d;
+        // 跨分支边界累加: a/b/c/d/e/f 来自不同 BB
+        sum = sum + a + b + c + d + e + f;
+        a = a + e;
+        b = b + f;
 
-    b = b + c;
-    b = b + a;
-    b = b + c;
+        i = i + 1;
+    }
 
-    a = a + d;
-    b = b + d;
-    c = c + d;
-    e = e + d;
-
-    return a + b + c + d + e;
+    return sum;
 }

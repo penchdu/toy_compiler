@@ -30,9 +30,7 @@ static void init_wave(BasicBlock &bb)
 	int mc_size = bb.x64mc_schedu.size();
 	for (int vr : bb.vrids)
 	{
-//		vrwave[vr].score.clear();
 		vrwave[vr].score.resize(mc_size, 0);
-//		vrwave[vr].cnt.clear();
 		vrwave[vr].insts.resize(mc_size, 0);
 	}
 
@@ -216,14 +214,15 @@ void wave_reg_alloc()
 	vrwave.resize(vregm.id + 1);
 	vr2pr.resize(vregm.id + 1);
 
+	VrToPr a;
+	std::fill(vr2pr.begin(), vr2pr.end(), a);
+	std::fill(pr2vr.begin(), pr2vr.end(), PrToVr{invalid_vr});
+
+
 	for (BasicBlock &bb : basic_blocks)
 	{
-		VrToPr a;
-		std::fill(vr2pr.begin(), vr2pr.end(), a);
-		std::fill(pr2vr.begin(), pr2vr.end(), PrToVr{invalid_vr});
-
 		init_wave(bb);
-		compute_wave(bb);
+		gen_wave(bb);
 //		dump_wave(bb);
 
 		_x64_reg_alloc_wave(bb);

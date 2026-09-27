@@ -13,12 +13,6 @@ vector<vector<int>> prev_read;
 vector<McDepend> mcs_predecessor;
 vector<McDepend> mcs_successor;
 
-/*
- * W(x):
- node.dep += last_read[x]
- last_write[x] = node
- clear last_read[x]
- */
 void create_dependcy_RAW(int a, int b)
 {
 	if (b < 0)
@@ -70,7 +64,6 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 	for (int mc = 0; mc < x64mc.size(); mc++)
 	{
 		MachineCodeStamp mc_stamp = x64mc[mc].mc_stamp;
-
 		int s1 = x64mc[mc].s1;
 		int s2 = x64mc[mc].s2;
 		int dst = x64mc[mc].dst;
@@ -83,6 +76,7 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 			break;
 
 		case MC_ASSIGN:
+			assert(s1 != s2);
 			create_dependcy_WAW(mc, prev_write[s1]);
 			create_dependcy_WAR(mc, prev_read[s1]);
 			prev_write[s1] = mc;
@@ -175,13 +169,12 @@ void dump_chain()
 }
 int get_mc_latency(vector<X64mc> &x64mc, int mc_id)
 {
-	int &c = x64mc[mc_id].chain_latency;
-	if (c >= 0)
-		return c;
+	int &chain_latency = x64mc[mc_id].chain_latency;
+	if (chain_latency >= 0)
+		return chain_latency;
 
-	int &n = x64mc[mc_id].latency;
-	assert(n >= 0);
-	c = n;
+	chain_latency = x64mc[mc_id].latency;
+	assert(chain_latency >= 0);
 
 	auto &mcs = mcs_successor[mc_id].mcs;
 	int mx = 0;
@@ -192,8 +185,8 @@ int get_mc_latency(vector<X64mc> &x64mc, int mc_id)
 		mx = std::max(mx, r);
 	}
 
-	c += mx;
-	return c;
+	chain_latency += mx;
+	return chain_latency;
 }
 void gen_schdu_chain_latency(vector<X64mc> &x64mc)
 {

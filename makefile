@@ -7,7 +7,8 @@ CXX := $(CCACHE) clang++
 
 CXXFLAGS = -std=c++20 -O0 -g -MMD -MP \
 	-Wall -Wextra -Wconstant-logical-operand -Wtautological-compare -Wint-in-bool-context \
-	-Wno-c99-designator -Wno-sign-compare -Wno-unused-parameter
+	-Wno-c99-designator -Wno-sign-compare -Wno-unused-parameter -Wno-unused-function \
+	-Wno-dangling-else
 	
 BUILD_DIR = build
 TARGET = $(BUILD_DIR)/a

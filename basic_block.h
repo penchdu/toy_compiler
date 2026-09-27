@@ -38,7 +38,7 @@ extern vector<Wave> vrwave;
 
 extern vector<BasicBlock> basic_blocks;
 void dump_mc(BasicBlock &bb, vector<X64mc> &v);
-void compute_wave(BasicBlock &bb);
+void gen_wave(BasicBlock &bb);
 void dump_wave(BasicBlock &bb);
 void dump_wave_gnuplot(Wave &w, int vr);
 void dump_asm();
