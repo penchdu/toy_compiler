@@ -120,14 +120,13 @@ enum VrUsage
 	VR_USAGE_WRITE = 1 << 1,
 	VR_USAGE_READ_WRITE = VR_USAGE_READ | VR_USAGE_WRITE,
 
-	VR_USEAGE_INVALID = 0,
+	VR_USEAGE_INVALID = 1 << 31,
 };
 
 struct VrToPr
 {
 	int pr = X64PR_MAX;
 	int u = VR_USEAGE_INVALID;
-//	bool allow_spill = 1;
 };
 
 constexpr int invalid_vr = -1;
@@ -182,7 +181,7 @@ enum MachineCodeStamp {
 	MC_JG,
 	MC_JGE,
 
-	MC_SAVE_RET_VALUE,	// reg-reg
+	MC_SAVE_RET,	// reg-reg
 	MC_INVALID,
 };
 struct Mc2mc {

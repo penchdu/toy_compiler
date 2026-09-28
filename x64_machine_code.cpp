@@ -44,7 +44,7 @@ const McInfo mc_info[MC_INVALID + 1] = {
     [MC_JG] = { 0, "jg" },
     [MC_JGE] = { 0, "jge" },
 
-    [MC_SAVE_RET_VALUE] = { 1, "save_ret" },
+    [MC_SAVE_RET] = { 1, "save_ret" },
 };
 
 MachineCodeStamp op_to_mc[] = {
@@ -164,7 +164,7 @@ static void gen_mc()
 				break;
 
 			case SEM_SAVE_RET_VALUE:
-				mc = X64mc(MC_SAVE_RET_VALUE, tac.s1);
+				mc = X64mc(MC_SAVE_RET, tac.s1);
 				mc.ori_sem = "save_ret";
 				bb.x64mc.push_back(mc);
 				break;
@@ -266,7 +266,7 @@ void dump_mc(BasicBlock &bb, vector<X64mc> &v)
 			PRINT_ASM("mov %%%d, eax div \n", mc.s1);
 			break;
 
-		case MC_SAVE_RET_VALUE:
+		case MC_SAVE_RET:
 			PRINT_ASM("mov eax, %%%d", mc.s1);
 			PRINT_MORE
 			break;

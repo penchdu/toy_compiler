@@ -243,7 +243,7 @@ void gen_wave(BasicBlock &bb)
 //    	compute_wave_triangle(wave[vr]);
 //		compute_wave_decay(vrwave[vr]);
 		gen_wave_decay_gemini_improved(vrwave[vr]);
-//		dump_wave_gnuplot(vrwave[vr], vr);
+//		dump_wave_gnuplot(vrwave[13], 13);
 	}
 }
 

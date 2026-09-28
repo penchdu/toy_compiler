@@ -117,7 +117,7 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 			prev_read[dst].clear();
 			break;
 
-		case MC_SAVE_RET_VALUE:
+		case MC_SAVE_RET:
 			printf("MC_SAVE_RET_VALUE %d %d, %lu\n", s1, s2, prev_read.size());
 			create_dependcy_RAW(mc, prev_write[s1]);
 			prev_read[s1].push_back(mc);

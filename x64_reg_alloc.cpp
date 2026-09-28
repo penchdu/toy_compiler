@@ -154,7 +154,7 @@ static void _x64_reg_alloc_o0()
 				spill_pr(x64mc_alloc, mc.s1, mc.s2);
 				break;
 
-			case MC_SAVE_RET_VALUE:
+			case MC_SAVE_RET:
 				mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_READ);
 				x64mc_alloc.push_back(mc);
 				spill_pr(x64mc_alloc, mc.s1);
@@ -197,7 +197,7 @@ int _asm_len = 0;
 static void dump_bb_asm(FILE *fp, BasicBlock &bb)
 {
 	if (bb.entry_label != 0 && bb.entry_label->name != "test")
-		PRINT_ASM_HEAD("\n%s:", bb.entry_label->name.c_str());
+		PRINT_ASM_HEAD("\n\n%s:", bb.entry_label->name.c_str());
 
 	for (X64mc &r : bb.x64mc_alloc)
 	{
@@ -258,8 +258,8 @@ static void dump_bb_asm(FILE *fp, BasicBlock &bb)
 			PRINT_ASM_sem
 			break;
 
-		case MC_SAVE_RET_VALUE:
-			PRINT_ASM("#---------------- print return value ----------------# \n");
+		case MC_SAVE_RET:
+			PRINT_ASM("#---------------- print ret ----------------# \n");
 			PRINT_ASM("mov esi, %s \n", pr_name[mc.pr1]);
 			PRINT_ASM("lea rdi, [rip + fmt] \n");
 			PRINT_ASM("mov eax, 0 \n");
@@ -309,7 +309,7 @@ void dump_asm(char *asm_file)
 	for (BasicBlock &bb : basic_blocks)
 		dump_bb_asm(fp, bb);
 
-	PRINT_ASM_HEAD("\n.L_return:");
+	PRINT_ASM_HEAD("\n\n.L_return:");
 	PRINT_ASM("mov rsp, rbp \n");
 	PRINT_ASM("pop rbp \n");
 	PRINT_ASM("ret \n\n");
@@ -333,7 +333,7 @@ void x64_reg_alloc()
 	for (BasicBlock &bb : basic_blocks)
 		bb.x64mc_alloc.clear();
 
-	usleep(500);
+//	usleep(1000);
 
 	wave_reg_alloc();
 	dump_asm("a1.s");

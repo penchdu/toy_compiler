@@ -48,13 +48,14 @@ static void init_wave(BasicBlock &bb)
 	}
 }
 
-static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
+static void spill_vr(vector<X64mc> &x64mc_alloced, int vr)
 {
-	int pr = vr2pr[vr].pr;
-	int u = vr2pr[vr].u;
+	int &pr = vr2pr[vr].pr;
+	int &u = vr2pr[vr].u;
 
 	assert(pr != X64PR_MAX);
 	assert(u != VR_USEAGE_INVALID);
+	assert(pr2vr[pr].vr == vr);
 
 	if (u & VR_USAGE_WRITE)
 	{
@@ -64,13 +65,18 @@ static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 		x64mc_alloced.push_back(mc);
 	}
 
-	vr2pr[vr].pr = X64PR_MAX;
-	vr2pr[vr].u = VR_USEAGE_INVALID;
-
-	assert(pr2vr[pr].vr == vr);
 	pr2vr[pr].vr = invalid_vr;
+	pr = X64PR_MAX;
+	u = VR_USEAGE_INVALID;
 }
-
+static void spill_all_pr(BasicBlock &bb)
+{
+	for (int pr = R10D; pr < X64PR_MAX; pr++)
+	{
+		if (pr2vr[pr].vr != invalid_vr)
+			spill_vr(bb.x64mc_alloc, pr2vr[pr].vr);
+	}
+}
 static vector<int> x64pr_state(X64PR_MAX, invalid_vr);
 
 static int get_pr(BasicBlock &bb, int mc_idx)
@@ -104,7 +110,7 @@ static int get_pr(BasicBlock &bb, int mc_idx)
 	assert(min_score_vr != invalid_vr);
 
 	int pr = vr2pr[min_score_vr].pr;
-	spill_pr(bb.x64mc_alloc, min_score_vr);
+	spill_vr(bb.x64mc_alloc, min_score_vr);
 
 	return pr;
 }
@@ -115,7 +121,9 @@ static int get_pr__load_vr(BasicBlock &bb, int vr, int u, int mc_idx)
 	 * mc_assign %1, %1
 	 * s1 == s2
 	 */
+	assert(u != VR_USEAGE_INVALID);
 	bool need_load = 0;
+
 	if (vr2pr[vr].pr == X64PR_MAX)
 	{
 		int pr = get_pr(bb, mc_idx);
@@ -197,7 +205,7 @@ void _x64_reg_alloc_wave(BasicBlock &bb)
 			x64mc_alloc.push_back(mc);
 			break;
 
-		case MC_SAVE_RET_VALUE:
+		case MC_SAVE_RET:
 			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
 			x64mc_alloc.push_back(mc);
 			break;
@@ -212,12 +220,11 @@ void _x64_reg_alloc_wave(BasicBlock &bb)
 void wave_reg_alloc()
 {
 	vrwave.resize(vregm.id + 1);
-	vr2pr.resize(vregm.id + 1);
 
-	VrToPr a;
-	std::fill(vr2pr.begin(), vr2pr.end(), a);
-	std::fill(pr2vr.begin(), pr2vr.end(), PrToVr{invalid_vr});
-
+	vr2pr.clear();
+	vr2pr.resize(vregm.id + 1, {X64PR_MAX, VR_USEAGE_INVALID});
+	pr2vr.clear();
+	pr2vr.resize(X64PR_MAX, {invalid_vr});
 
 	for (BasicBlock &bb : basic_blocks)
 	{
@@ -226,6 +233,7 @@ void wave_reg_alloc()
 //		dump_wave(bb);
 
 		_x64_reg_alloc_wave(bb);
+		spill_all_pr(bb);
 	}
 
 }

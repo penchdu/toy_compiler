@@ -5,10 +5,21 @@ CCACHE := $(shell command -v ccache 2> /dev/null)
 CXX := $(CCACHE) clang++
 
 
+#-Wextra
 CXXFLAGS = -std=c++20 -O0 -g -MMD -MP \
-	-Wall -Wextra -Wconstant-logical-operand -Wtautological-compare -Wint-in-bool-context \
-	-Wno-c99-designator -Wno-sign-compare -Wno-unused-parameter -Wno-unused-function \
-	-Wno-dangling-else
+	-Wall  \
+	-Wconstant-logical-operand \
+	-Wtautological-compare \
+ 	-Wint-in-bool-context \
+	-Wno-c99-designator \
+	-Wno-sign-compare \
+	-Wno-dangling-else \
+	-Wno-unused-parameter \
+	-Wno-unused-function \
+	-Wno-unused-value	\
+	-Wno-unused-variable \
+	-Wno-writable-strings
+	
 	
 BUILD_DIR = build
 TARGET = $(BUILD_DIR)/a

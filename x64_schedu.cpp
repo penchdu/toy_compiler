@@ -69,7 +69,7 @@ bool get_function_unit(MachineCodeStamp stamp)
 		}
 		break;
 
-	case MC_SAVE_RET_VALUE:
+	case MC_SAVE_RET:
 		return true;
 		break;
 
@@ -108,7 +108,7 @@ void free_function_unit(MachineCodeStamp stamp)
 		free_div_unit++;
 		break;
 
-	case MC_SAVE_RET_VALUE:
+	case MC_SAVE_RET:
 		break;
 
 	default:
