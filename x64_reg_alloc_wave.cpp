@@ -13,7 +13,7 @@
 extern vector<BasicBlock> basic_blocks;
 vector<Wave> vrwave;
 static vector<VrToPr> vr2pr;
-static vector<PrToVr> pr2vr(X64PR_MAX, {invalid_vr});
+static vector<PrToVr> pr2vr(X64PR_MAX, {INVALID__VR});
 
 static void init_wave(BasicBlock &bb)
 {
@@ -65,7 +65,7 @@ static void spill_vr(vector<X64mc> &x64mc_alloced, int vr)
 		x64mc_alloced.push_back(mc);
 	}
 
-	pr2vr[pr].vr = invalid_vr;
+	pr2vr[pr].vr = INVALID__VR;
 	pr = X64PR_MAX;
 	u = VR_USEAGE_INVALID;
 }
@@ -73,41 +73,71 @@ static void spill_all_pr(BasicBlock &bb)
 {
 	for (int pr = R10D; pr < X64PR_MAX; pr++)
 	{
-		if (pr2vr[pr].vr != invalid_vr)
+		if (pr2vr[pr].vr != INVALID__VR)
 			spill_vr(bb.x64mc_alloc, pr2vr[pr].vr);
 	}
 }
-static vector<int> x64pr_state(X64PR_MAX, invalid_vr);
+static vector<int> x64pr_state(X64PR_MAX, INVALID__VR);
 
 static int get_pr(BasicBlock &bb, int mc_idx)
 {
+	X64mc &mc = bb.x64mc_schedu[mc_idx];
+//	int vr = mc.s1;
+//	if (vr >= 0 && vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient)
+//		vr_manager.ast[vr]->consume_cnt++;
+//
+//	vr = mc.s2;
+//	if (vr >= 0 && vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient)
+//		vr_manager.ast[vr]->consume_cnt++;
+
+//	if(vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
+//		&& (vr == bb.x64mc_schedu[mc_idx].s1 || vr == bb.x64mc_schedu[mc_idx].s2))
+//	{
+//		vr_manager.ast[vr]->consume_cnt++;
+//	}
+
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
-		if (pr2vr[i].vr == invalid_vr)
-		{
+		int vr = pr2vr[i].vr;
+		if (vr != INVALID__VR
+			&& vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
+			&& (mc.mc_stamp == MC_ASSIGN && vr == mc.s2))
+			vr_manager.ast[vr]->consume_cnt++;
+	}
+
+	for (int i = R10D; i < X64PR_MAX; i++)
+	{
+		int vr = pr2vr[i].vr;
+		if (vr == INVALID__VR)
 			return i;
-		}
+
+		if (vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
+		    && vr_manager.ast[vr]->consume_cnt >= vr_manager.ast[vr]->use_cnt
+		    && vr != mc.s1
+		    && vr != mc.s2
+		    && vr != mc.dst)
+			return i;
 	}
 
 	float min_score = 100000;
-	int min_score_vr = invalid_vr;
+	int min_score_vr = INVALID__VR;
 
 	for (int pr = R10D; pr < X64PR_MAX; pr++)
 	{
 		int vr = pr2vr[pr].vr;
-		if (vr == bb.x64mc_schedu[mc_idx].dst
-			|| vr == bb.x64mc_schedu[mc_idx].s1
-			|| vr == bb.x64mc_schedu[mc_idx].s2)
+		if (vr == mc.dst
+		    || vr == mc.s1
+		    || vr == mc.s2)
 			continue;
 
 		float score = vrwave[vr].score[mc_idx];
-		if(score < min_score)
+		if (score < min_score)
 		{
 			min_score = score;
 			min_score_vr = vr;
 		}
 	}
-	assert(min_score_vr != invalid_vr);
+	assert(min_score_vr != INVALID__VR);
 
 	int pr = vr2pr[min_score_vr].pr;
 	spill_vr(bb.x64mc_alloc, min_score_vr);
@@ -154,7 +184,6 @@ static int get_pr__load_vr(BasicBlock &bb, int vr, int u, int mc_idx)
 
 	return vr2pr[vr].pr;
 }
-
 
 void _x64_reg_alloc_wave(BasicBlock &bb)
 {
@@ -219,12 +248,12 @@ void _x64_reg_alloc_wave(BasicBlock &bb)
 
 void wave_reg_alloc()
 {
-	vrwave.resize(vregm.id + 1);
+	vrwave.resize(vr_manager.id + 1);
 
 	vr2pr.clear();
-	vr2pr.resize(vregm.id + 1, {X64PR_MAX, VR_USEAGE_INVALID});
+	vr2pr.resize(vr_manager.id + 1, {X64PR_MAX, VR_USEAGE_INVALID});
 	pr2vr.clear();
-	pr2vr.resize(X64PR_MAX, {invalid_vr});
+	pr2vr.resize(X64PR_MAX, {INVALID__VR});
 
 	for (BasicBlock &bb : basic_blocks)
 	{

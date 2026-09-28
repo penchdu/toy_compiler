@@ -121,14 +121,19 @@ void case_tk_if()
 	if (!in_func_define)
 		ERR("%s not in func", tk.src.c_str());
 
+	Scope *if_scp = new_scope_and_drop_in();
+	if_scp->sem_stamp = SEM_IF;
+	if_scp->name = ".L_" + if_scp->name + "_if";
+
 	// cond
 	Scope *cond = cond_to_negative();
-	cond->name += "_if";
+	cond->sem_stamp = SEM_COND_JMP;
+	cond->name += "_if_cond";
 
 	// then branch
 	Scope *then_branch = body_of_if__while();
-//	then_branch->sem_stamp = SEM_LABEL;
-	then_branch->name += "_then";	// + to_string(cond->id);
+	then_branch->sem_stamp = SEM_THEN;
+	then_branch->name += "_if_then";	// + to_string(cond->id);
 
 	// else branch
 	Scope *else_branch = 0;
@@ -138,7 +143,8 @@ void case_tk_if()
 	{
 		tokens.get();
 		else_branch = body_of_if__while();
-		else_branch->name += "_else";
+		else_branch->sem_stamp = SEM_ELSE;
+		else_branch->name += "_if_else";
 	}
 
 	// end work
@@ -161,6 +167,16 @@ void case_tk_if()
 	tail->jmp_in.push_back(then_branch_inner_tail);
 
 	rm_duplicit_jmp_in(tail);
+
+	//exit if_scp
+	assert(current_scope_pointer == if_scp || current_scope_pointer->parent == if_scp);
+	if (current_scope_pointer->is_virtual)
+		exit_current_scope();
+	exit_current_scope();
+	new_virtual_scope_and_drop_in();
+
+//	if_scp->jmp_out = current_scope_pointer;
+//	current_scope_pointer->jmp_in.push_back(if_scp);
 	return;
 }
 
@@ -171,10 +187,15 @@ void case_tk_while()
 	if (!in_func_define)
 		ERR("%s not in func", tk.src.c_str());
 
+	Scope *while_scp = new_scope_and_drop_in();
+	while_scp->sem_stamp = SEM_WHILE;
+	while_scp->name = ".L_" + while_scp->name + "_while";
+
 	// cond
 	// while only have one condition express
 	Scope *while_cond = cond_to_negative();
-	while_cond->name += "_while";
+	while_cond->sem_stamp = SEM_COND_JMP;
+	while_cond->name += "_while_cond";
 
 	// body
 	Scope *while_body = body_of_if__while(SEM_WHILE_BODY);
@@ -204,6 +225,16 @@ void case_tk_while()
 	}
 
 	rm_duplicit_jmp_in(tail);
+
+	//exit while_scp
+	assert(current_scope_pointer == while_scp || current_scope_pointer->parent == while_scp);
+	if (current_scope_pointer->is_virtual)
+		exit_current_scope();
+	exit_current_scope();
+	new_virtual_scope_and_drop_in();
+
+//	while_scp->jmp_out = current_scope_pointer;
+//	current_scope_pointer->jmp_in.push_back(while_scp);
 	return;
 }
 void make_bb_terminate()

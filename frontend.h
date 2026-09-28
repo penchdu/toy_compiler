@@ -97,20 +97,24 @@ private:
 };
 
 struct Scope;
-
 struct SymbolVar
 {
 //	Semantic_type semty;
 	Type type = INT;
 	//	int value;
 
-	string *src;
+	string src;
 	string unique_name;		// global unique
 	string explicit_unique_name;	// global explicit unique
 
 	int vr = -1;
-	Scope *scp;
+	int use_cnt = 0;
+	int consume_cnt = 0;
 
+	int cld_use_cnt = 0;
+	int cld_consume_cnt = 0;
+
+	Scope *scp;
 	vector<SymbolVar*> cld;
 };
 struct SymbolFunc
@@ -120,6 +124,15 @@ struct SymbolFunc
 	int argc = 0;
 	Scope *func_scope;
 };
+
+enum Symbol_live_region{
+	SYMB_PRIVATE,
+	SYMB_PRIVATE_transient,
+	SYMB_OUTER,
+
+	SYMB_INVALID,
+};
+
 struct Ast {
 public:
 	Semantic sem_stamp;
@@ -133,8 +146,13 @@ public:
 	// var
 	// for op, var_type is type of temp vr
 	Type type;		// var_type in ast or symtable?
-	SymbolVar *symb_var = 0;
+
+	Symbol_live_region symb_live_region = SYMB_INVALID;
+	SymbolVar *var_symb = 0;
+	int use_cnt = 0;
+	int consume_cnt = 0;
 	int const_value;
+
 
 	Token tk;
 	Ast *parent = 0;
@@ -142,7 +160,7 @@ public:
 	Ast *right = 0;
 
 	Scope *this_scp = 0;
-	Scope *home_scp = 0;
+//	Scope *home_scp = 0;
 
 	Ast(const Token &_token)
 	{
@@ -254,6 +272,8 @@ public:
 	vector<Ast*> asts;
 	map<string, SymbolVar*> _var_table;
 	map<string, SymbolVar*> *var_table = &_var_table;
+	SymbolVar *outer_var_fake_symb = 0;
+
 	map<string, SymbolFunc*> _func_table;
 	map<string, SymbolFunc*> *func_table = &_func_table;
 	//	Sem_type region_header = sem_none;
@@ -267,6 +287,8 @@ public:
 //	Scope *jmp_else = 0;
 	vector<Scope*> jmp_in;
 	Scope *jmp_out = 0;
+	vector<int> then_branch_used_outer_symb;
+	vector<int> else_branch_used_outer_symb;
 
 	// continue, break
 	vector<Scope*> continue__break;
@@ -337,6 +359,7 @@ struct VirtualRegManager
 		id++;
 		offset += size;
 		vr_off.push_back(offset);
+		ast.push_back(p);
 		return id;
 	}
 
@@ -353,6 +376,7 @@ struct VirtualRegManager
 	int id = -1;
 	int offset = 0;
 	vector<int> vr_off;
+	vector<Ast*> ast;
 };
 
 
@@ -377,7 +401,7 @@ extern Scope file_scp;
 extern Scope *current_scope_pointer;
 extern int scope_id;
 extern bool in_func_define;
-extern VirtualRegManager vregm;
+extern VirtualRegManager vr_manager;
 
 
 

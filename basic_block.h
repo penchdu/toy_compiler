@@ -21,7 +21,7 @@ struct BasicBlock {
 
 	Scope *exit_jmp = 0;
 	Scope *jmp_to = 0;
-	MachineCodeStamp mc_jmp = MC_INVALID;
+	MachineCodeStamp jmp_mc_stamp = MC_INVALID;
 
 	//
 	vector<X64mc> x64mc_alloc;

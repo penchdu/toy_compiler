@@ -41,7 +41,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 	{
 	// leaf node
 	case SEM_VAR:
-		symb = p->symb_var;
+		symb = p->var_symb;
 		assert(symb);
 
 		// todo symb->vr to be defined in "new =" to gen ssa
@@ -57,7 +57,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 	case SEM_OPERATOR:
 		if (p->op == OP_ASSIGN)
 		{
-			if(a == b)
+			if(a == b) // not put into tac
 				return a;
 			// x = y : return x
 			t = Tac(p);
@@ -177,7 +177,7 @@ static void dump_tac()
 				break;
 
 			case SEM_VAR_DECLARE:
-				printf("del:\t %s[%s] %%%d\n", p->tk.src.c_str(), p->symb_var->unique_name.c_str(), p->symb_var->vr);
+				printf("del:\t %s[%s] %%%d\n", p->tk.src.c_str(), p->var_symb->unique_name.c_str(), p->var_symb->vr);
 				break;
 
 			case SEM_VAR:

@@ -12,13 +12,13 @@
 extern Mc2mc fake_cmp_mc_to_real_mc[];
 
 static vector<VrToPr> vr2pr;
-static vector<PrToVr> pr2vr(X64PR_MAX, {invalid_vr});
+static vector<PrToVr> pr2vr(X64PR_MAX, {INVALID__VR});
 
 static X64pr get_pr()
 {
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
-		if (pr2vr[i].vr == invalid_vr)
+		if (pr2vr[i].vr == INVALID__VR)
 		{
 			return (X64pr) i;
 		}
@@ -83,7 +83,7 @@ static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 	vr2pr[vr].u = VR_USEAGE_INVALID;
 
 	assert(pr2vr[pr].vr == vr);
-	pr2vr[pr].vr = invalid_vr;
+	pr2vr[pr].vr = INVALID__VR;
 }
 static void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
 {
@@ -98,7 +98,7 @@ static void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
 
 static void _x64_reg_alloc_o0()
 {
-	vr2pr.resize(vregm.id + 1);
+	vr2pr.resize(vr_manager.id + 1);
 	X64mc inst;
 
 	for (BasicBlock &bb : basic_blocks)
@@ -277,13 +277,13 @@ static void dump_bb_asm(FILE *fp, BasicBlock &bb)
 
 	if (bb.exit_jmp != 0)
 	{
-		PRINT_ASM("%s %s", mc_info[bb.mc_jmp].mc_code.c_str(),
+		PRINT_ASM("%s %s", mc_info[bb.jmp_mc_stamp].mc_code.c_str(),
 		    bb.exit_jmp->jmp_out->name.c_str());
 	}
 }
 void dump_asm(char *asm_file)
 {
-	int rsp_of = vregm.offset;
+	int rsp_of = vr_manager.offset;
 	align16(rsp_of);
 	//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 

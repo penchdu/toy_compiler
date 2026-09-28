@@ -184,18 +184,23 @@ static void gen_mc()
 		{
 			if (bb.exit_jmp->sem_stamp == SEM_COND_JMP)
 			{
+				printf("bb.exit_jmp=%s %d\n", bb.exit_jmp->name.c_str());
+				assert(bb.exit_jmp->asts.size());
+
 				Ast *cond = bb.exit_jmp->asts[0];
-				bb.mc_jmp = op2jmp_mc[cond->op];
+				bb.jmp_mc_stamp = op2jmp_mc[cond->op];
 			}
 			else if (bb.exit_jmp->sem_stamp == SEM_JMP)
-				bb.mc_jmp = MC_JMP;
+				bb.jmp_mc_stamp = MC_JMP;
 			else if (bb.exit_jmp->sem_stamp == SEM_SAVE_RET_VALUE)
 			{
 				ERR();
-				bb.mc_jmp = MC_JMP;
+				bb.jmp_mc_stamp = MC_JMP;
 			}
 			else
-				ERR();
+			{
+				printf("NOTE: bb.exit_jmp=%s %d\n", bb.exit_jmp->name.c_str(), bb.exit_jmp->sem_stamp);
+			}
 		}
 
 		if (bb.tacs.size() != bb.x64mc.size())
@@ -279,7 +284,7 @@ void dump_mc(BasicBlock &bb, vector<X64mc> &v)
 
 	if (bb.exit_jmp != 0)
 	{
-		PRINT_ASM("%s %s \n", mc_info[bb.mc_jmp].mc_code.c_str(),
+		PRINT_ASM("%s %s \n", mc_info[bb.jmp_mc_stamp].mc_code.c_str(),
 			bb.exit_jmp->jmp_out->name.c_str());
 	}
 }

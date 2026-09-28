@@ -24,14 +24,14 @@ static int case_sem_assign(Ast *p)
 	Semantic ty = p->right->sem_stamp;
 
 	if (!(ty == SEM_VAR
-	        || ty == SEM_CONST_NUM
-	        || (ty == SEM_OPERATOR)
-	        || ty == SEM_FUNC_CALL))
+	    || ty == SEM_CONST_NUM
+	    || (ty == SEM_OPERATOR)
+	    || ty == SEM_FUNC_CALL))
 	{
 
 		ERR("semty %d, %s %s %s ", ty,
-		        p->tk.src.c_str(),
-		        left->tk.src.c_str(), p->right->tk.src.c_str());
+		    p->tk.src.c_str(),
+		    left->tk.src.c_str(), p->right->tk.src.c_str());
 	}
 
 //	assert(p->left->var_type == p->right->var_type);
@@ -47,16 +47,16 @@ static int case_sem_op(Ast *p)
 	assert(p->left);
 	Semantic ty = p->left->sem_stamp;
 	assert(ty == SEM_VAR
-	        || ty == SEM_CONST_NUM
-	        || ty == SEM_OPERATOR
-	        || ty == SEM_FUNC_CALL);
+	    || ty == SEM_CONST_NUM
+	    || ty == SEM_OPERATOR
+	    || ty == SEM_FUNC_CALL);
 
 	assert(p->right);
 	ty = p->right->sem_stamp;
 	assert(ty == SEM_VAR
-	        || ty == SEM_CONST_NUM
-	        || ty == SEM_OPERATOR
-	        || ty == SEM_FUNC_CALL);
+	    || ty == SEM_CONST_NUM
+	    || ty == SEM_OPERATOR
+	    || ty == SEM_FUNC_CALL);
 
 //	p->vr = vrid++;
 //	p->vr_name = "%" + to_string(p->vr);
@@ -69,18 +69,18 @@ static int case_sem_save_retuen_up_down(Ast *p)
 	assert(p->left);
 	assert(!p->right);
 
-	if(!p->left)
+	if (!p->left)
 		ERR("only support return int");
 
 	Semantic ty = p->left->sem_stamp;
 	if (!(ty == SEM_VAR
-	        || ty == SEM_CONST_NUM
-	        || ty == SEM_OPERATOR
-	        || ty == SEM_FUNC_CALL))
+	    || ty == SEM_CONST_NUM
+	    || ty == SEM_OPERATOR
+	    || ty == SEM_FUNC_CALL))
 	{
 		ERR("semty %d, %s %s ", ty,
-		        p->tk.src.c_str(),
-		        p->left->tk.src.c_str());
+		    p->tk.src.c_str(),
+		    p->left->tk.src.c_str());
 	}
 
 	return 0;
@@ -88,21 +88,26 @@ static int case_sem_save_retuen_up_down(Ast *p)
 static int case_sem_var(Ast *p)
 {
 	Scope *scp = p->this_scp;
+	auto r = scp->var_table->find(p->tk.src);
+	if (r != scp->var_table->end())
+	{
+		p->symb_live_region = SYMB_PRIVATE;
+		p->var_symb = r->second;
+		return 0;
+	}
 
-	while (scp && scp->var_table)
+	while ((scp = scp->parent) && scp->var_table)
 	{
 		auto r = scp->var_table->find(p->tk.src);
 		if (r != scp->var_table->end())
 		{
-			p->symb_var = r->second;
+			p->symb_live_region = SYMB_OUTER;
+			p->var_symb = r->second;
 			break;
 		}
-		scp = scp->parent;
 	}
-	if (!p->symb_var)
-	{
+	if (!p->var_symb)
 		ERR("error: %s is undeclared", p->tk.src.c_str());
-	}
 
 	return 0;
 }
@@ -124,14 +129,12 @@ static int case_sem_variable_declare(Ast *ty)
 	var->type = ty->type;
 
 	if (tbl->find(var->tk.src) != tbl->end())
-	{
 		ERR("%s is already declared", var->tk.src.c_str());
-	}
 
 	SymbolVar *symb = new SymbolVar;
 //	symb->semty = sem_var;
 	symb->type = var->type;
-	symb->src = &var->tk.src;
+	symb->src = var->tk.src;
 //	symb->vr = get_vr(var);
 
 // get a unique name
@@ -147,8 +150,9 @@ static int case_sem_variable_declare(Ast *ty)
 	}
 
 	symb->explicit_unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
-	var->symb_var = symb;
-	tbl->insert( {var->tk.src, symb});
+	var->symb_live_region = SYMB_PRIVATE;
+	var->var_symb = symb;
+	tbl->insert({var->tk.src, symb});
 	return 0;
 }
 static int trace_ast_up_down__named_variable_declare(Ast *p)
@@ -183,38 +187,16 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 
 	trace_ast_up_down__named_variable_declare(p->left);
 	trace_ast_up_down__named_variable_declare(p->right);
-
 	return 0;
 }
-static int sem_analysis_named_var(Scope *scp)
+static void sem_analysis_named_var(Scope *scp)
 {
-	LOG();
 	LOG("%s", scp->name.c_str());
-
-	for (int i = 0; i < scp->asts.size(); i++)
-	{
-		LOG("ast %d", i);
-		trace_ast_up_down__named_variable_declare(scp->asts[i]);
-	}
-
-//	for(auto it = scp->asts.begin(); it != scp->asts.end();) {
-//		Ast *p = *it;
-//
-//		// sem_declare is root node, no child
-//		if(p->semty == sem_declare) {
-//			delete p;
-//			it = scp->asts.erase(it);
-//			continue;
-//		}
-//		it++;
-//	}
+	for (Ast *p : scp->asts)
+		trace_ast_up_down__named_variable_declare(p);
 
 	for (Scope *p : scp->clds)
-	{
 		sem_analysis_named_var(p);
-	}
-
-	return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -229,6 +211,7 @@ static int case_op(Ast *p)
 			ERR("assign type mismatch %d %d", p->left->type, p->right->type);
 
 		p->type = p->left->type;
+		assert(p->left->symb_live_region != SYMB_PRIVATE_transient);
 		// assign do not gen a new vr, just return left
 		p->vr_id = p->left->vr_id;
 		return p->vr_id;
@@ -238,25 +221,24 @@ static int case_op(Ast *p)
 		case OP_SUB:
 		case OP_MUL:
 		case OP_DIV:
-
-			// todo, type bool
-	case OP_CMP_L:
+		case OP_CMP_L:
 		case OP_CMP_LE:
 		case OP_CMP_E:
 		case OP_CMP_GE:
 		case OP_CMP_G:
 		case OP_CMP_NE:
 
-	case OP_LOGIC_AND:
-
 		if (p->left->type != p->right->type)
 			ERR("op type mismatch %d %d", p->left->type, p->right->type);
 
 		p->type = p->left->type;
-		p->vr_id = vregm.new_vr(p);
+		p->vr_id = vr_manager.new_vr(p);
+		p->symb_live_region = SYMB_PRIVATE_transient;
+		p->use_cnt = 1;
 		return p->vr_id;
 
-	default:
+	case OP_LOGIC_AND:
+		default:
 		ERR();
 	}
 }
@@ -271,8 +253,8 @@ static void case_save_return_down_up(Ast *p)
 	if (!func)
 		ERR();
 
-	if(p->left->type != func->return_type)
-		ERR("return type mismatch %d %d", p->home_scp->return_type, p->left->type);
+	if (p->left->type != func->return_type)
+		ERR("return type mismatch %d %d", func->return_type, p->left->type);
 
 	assert(p->right == 0);
 }
@@ -284,24 +266,26 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	int b = trace_ast_down_up_gen_vr(p->right);
 	int a = trace_ast_down_up_gen_vr(p->left);
 	SymbolVar *symb = 0;
-	(void)a;
-	(void)b;
+	(void) a;
+	(void) b;
 
 	switch (p->sem_stamp)
 	{
 	// leaf node
 	case SEM_VAR:
-		symb = p->symb_var;
+		symb = p->var_symb;
 		assert(symb);
 		if (symb->vr < 0)
-			symb->vr = vregm.new_vr(p);
+			symb->vr = vr_manager.new_vr(p);
 
 		// todo symb->vr to be defined in "new =" to gen ssa
 		p->vr_id = symb->vr;
 		return symb->vr;
 
 	case SEM_CONST_NUM:
-		p->vr_id = vregm.new_vr(p);
+		p->vr_id = vr_manager.new_vr(p);
+		p->symb_live_region = SYMB_PRIVATE_transient;
+		p->use_cnt = 1;
 		return p->vr_id;
 
 	case SEM_OPERATOR:
@@ -309,6 +293,8 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 
 	case SEM_SAVE_RET_VALUE:
 		p->vr_id = a;
+//		if(p->symb_live_region == SYMB_PRIVATE_transient)
+//			p->symb_live_region = SYMB_PRIVATE;
 		case_save_return_down_up(p);
 		return -1;
 
@@ -332,19 +318,11 @@ static void sem_analysis_gen_vr(Scope *scp)
 {
 	LOG("scp %s", scp->name.c_str());
 
-	for (auto it = scp->asts.begin(); it != scp->asts.end();)
-	{
-		LOG("%s, scp %s, ast %ld", __FUNCTION__, scp->name.c_str(), it - scp->asts.begin());
-		Ast *p = *it;
-
+	for (Ast *p : scp->asts)
 		trace_ast_down_up_gen_vr(p);
-		it++;
-	}
 
 	for (Scope *p : scp->clds)
 		sem_analysis_gen_vr(p);
-
-	return;
 }
 
 void sem_analysis()

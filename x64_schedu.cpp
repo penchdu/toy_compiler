@@ -267,8 +267,8 @@ static void dump()
 
 void mc_schedule()
 {
-	prev_write.resize(vregm.id + 1, -1);
-	prev_read.resize(vregm.id + 1);
+	prev_write.resize(vr_manager.id + 1, -1);
+	prev_read.resize(vr_manager.id + 1);
 
 	for (BasicBlock &bb : basic_blocks)
 	{

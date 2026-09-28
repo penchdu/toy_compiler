@@ -38,10 +38,10 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 
 	else if (p->sem_stamp == SEM_VAR)
 	{
-		if (!p->symb_var)
+		if (!p->var_symb)
 			printf("[var %s]\n", p->tk.src.c_str());
 		else
-			printf("[var %s %%%d]\n", p->symb_var->unique_name.c_str(), p->symb_var->vr);
+			printf("[var %s %%%d]\n", p->var_symb->unique_name.c_str(), p->var_symb->vr);
 	}
 	else if (p->sem_stamp == SEM_CONST_NUM)
 		printf("[num %d]\n", p->const_value);

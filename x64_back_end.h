@@ -129,10 +129,10 @@ struct VrToPr
 	int u = VR_USEAGE_INVALID;
 };
 
-constexpr int invalid_vr = -1;
+constexpr int INVALID__VR = -1;
 struct PrToVr
 {
-	int vr = invalid_vr;
+	int vr = INVALID__VR;
 //	int u = VR_USEAGE_INVALID;
 };
 
@@ -195,7 +195,7 @@ struct McInfo {
 	string mc_code;	// just for print
 };
 extern const McInfo mc_info[];
-extern VirtualRegManager vregm;
+extern VirtualRegManager vr_manager;
 
 static int mcidx = 0;
 struct X64mc {
@@ -206,9 +206,9 @@ struct X64mc {
 		s1 = tac_s1;
 		s2 = tac_s2;
 
-		of_dst = vregm.get_vr_off(dst);
-		of1 = vregm.get_vr_off(s1);
-		of2 = vregm.get_vr_off(s2);
+		of_dst = vr_manager.get_vr_off(dst);
+		of1 = vr_manager.get_vr_off(s1);
+		of2 = vr_manager.get_vr_off(s2);
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
@@ -220,8 +220,8 @@ struct X64mc {
 		s1 = tac_dst;
 		s2 = tac_s2;
 
-		of1 = vregm.get_vr_off(s1);
-		of2 = vregm.get_vr_off(s2);
+		of1 = vr_manager.get_vr_off(s1);
+		of2 = vr_manager.get_vr_off(s2);
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
@@ -231,7 +231,7 @@ struct X64mc {
 	{
 		mc_stamp = _mc_stamp;
 		s1 = tac_s1;
-		of1 = vregm.get_vr_off(tac_s1);
+		of1 = vr_manager.get_vr_off(tac_s1);
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
