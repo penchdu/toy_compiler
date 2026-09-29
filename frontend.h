@@ -300,7 +300,7 @@ public:
 	vector<int> outer_symb_used;
 
 	vector<int> used_cnt_in_bb;
-	vector<int> consume_cnt_in_bb;
+	vector<int> consume_cnt_in_bb;	// only use in schedule
 
 	// continue, break
 	vector<Scope*> continue__break;

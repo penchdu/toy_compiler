@@ -71,6 +71,10 @@ static void _gen_liveness(Scope *scp)
 			break;
 
 		case MC_ASSIGN:
+			gen_vr_liveness(mc.s1, VR_USAGE_WRITE);
+			gen_vr_liveness(mc.s2, VR_USAGE_READ);
+			break;
+
 			case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:

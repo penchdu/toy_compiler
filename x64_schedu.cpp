@@ -214,8 +214,9 @@ int mc_select(vector<X64mc> &x64mc)
 			if (ps1->symb_stamp == SYMB_PRIVATE_transient)
 				r.score += transient_score;
 
-			int left_use_score = ((float)scp->consume_cnt_in_bb[s1] / scp->used_cnt_in_bb[s1]) * can_emit.size();
-			r.score += left_use_score;
+			assert(scp->used_cnt_in_bb[s1] > 0);
+			int consumed_ratio_score = ((float)scp->consume_cnt_in_bb[s1] / scp->used_cnt_in_bb[s1]) * can_emit.size();
+			r.score += consumed_ratio_score;
 		}
 
 		int s2 = x64mc[r.idx_in_mc_list].s2;
@@ -226,8 +227,9 @@ int mc_select(vector<X64mc> &x64mc)
 			if (ps2->symb_stamp == SYMB_PRIVATE_transient)
 				r.score += transient_score;
 
-			int left_use_score = ((float)scp->consume_cnt_in_bb[s2] / scp->used_cnt_in_bb[s2]) * can_emit.size();
-			r.score += left_use_score;
+			assert(scp->used_cnt_in_bb[s2] > 0);
+			int consumed_ratio_score = ((float)scp->consume_cnt_in_bb[s2] / scp->used_cnt_in_bb[s2]) * can_emit.size();
+			r.score += consumed_ratio_score;
 		}
 	}
 
@@ -373,6 +375,7 @@ static void mc_schdu(Scope *scp)
 			if (cycle >= x64mc[mc].start_cycle + x64mc[mc].latency)
 			{
 				free_function_unit(x64mc[mc].mc_stamp);
+				update_bb_consume_cnt(scp, x64mc[mc]);
 				finish_mc__update_ready_queue(x64mc, mc);
 
 				it = running.erase(it);
@@ -397,7 +400,6 @@ static void mc_schdu(Scope *scp)
 				if (vr >= 0)
 					bb->vrids.push_back(vr);
 			}
-			update_bb_consume_cnt(scp, x64mc[mc]);
 
 			assert(x64mc[mc].start_cycle >= 0);
 			if (x64mc[mc].latency <= 0)
