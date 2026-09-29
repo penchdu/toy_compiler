@@ -2,10 +2,10 @@
 
 int test() {
     int a = 1;
-    int b = 10;
-    int c = 100;
-    int d = 1000;
-    int e = 0;
+    int b = a + 10;
+    int c = a + 100;
+    int d = a + 1000;
+    int e = a + 0;
     int f = 0;
     int sum = 0;
     int i = 0;
@@ -43,5 +43,6 @@ int test() {
         i = i + 1;
     }
 
+	sum = sum + 1;
     return sum;
 }

@@ -114,6 +114,7 @@ struct SymbolVariable
 	int cld_use_cnt = 0;
 	int cld_consume_cnt = 0;
 
+	int appear_cnt = 0;
 	Scope *scp = 0;
 	vector<SymbolVariable*> cld;
 };
@@ -149,7 +150,7 @@ public:
 	int const_value;
 
 	SymbolStamp symb_stamp = SYMB_INVALID;
-	SymbolVariable *var_symb = 0;
+	SymbolVariable *symb = 0;
 	int use_cnt = 0;
 	int consume_cnt = 0;
 
@@ -296,8 +297,10 @@ public:
 //	Scope *jmp_else = 0;
 	vector<Scope*> jmp_in;
 	Scope *jmp_out = 0;
-	vector<int> then_branch_used_outer_symb;
-	vector<int> else_branch_used_outer_symb;
+	vector<int> outer_symb_used;
+
+	vector<int> used_cnt_in_bb;
+	vector<int> consume_cnt_in_bb;
 
 	// continue, break
 	vector<Scope*> continue__break;
@@ -420,5 +423,7 @@ void dump_ast();
 void parser();
 void sem_analysis();
 void gen_three_address_code();
+void gen_liveness();
+
 
 #endif /* FRONTEND_H_ */

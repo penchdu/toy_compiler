@@ -94,7 +94,7 @@ static int case_sem_var(Ast *p)
 		if (symb->src == p->tk.src)
 		{
 			p->symb_stamp = SYMB_PRIVATE;
-			p->var_symb = symb;
+			p->symb = symb;
 			return 0;
 		}
 	}
@@ -106,12 +106,12 @@ static int case_sem_var(Ast *p)
 			if (symb->src == p->tk.src)
 			{
 				p->symb_stamp = SYMB_OUTER;
-				p->var_symb = symb;
+				p->symb = symb;
 				break;
 			}
 		}
 	}
-	if (!p->var_symb)
+	if (!p->symb)
 		ERR("error: %s is undeclared", p->tk.src.c_str());
 
 	return 0;
@@ -165,7 +165,7 @@ static int case_sem_variable_declare(Ast *ty)
 
 	symb->explicit_unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
 	var->symb_stamp = SYMB_PRIVATE;
-	var->var_symb = symb;
+	var->symb = symb;
 	scp->symb_table->push_back(symb);
 	return 0;
 }
@@ -218,9 +218,9 @@ static void sem_analysis_named_var(Scope *scp)
 static void increase_use_cnt(Ast *p)
 {
 	if (p->symb_stamp == SYMB_OUTER)
-		p->var_symb->cld_use_cnt++;
+		p->symb->cld_use_cnt++;
 	else
-		p->var_symb->use_cnt++;
+		p->symb->use_cnt++;
 }
 static void new_PRIVATE_transient_symb(Ast *p)
 {
@@ -230,7 +230,7 @@ static void new_PRIVATE_transient_symb(Ast *p)
 	symb->vr = p->vr_id;
 //	symb->use_cnt = 1;
 
-	p->var_symb = symb;
+	p->symb = symb;
 	p->this_scp->symb_table->push_back(symb);
 }
 
@@ -307,7 +307,7 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 	{
 	// leaf node
 	case SEM_VAR:
-		symb = p->var_symb;
+		symb = p->symb;
 		assert(symb);
 		if (symb->vr < 0)
 			symb->vr = vr_manager.new_vr(p);

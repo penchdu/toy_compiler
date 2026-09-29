@@ -22,6 +22,7 @@ int main(int argc, char **argv)
 	sem_analysis();
 	gen_three_address_code();
 	gen_machine_code();
+	gen_liveness();
 	mc_schedule();
 	x64_reg_alloc();		// create a.s in current location
 
