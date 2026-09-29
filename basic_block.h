@@ -14,20 +14,19 @@
 
 struct BasicBlock {
 	Scope *entry_label = 0;
-	vector<Tac> tacs;
 	vector<X64mc> x64mc;
 	vector<X64mc> x64mc_schedu;
 	vector<int> vrids;
 
-	Scope *exit_jmp = 0;
+//	Scope *exit_jmp = 0;
 	Scope *jmp_to = 0;
 	MachineCodeStamp jmp_mc_stamp = MC_INVALID;
 
 	//
-	vector<X64mc> x64mc_alloc;
+	vector<X64mc> x64mc_alloc_o0;
+	vector<X64mc> x64mc_alloc_wave;
 //	float max_wave_value = 0;
 };
-extern vector<BasicBlock> basic_blocks;
 
 struct Wave {
 	int vr;
@@ -36,11 +35,10 @@ struct Wave {
 };
 extern vector<Wave> vrwave;
 
-extern vector<BasicBlock> basic_blocks;
-void dump_mc(BasicBlock &bb, vector<X64mc> &v);
-void gen_wave(BasicBlock &bb);
-void dump_wave(BasicBlock &bb);
+void dump_mc(Scope *scp);
+void gen_wave(BasicBlock *bb);
+void dump_wave(BasicBlock *bb);
 void dump_wave_gnuplot(Wave &w, int vr);
-void dump_asm();
+//void dump_asm();
 
 #endif /* BASIC_BLOCK_H_ */

@@ -9,7 +9,6 @@
 #define X64_BACK_END_H_
 
 #include "enums.h"
-#include "frontend.h"
 
 /*
  *
@@ -42,7 +41,7 @@
 
  op_+-*,
  %dst = %s1 + %s2	mov %dst, st[s1]
- add %dst, st[s2]
+					add %dst, st[s2]
 
  op_div,
  %dst = %s1 / %s2

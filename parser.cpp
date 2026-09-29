@@ -112,7 +112,7 @@ static int case_tk_func()
 	Scope *cur_file_scope = current_scope_pointer;
 	assert(cur_file_scope->sem_stamp == SEM_FILE_SCOPE);
 
-	if (cur_file_scope->var_table->find(func_name) != cur_file_scope->var_table->end())
+	if (cur_file_scope->symb_tabel->find(func_name) != cur_file_scope->symb_tabel->end())
 		ERR("%s already declared", func_name.c_str());
 
 	if (cur_file_scope->func_table->find(func_name) != cur_file_scope->func_table->end())

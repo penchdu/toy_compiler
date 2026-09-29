@@ -6,10 +6,10 @@
  */
 
 #include "frontend.h"
-#include "basic_block.h"
+//#include "basic_block.h"
 
 extern Scope file_scp;
-vector<BasicBlock> basic_blocks;
+//vector<BasicBlock> basic_blocks;
 
 //static int sem_if_scope(Ast *p)
 //{
@@ -25,15 +25,13 @@ vector<BasicBlock> basic_blocks;
 //	three_addr_code.push_back(inst);
 //}
 
-static int trace_ast_down_up_gen_3_address_code(Ast *p)
+static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 {
 	if (!p || p->sem_stamp == SEM_VAR_DECLARE)
 		return -1;
 
-	vector<Tac> &tacs = basic_blocks.back().tacs;
-
-	int b = trace_ast_down_up_gen_3_address_code(p->right);
-	int a = trace_ast_down_up_gen_3_address_code(p->left);
+	int b = trace_ast_down_up_gen_3_address_code(tacs, p->right);
+	int a = trace_ast_down_up_gen_3_address_code(tacs, p->left);
 	SymbolVar *symb = 0;
 	Tac t;
 
@@ -57,7 +55,7 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 	case SEM_OPERATOR:
 		if (p->op == OP_ASSIGN)
 		{
-			if(a == b) // not put into tac
+			if (a == b) // not put into tac
 				return a;
 			// x = y : return x
 			t = Tac(p);
@@ -102,35 +100,14 @@ static int trace_ast_down_up_gen_3_address_code(Ast *p)
 static bool gen_tac(Scope *scp)
 {
 	LOG("scp %s", scp->name.c_str());
-
 	if (scp->sem_stamp == SEM_bb_terminate)
 	{
 		printf("%s have a SEM_bb_terminate scope %s\n", scp->parent->name.c_str(), scp->name.c_str());
 		return true;
 	}
 
-	BasicBlock &bb = basic_blocks.back();
-	if (bb.exit_jmp != nullptr
-		|| scp->sem_stamp == SEM_FUNC_DEFINE
-	    || scp->sem_stamp == SEM_COND_JMP	// if, while
-	    || scp->sem_stamp == SEM_WHILE_BODY
-	    || scp->sem_stamp == SEM_LABEL
-	    || scp->jmp_in.size() > 0)
-	{
-		BasicBlock newbb;
-		newbb.entry_label = scp;
-		basic_blocks.push_back(newbb);
-	}
-
 	for (auto *p : scp->asts)
-		trace_ast_down_up_gen_3_address_code(p);
-
-	if (scp->jmp_out != 0)	// || scp->sem == SEM_COND_JMP || scp->sem == SEM_JMP)
-	{
-		BasicBlock &bb = basic_blocks.back();
-		bb.exit_jmp = scp;
-		bb.jmp_to = bb.exit_jmp->jmp_out;
-	}
+		trace_ast_down_up_gen_3_address_code(scp->tac, p);
 
 	bool bb_terminated = 0;
 	for (Scope *p : scp->clds)
@@ -151,67 +128,66 @@ static bool gen_tac(Scope *scp)
 	return false;
 }
 
-static void dump_tac()
+static void dump_tac(Scope *scp)
 {
-	printf("\n========== tac ==========\n");
-	for (BasicBlock &bb : basic_blocks)
+	if (scp->jmp_in.size() > 0)
+		printf("\nlabel %d:\n", scp->id);
+
+	for (Tac &r : scp->tac)
 	{
-		if (bb.entry_label != 0)
-			printf("\nlabel %d:\n", bb.entry_label->id);
+		Ast *p = r.ast;
 
-		for (Tac &r : bb.tacs)
+		switch (p->sem_stamp)
 		{
-			Ast *p = r.ast;
+		case SEM_CONST_NUM:
+			printf("const:\t %%%d num %d\n", r.dst, p->const_value);
+			break;
 
-			switch (p->sem_stamp)
-			{
-			case SEM_CONST_NUM:
-				printf("const:\t %%%d num %d\n", r.dst, p->const_value);
-				break;
+		case SEM_OPERATOR:
+			if (p->op == OP_ASSIGN)
+				printf("assign:\t %%%d %s %%%d\n", r.dst, p->tk.src.c_str(), r.s1);
+			else
+				printf("op:\t %%%d = %%%d %s %%%d\n", r.dst, r.s1, p->tk.src.c_str(), r.s2);
+			break;
 
-			case SEM_OPERATOR:
-				if (p->op == OP_ASSIGN)
-					printf("assign:\t %%%d %s %%%d\n", r.dst, p->tk.src.c_str(), r.s1);
-				else
-					printf("op:\t %%%d = %%%d %s %%%d\n", r.dst, r.s1, p->tk.src.c_str(), r.s2);
-				break;
+		case SEM_VAR_DECLARE:
+			printf("del:\t %s[%s] %%%d\n", p->tk.src.c_str(), p->var_symb->unique_name.c_str(), p->var_symb->vr);
+			break;
 
-			case SEM_VAR_DECLARE:
-				printf("del:\t %s[%s] %%%d\n", p->tk.src.c_str(), p->var_symb->unique_name.c_str(), p->var_symb->vr);
-				break;
+		case SEM_VAR:
+			printf("var:\t %%%d %s\n", r.dst, p->tk.src.c_str());
+			break;
 
-			case SEM_VAR:
-				printf("var:\t %%%d %s\n", r.dst, p->tk.src.c_str());
-				break;
+		case SEM_FUNC_CALL:
+			printf("func call:\t %s\n", p->tk.src.c_str());
+			break;
 
-			case SEM_FUNC_CALL:
-				printf("func call:\t %s\n", p->tk.src.c_str());
-				break;
+		case SEM_SAVE_RET_VALUE:
+			printf("save_ret:\t %s %%%d\n", p->tk.src.c_str(), r.s1);
+			break;
 
-			case SEM_SAVE_RET_VALUE:
-				printf("save_ret:\t %s %%%d\n", p->tk.src.c_str(), r.s1);
-				break;
-
-			default:
-				ERR();
-				break;
-			}
-		}
-
-		if (bb.exit_jmp != 0)
-		{
-			printf("%s %d->%d:\n\n", Semantic_string[bb.exit_jmp->sem_stamp],
-			    bb.exit_jmp->id, bb.exit_jmp->jmp_out->id);
+		default:
+			ERR();
+			break;
 		}
 	}
+
+	if (scp->jmp_out != 0)
+		printf("%d->%d:\n\n", scp->id, scp->jmp_out->id);
+
+	for (Scope *p : scp->clds)
+		dump_tac(p);
 }
 void gen_three_address_code()
 {
-	BasicBlock bb;
-	bb.entry_label = &file_scp;
-	basic_blocks.push_back(bb);
+//	BasicBlock bb;
+//	bb.entry_label = &file_scp;
+//	basic_blocks.push_back(bb);
+//	gen_tac(&file_scp);
 
 	gen_tac(&file_scp);
 	dump_ast();
-	dump_tac();
+
+	printf("\n========== tac ==========\n");
+	dump_tac(&file_scp);
 }

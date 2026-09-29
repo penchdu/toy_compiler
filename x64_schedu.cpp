@@ -14,7 +14,6 @@ extern vector<vector<int>> prev_read;
 extern vector<McDepend> mcs_predecessor;
 extern vector<McDepend> mcs_successor;
 
-
 using std::multimap;
 multimap<int, int> ready;
 vector<int> running;
@@ -159,7 +158,7 @@ void finish_mc__update_ready_queue(vector<X64mc> &x64mc, int mc)
 	}
 }
 
-static void mc_schdu(BasicBlock &bb)
+static void mc_schdu(Scope *scp)
 {
 	/*
 	 * 	for mc : x64mc
@@ -183,8 +182,10 @@ static void mc_schdu(BasicBlock &bb)
 	 */
 
 	//	LOG("scp %s", scp->name.c_str());
-	vector<X64mc> &x64mc = bb.x64mc;
-	vector<X64mc> &x64mc_schedu = bb.x64mc_schedu;
+
+	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	vector<X64mc> &x64mc = bb->x64mc;
+	vector<X64mc> &x64mc_schedu = bb->x64mc_schedu;
 
 	int cycle = 0;
 	init_ready_queue(x64mc);
@@ -192,9 +193,9 @@ static void mc_schdu(BasicBlock &bb)
 	if (ready.size() == 0)
 	{
 
-		if (bb.entry_label)
-			LOG("bb %s == 0", bb.entry_label->name.c_str());
-		if (x64mc.size() || bb.tacs.size())
+		if (bb->entry_label)
+			LOG("bb %s == 0", bb->entry_label->name.c_str());
+		if (x64mc.size() || scp->tac.size())
 			ERR();
 	}
 
@@ -230,7 +231,7 @@ static void mc_schdu(BasicBlock &bb)
 			for (int vr : x64mc[mc].vr)
 			{
 				if (vr >= 0)
-					bb.vrids.push_back(vr);
+					bb->vrids.push_back(vr);
 			}
 
 			running.push_back(mc);
@@ -244,8 +245,8 @@ static void mc_schdu(BasicBlock &bb)
 		cycle++;
 	}
 
-	if (bb.x64mc_schedu.size() != bb.x64mc.size())
-		ERR("%lu %lu", bb.x64mc.size(), bb.x64mc_schedu.size());
+	if (bb->x64mc_schedu.size() != bb->x64mc.size())
+		ERR("%lu %lu", bb->x64mc.size(), bb->x64mc_schedu.size());
 //	printf("max cycle: %d \n", cycle);
 
 //	auto &t = *x64mc_schedu.rbegin();
@@ -257,30 +258,31 @@ static void mc_schdu(BasicBlock &bb)
 //		    t.start_cycle, t.chain_latency);
 //	}
 }
-static void dump()
+
+static void _mc_schedule(Scope *scp)
 {
-	printf("\n========== mc schedu ==========\n");
+	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 
-	for (BasicBlock &bb : basic_blocks)
-		dump_mc(bb, bb.x64mc_schedu);
+	if (bb->x64mc.size())
+	{
+		gen_use_def_chain(bb->x64mc);
+		dump_chain();
+		gen_schdu_chain_latency(bb->x64mc);
+
+		mc_schdu(scp);
+	}
+
+	for (Scope *p : scp->clds)
+		_mc_schedule(p);
 }
-
 void mc_schedule()
 {
 	prev_write.resize(vr_manager.id + 1, -1);
 	prev_read.resize(vr_manager.id + 1);
 
-	for (BasicBlock &bb : basic_blocks)
-	{
-		if (!bb.x64mc.size())
-			continue;
+	_mc_schedule(&file_scp);
 
-		gen_use_def_chain(bb.x64mc);
-		dump_chain();
-		gen_schdu_chain_latency(bb.x64mc);
-
-		mc_schdu(bb);
-	}
-
-	dump();
+	mc_list_name = "x64mc_schedu";
+	printf("\n========== mc schedu ==========\n");
+	dump_mc(&file_scp);
 }

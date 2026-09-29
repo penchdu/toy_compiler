@@ -88,18 +88,18 @@ static int case_sem_save_retuen_up_down(Ast *p)
 static int case_sem_var(Ast *p)
 {
 	Scope *scp = p->this_scp;
-	auto r = scp->var_table->find(p->tk.src);
-	if (r != scp->var_table->end())
+	auto r = scp->symb_tabel->find(p->tk.src);
+	if (r != scp->symb_tabel->end())
 	{
 		p->symb_live_region = SYMB_PRIVATE;
 		p->var_symb = r->second;
 		return 0;
 	}
 
-	while ((scp = scp->parent) && scp->var_table)
+	while ((scp = scp->parent) && scp->symb_tabel)
 	{
-		auto r = scp->var_table->find(p->tk.src);
-		if (r != scp->var_table->end())
+		auto r = scp->symb_tabel->find(p->tk.src);
+		if (r != scp->symb_tabel->end())
 		{
 			p->symb_live_region = SYMB_OUTER;
 			p->var_symb = r->second;
@@ -123,7 +123,7 @@ static int case_sem_variable_declare(Ast *ty)
 	assert(ty->parent == nullptr);
 
 	Scope *scp = ty->this_scp;
-	auto tbl = scp->var_table;
+	auto tbl = scp->symb_tabel;
 
 	Ast *var = ty->left;
 	var->type = ty->type;

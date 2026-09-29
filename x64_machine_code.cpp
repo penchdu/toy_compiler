@@ -9,42 +9,44 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
+string mc_list_name = "x64mc";
+
 const McInfo mc_info[MC_INVALID + 1] = {
-    [MC_LI] = { 1, "mov" },
-    [MC_LD] = { 3, "mov" },
-    [MC_ST] = { 3, "mov" },
+    [MC_LI] = {1, "mov"},
+    [MC_LD] = {3, "mov"},
+    [MC_ST] = {3, "mov"},
 
-    [MC_ASSIGN] = { 1, "mov" },
-    [MC_ADD] = { 1, "add" },
-    [MC_SUB] = { 1, "sub" },
-    [MC_IMUL] = { 3, "imul" },
-    [MC_DIV] = { 10, "div" },
+    [MC_ASSIGN] = {1, "mov"},
+    [MC_ADD] = {1, "add"},
+    [MC_SUB] = {1, "sub"},
+    [MC_IMUL] = {3, "imul"},
+    [MC_DIV] = {10, "div"},
 
-    [MC_CMP] = { 1, "cmp" },
+    [MC_CMP] = {1, "cmp"},
 
-    [MC_CMP_E] = { 1, "cmpe" },
-    [MC_CMP_NE] = { 1, "cmpne" },
-    [MC_CMP_L] = { 1, "cmpl" },
-    [MC_CMP_LE] = { 1, "cmple" },
-    [MC_CMP_G] = { 1, "cmpg" },
-    [MC_CMP_GE] = { 1, "cmpge" },
+    [MC_CMP_E] = {1, "cmpe"},
+    [MC_CMP_NE] = {1, "cmpne"},
+    [MC_CMP_L] = {1, "cmpl"},
+    [MC_CMP_LE] = {1, "cmple"},
+    [MC_CMP_G] = {1, "cmpg"},
+    [MC_CMP_GE] = {1, "cmpge"},
 
-    [MC_SET_E] = { 1, "sete" },
-    [MC_SET_NE] = { 1, "setne" },
-    [MC_SET_L] = { 1, "setl" },
-    [MC_SET_LE] = { 1, "setle" },
-    [MC_SET_G] = { 1, "setg" },
-    [MC_SET_GE] = { 1, "setge" },
+    [MC_SET_E] = {1, "sete"},
+    [MC_SET_NE] = {1, "setne"},
+    [MC_SET_L] = {1, "setl"},
+    [MC_SET_LE] = {1, "setle"},
+    [MC_SET_G] = {1, "setg"},
+    [MC_SET_GE] = {1, "setge"},
 
-    [MC_JMP] = { 0, "jmp" },
-    [MC_JE] = { 0, "je" },
-    [MC_JNE] = { 0, "jne" },
-    [MC_JL] = { 0, "jl" },
-    [MC_JLE] = { 0, "jle" },
-    [MC_JG] = { 0, "jg" },
-    [MC_JGE] = { 0, "jge" },
+    [MC_JMP] = {0, "jmp"},
+    [MC_JE] = {0, "je"},
+    [MC_JNE] = {0, "jne"},
+    [MC_JL] = {0, "jl"},
+    [MC_JLE] = {0, "jle"},
+    [MC_JG] = {0, "jg"},
+    [MC_JGE] = {0, "jge"},
 
-    [MC_SAVE_RET] = { 1, "save_ret" },
+    [MC_SAVE_RET] = {1, "save_ret"},
 };
 
 MachineCodeStamp op_to_mc[] = {
@@ -73,12 +75,12 @@ MachineCodeStamp op2jmp_mc[] = {
 };
 
 Mc2mc fake_cmp_mc_to_real_mc[] = {
-    [MC_CMP_E] = { MC_CMP, MC_SET_E },
-    [MC_CMP_NE] = { MC_CMP, MC_SET_NE },
-    [MC_CMP_L] = { MC_CMP, MC_SET_L },
-    [MC_CMP_LE] = { MC_CMP, MC_SET_LE },
-    [MC_CMP_G] = { MC_CMP, MC_SET_G },
-    [MC_CMP_GE] = { MC_CMP, MC_SET_GE },
+    [MC_CMP_E] = {MC_CMP, MC_SET_E},
+    [MC_CMP_NE] = {MC_CMP, MC_SET_NE},
+    [MC_CMP_L] = {MC_CMP, MC_SET_L},
+    [MC_CMP_LE] = {MC_CMP, MC_SET_LE},
+    [MC_CMP_G] = {MC_CMP, MC_SET_G},
+    [MC_CMP_GE] = {MC_CMP, MC_SET_GE},
 };
 
 static void gen_op_add_sub_mul_div_mc(vector<X64mc> &x64mc, MachineCodeStamp mc, const string &ori_sem,
@@ -139,86 +141,110 @@ static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 		ERR();
 	}
 }
-static void gen_mc()
+static void gen_mc(Scope *scp)
 {
 	X64mc mc;
+	scp->basic_block = new BasicBlock;
+	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 
-	for (BasicBlock &bb : basic_blocks)
+	if (scp->sem_stamp == SEM_FUNC_DEFINE
+	    || scp->sem_stamp == SEM_COND_JMP	// if, while
+	    || scp->sem_stamp == SEM_WHILE_BODY
+	    || scp->sem_stamp == SEM_LABEL
+	    || scp->jmp_in.size() > 0)
 	{
-		for (Tac &tac : bb.tacs)
+		bb->entry_label = scp;
+	}
+
+	for (Tac &ttac : scp->tac)
+	{
+		Semantic sem = ttac.ast->sem_stamp;
+		if (sem == SEM_OPERATOR)
 		{
-			Semantic sem = tac.ast->sem_stamp;
-			if (sem == SEM_OPERATOR)
-			{
-				gen_op_mc(bb.x64mc, tac);
-				continue;
-			}
-
-			switch (sem)
-			{
-			case SEM_CONST_NUM:
-				mc = X64mc(MC_LI, tac.dst);
-				mc.const_num = tac.const_num_value;
-				mc.ori_sem = "li";
-				bb.x64mc.push_back(mc);
-				break;
-
-			case SEM_SAVE_RET_VALUE:
-				mc = X64mc(MC_SAVE_RET, tac.s1);
-				mc.ori_sem = "save_ret";
-				bb.x64mc.push_back(mc);
-				break;
-
-				// todo
-			case SEM_FUNC_CALL:
-				ERR("todo sem_func* semty %d \n", sem);
-				break;
-
-				default:
-				ERR("%d \n", sem);
-				break;
-			}
+			gen_op_mc(bb->x64mc, ttac);
+			continue;
 		}
 
-		if (bb.exit_jmp)
+		switch (sem)
 		{
-			if (bb.exit_jmp->sem_stamp == SEM_COND_JMP)
-			{
-				printf("bb.exit_jmp=%s %d\n", bb.exit_jmp->name.c_str());
-				assert(bb.exit_jmp->asts.size());
+		case SEM_CONST_NUM:
+			mc = X64mc(MC_LI, ttac.dst);
+			mc.const_num = ttac.const_num_value;
+			mc.ori_sem = "li";
+			bb->x64mc.push_back(mc);
+			break;
 
-				Ast *cond = bb.exit_jmp->asts[0];
-				bb.jmp_mc_stamp = op2jmp_mc[cond->op];
-			}
-			else if (bb.exit_jmp->sem_stamp == SEM_JMP)
-				bb.jmp_mc_stamp = MC_JMP;
-			else if (bb.exit_jmp->sem_stamp == SEM_SAVE_RET_VALUE)
-			{
-				ERR();
-				bb.jmp_mc_stamp = MC_JMP;
-			}
-			else
-			{
-				printf("NOTE: bb.exit_jmp=%s %d\n", bb.exit_jmp->name.c_str(), bb.exit_jmp->sem_stamp);
-			}
-		}
+		case SEM_SAVE_RET_VALUE:
+			mc = X64mc(MC_SAVE_RET, ttac.s1);
+			mc.ori_sem = "save_ret";
+			bb->x64mc.push_back(mc);
+			break;
 
-		if (bb.tacs.size() != bb.x64mc.size())
-		{
-			LOG("%lu %lu", bb.tacs.size(), bb.x64mc.size());
+			// todo
+		case SEM_FUNC_CALL:
+			ERR("todo sem_func* semty %d \n", sem);
+			break;
+
+		default:
+			ERR("%d \n", sem);
+			break;
 		}
 	}
+
+	if (scp->jmp_out != 0)	// || scp->sem == SEM_COND_JMP || scp->sem == SEM_JMP)
+		bb->jmp_to = scp->jmp_out;
+//
+	if (scp->jmp_out)
+	{
+		if (scp->sem_stamp == SEM_COND_JMP)
+		{
+			printf("bb.exit_jmp=%s \n", scp->name.c_str());
+			assert(scp->asts.size());
+
+			Ast *cond = scp->asts[0];
+			bb->jmp_mc_stamp = op2jmp_mc[cond->op];
+		}
+		else if (scp->sem_stamp == SEM_JMP)
+			bb->jmp_mc_stamp = MC_JMP;
+		else if (scp->sem_stamp == SEM_SAVE_RET_VALUE)
+		{
+			ERR();
+			bb->jmp_mc_stamp = MC_JMP;
+		}
+		else
+		{
+			printf("NOTE: bb.exit_jmp=%s %d\n", scp->name.c_str(), scp->sem_stamp);
+		}
+	}
+
+	if (scp->tac.size() != bb->x64mc.size())
+	{
+		LOG("%lu %lu", scp->tac.size(), bb->x64mc.size());
+	}
+
+	for (Scope *p : scp->clds)
+		gen_mc(p);
 }
 
-#define PRINT_ASM_HEAD(fmt, ...) printf(fmt "\n", ##__VA_ARGS__);
-#define PRINT_ASM(fmt, ...) printf("\t" fmt , ##__VA_ARGS__);
+#define PRINT_ASM_HEAD(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
+#define PRINT_ASM(fmt, ...) printf("\t" fmt , ##__VA_ARGS__)
 
-void dump_mc(BasicBlock &bb, vector<X64mc> &v)
+void dump_mc(Scope *scp)
 {
-	if (bb.entry_label != 0)
-		PRINT_ASM_HEAD("\n%s:", bb.entry_label->name.c_str());
+	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 
-	for (auto &mc : v)
+	if (bb->entry_label != 0)
+		PRINT_ASM_HEAD("\n%s:", bb->entry_label->name.c_str());
+
+	vector<X64mc> *mc_list;
+	if(mc_list_name == "x64mc")
+		mc_list = &bb->x64mc;
+	else if(mc_list_name == "x64mc_schedu")
+		mc_list = &bb->x64mc_schedu;
+	else
+		ERR("%s", mc_list_name.c_str());
+
+	for (auto &mc : *mc_list)
 	{
 		MachineCodeStamp mc_stamp = mc.mc_stamp;
 		MachineCodeStamp set_mc;
@@ -282,24 +308,24 @@ void dump_mc(BasicBlock &bb, vector<X64mc> &v)
 		}
 	}
 
-	if (bb.exit_jmp != 0)
+	if (scp->jmp_out != 0)
 	{
-		PRINT_ASM("%s %s \n", mc_info[bb.jmp_mc_stamp].mc_code.c_str(),
-			bb.exit_jmp->jmp_out->name.c_str());
+		PRINT_ASM("%s %s \n", mc_info[bb->jmp_mc_stamp].mc_code.c_str(),
+		    scp->jmp_out->name.c_str());
 	}
-}
-static void dump()
-{
-	PRINT_ASM_HEAD("========== mc ==========");
 
-	for (BasicBlock &bb : basic_blocks)
-		dump_mc(bb, bb.x64mc);
+	for (Scope *p : scp->clds)
+		dump_mc(p);
 }
-#undef PRINT_ASM_HEAD
-#undef PRINT_ASM
 
 void gen_machine_code()
 {
-	gen_mc();
-	dump();
+	gen_mc(&file_scp);
+
+	mc_list_name = "x64mc";
+	PRINT_ASM_HEAD("========== mc ==========");
+	dump_mc(&file_scp);
 }
+
+#undef PRINT_ASM_HEAD
+#undef PRINT_ASM

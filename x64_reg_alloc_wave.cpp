@@ -10,12 +10,11 @@
 #include "basic_block.h"
 #include <cmath>
 
-extern vector<BasicBlock> basic_blocks;
 vector<Wave> vrwave;
 static vector<VrToPr> vr2pr;
 static vector<PrToVr> pr2vr(X64PR_MAX, {INVALID__VR});
 
-static void init_wave(BasicBlock &bb)
+static void init_wave(BasicBlock *bb)
 {
 	for (auto &r : vrwave)
 	{
@@ -23,12 +22,12 @@ static void init_wave(BasicBlock &bb)
 		r.insts.clear();
 	}
 
-	auto &v = bb.vrids;
+	auto &v = bb->vrids;
 	std::sort(v.begin(), v.end());
 	v.erase(std::unique(v.begin(), v.end()), v.end());
 
-	int mc_size = bb.x64mc_schedu.size();
-	for (int vr : bb.vrids)
+	int mc_size = bb->x64mc_schedu.size();
+	for (int vr : bb->vrids)
 	{
 		vrwave[vr].score.resize(mc_size, 0);
 		vrwave[vr].insts.resize(mc_size, 0);
@@ -36,7 +35,7 @@ static void init_wave(BasicBlock &bb)
 
 	for (int inst_idx = 0; inst_idx < mc_size; inst_idx++)
 	{
-		X64mc &mc = bb.x64mc_schedu[inst_idx];
+		X64mc &mc = bb->x64mc_schedu[inst_idx];
 		for (int i = 0; i < 3; i++)
 		{
 			int vr = mc.vr[i];
@@ -69,19 +68,19 @@ static void spill_vr(vector<X64mc> &x64mc_alloced, int vr)
 	pr = X64PR_MAX;
 	u = VR_USEAGE_INVALID;
 }
-static void spill_all_pr(BasicBlock &bb)
+static void spill_all_pr(BasicBlock *bb)
 {
 	for (int pr = R10D; pr < X64PR_MAX; pr++)
 	{
 		if (pr2vr[pr].vr != INVALID__VR)
-			spill_vr(bb.x64mc_alloc, pr2vr[pr].vr);
+			spill_vr(bb->x64mc_alloc_wave, pr2vr[pr].vr);
 	}
 }
 static vector<int> x64pr_state(X64PR_MAX, INVALID__VR);
 
-static int get_pr(BasicBlock &bb, int mc_idx)
+static int get_pr(BasicBlock *bb, int mc_idx)
 {
-	X64mc &mc = bb.x64mc_schedu[mc_idx];
+	X64mc &mc = bb->x64mc_schedu[mc_idx];
 //	int vr = mc.s1;
 //	if (vr >= 0 && vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient)
 //		vr_manager.ast[vr]->consume_cnt++;
@@ -91,7 +90,7 @@ static int get_pr(BasicBlock &bb, int mc_idx)
 //		vr_manager.ast[vr]->consume_cnt++;
 
 //	if(vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
-//		&& (vr == bb.x64mc_schedu[mc_idx].s1 || vr == bb.x64mc_schedu[mc_idx].s2))
+//		&& (vr == bb->x64mc_schedu[mc_idx].s1 || vr == bb->x64mc_schedu[mc_idx].s2))
 //	{
 //		vr_manager.ast[vr]->consume_cnt++;
 //	}
@@ -100,8 +99,8 @@ static int get_pr(BasicBlock &bb, int mc_idx)
 	{
 		int vr = pr2vr[i].vr;
 		if (vr != INVALID__VR
-			&& vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
-			&& (mc.mc_stamp == MC_ASSIGN && vr == mc.s2))
+		    && vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
+		    && (mc.mc_stamp == MC_ASSIGN && vr == mc.s2))
 			vr_manager.ast[vr]->consume_cnt++;
 	}
 
@@ -140,11 +139,11 @@ static int get_pr(BasicBlock &bb, int mc_idx)
 	assert(min_score_vr != INVALID__VR);
 
 	int pr = vr2pr[min_score_vr].pr;
-	spill_vr(bb.x64mc_alloc, min_score_vr);
+	spill_vr(bb->x64mc_alloc_wave, min_score_vr);
 
 	return pr;
 }
-static int get_pr__load_vr(BasicBlock &bb, int vr, int u, int mc_idx)
+static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 {
 	/*
 	 * todo
@@ -179,20 +178,26 @@ static int get_pr__load_vr(BasicBlock &bb, int vr, int u, int mc_idx)
 		X64mc mc(MC_LD, vr);
 		mc.pr1 = vr2pr[vr].pr;
 		mc.ori_sem = "alloc";
-		bb.x64mc_alloc.push_back(mc);
+		bb->x64mc_alloc_wave.push_back(mc);
 	}
 
 	return vr2pr[vr].pr;
 }
 
-void _x64_reg_alloc_wave(BasicBlock &bb)
+static void _wave_reg_alloc(Scope *scp)
 {
-	X64mc inst;
-	vector<X64mc> &x64mc_alloc = bb.x64mc_alloc;
+	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 
-	for (int i = 0; i < bb.x64mc_schedu.size(); i++)
+	init_wave(bb);
+	gen_wave(bb);
+//	dump_wave(*bb);
+
+	X64mc inst;
+	vector<X64mc> &x64mc_alloc = bb->x64mc_alloc_wave;
+
+	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
 	{
-		X64mc mc = bb.x64mc_schedu[i];
+		X64mc mc = bb->x64mc_schedu[i];
 		MachineCodeStamp mc_stamp = mc.mc_stamp;
 
 		switch (mc_stamp)
@@ -244,8 +249,12 @@ void _x64_reg_alloc_wave(BasicBlock &bb)
 			break;
 		}
 	}
-}
 
+	spill_all_pr(bb);
+
+	for (Scope *p : scp->clds)
+		_wave_reg_alloc(p);
+}
 void wave_reg_alloc()
 {
 	vrwave.resize(vr_manager.id + 1);
@@ -255,14 +264,6 @@ void wave_reg_alloc()
 	pr2vr.clear();
 	pr2vr.resize(X64PR_MAX, {INVALID__VR});
 
-	for (BasicBlock &bb : basic_blocks)
-	{
-		init_wave(bb);
-		gen_wave(bb);
-//		dump_wave(bb);
-
-		_x64_reg_alloc_wave(bb);
-		spill_all_pr(bb);
-	}
-
+	_wave_reg_alloc(&file_scp);
 }
+

@@ -10,7 +10,7 @@
 #include "basic_block.h"
 #include <cmath>
 
-void dump_wave(BasicBlock &bb)
+void dump_wave(BasicBlock *bb)
 {
 	static const char *level[] = {
 	    " ",
@@ -25,7 +25,7 @@ void dump_wave(BasicBlock &bb)
 	};
 	printf("\n========== wave ==========\n");
 
-	for (int vr : bb.vrids)
+	for (int vr : bb->vrids)
 	{
 		const vector<float> &score = vrwave[vr].score;
 		if (score.empty())
@@ -58,9 +58,9 @@ void dump_wave(BasicBlock &bb)
 	}
 	printf("     ");
 
-	if (!bb.vrids.empty())
+	if (!bb->vrids.empty())
 	{
-		int n = vrwave[bb.vrids[0]].score.size();
+		int n = vrwave[bb->vrids[0]].score.size();
 		printf("   ");
 		for (int i = 0; i < n; ++i)
 		{
@@ -104,12 +104,12 @@ void dump_wave_gnuplot(Wave &wave, int vr)
 
 	pclose(gp);
 }
-static void dump_all_wave_gnuplot(BasicBlock &bb)
+static void dump_all_wave_gnuplot(BasicBlock *bb)
 {
 	FILE *fp = fopen("/tmp/all_wave.dat", "w");
 	int count = 0;
 
-	for (int vr : bb.vrids)
+	for (int vr : bb->vrids)
 	{
 		printf("dump VR %d size=%ld\n",
 		    vr,
@@ -236,9 +236,9 @@ static void gen_wave_decay_gemini_improved(Wave &_wave)
 		}
 	}
 }
-void gen_wave(BasicBlock &bb)
+void gen_wave(BasicBlock *bb)
 {
-	for (int vr : bb.vrids)
+	for (int vr : bb->vrids)
 	{
 //    	compute_wave_triangle(wave[vr]);
 //		compute_wave_decay(vrwave[vr]);

@@ -125,7 +125,7 @@ struct SymbolFunc
 	Scope *func_scope;
 };
 
-enum Symbol_live_region{
+enum Symbol_live_region {
 	SYMB_PRIVATE,
 	SYMB_PRIVATE_transient,
 	SYMB_OUTER,
@@ -153,14 +153,13 @@ public:
 	int consume_cnt = 0;
 	int const_value;
 
-
 	Token tk;
 	Ast *parent = 0;
 	Ast *left = 0;
 	Ast *right = 0;
 
 	Scope *this_scp = 0;
-//	Scope *home_scp = 0;
+	//	Scope *home_scp = 0;
 
 	Ast(const Token &_token)
 	{
@@ -224,7 +223,7 @@ public:
 			sem_stamp = SEM_COND_JMP;
 			break;
 		case TK_ELSE:
-//			sem_stamp = SEM_ELSE;
+			//			sem_stamp = SEM_ELSE;
 			break;
 
 		case TK_INT:
@@ -262,6 +261,20 @@ public:
 	}
 };
 
+struct Tac {
+	Tac(Ast *p = 0)
+	{
+		ast = p;
+	}
+	Ast *ast = 0;
+
+	int dst = -1;
+	int s1 = -1;
+	int s2 = -1;
+
+	int const_num_value = 0;
+};
+
 struct Scope
 {
 public:
@@ -270,13 +283,9 @@ public:
 	Semantic sem_stamp = SEM_INVALID;
 
 	vector<Ast*> asts;
-	map<string, SymbolVar*> _var_table;
-	map<string, SymbolVar*> *var_table = &_var_table;
+	map<string, SymbolVar*> _symb_table;
+	map<string, SymbolVar*> *symb_tabel = &_symb_table;
 	SymbolVar *outer_var_fake_symb = 0;
-
-	map<string, SymbolFunc*> _func_table;
-	map<string, SymbolFunc*> *func_table = &_func_table;
-	//	Sem_type region_header = sem_none;
 
 	Scope *parent;
 	vector<Scope*> clds;
@@ -294,9 +303,14 @@ public:
 	vector<Scope*> continue__break;
 	bool bb_terminated;
 
+	vector<Tac> tac;
+	void *basic_block;
+
 	// for function
 	Scope *return_label = 0;
 	enum Type return_type = INVALID_TYPE;
+	map<string, SymbolFunc*> _func_table;
+	map<string, SymbolFunc*> *func_table = &_func_table;
 
 	Scope* new_cld()
 	{
@@ -312,20 +326,6 @@ public:
 		p->parent = real_parent;
 		return p;
 	}
-};
-
-struct Tac {
-	Tac(Ast *p = 0)
-	{
-		ast = p;
-	}
-	Ast *ast = 0;
-
-	int dst = -1;
-	int s1 = -1;
-	int s2 = -1;
-
-	int const_num_value = 0;
 };
 
 //struct BasicBlock
@@ -379,8 +379,6 @@ struct VirtualRegManager
 	vector<Ast*> ast;
 };
 
-
-
 #if 0
 #define PARSER_LOG(fmt, ...) do{ \
 		printf("%s %d, scope-%s-%d,        " fmt "\n",	\
@@ -390,9 +388,8 @@ struct VirtualRegManager
 	##__VA_ARGS__); \
 	}while(0)
 #else
-	#define PARSER_LOG(fmt, ...)
+#define PARSER_LOG(fmt, ...)
 #endif
-
 
 constexpr bool enable_bb_terminate = 1;
 
@@ -402,8 +399,7 @@ extern Scope *current_scope_pointer;
 extern int scope_id;
 extern bool in_func_define;
 extern VirtualRegManager vr_manager;
-
-
+extern string mc_list_name;
 
 Scope* new_scope_and_drop_in();
 Scope* new_virtual_scope_and_drop_in();

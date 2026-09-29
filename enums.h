@@ -20,8 +20,7 @@
     exit(1);	\
 }while(0)
 
-//#define DEBUG
-#ifdef DEBUG
+#if 1
 #define LOG(fmt, ...) do{ \
 		printf("%s %d, " fmt "\n", __FUNCTION__, __LINE__ , ##__VA_ARGS__); \
 	}while(0)
