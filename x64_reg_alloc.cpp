@@ -299,8 +299,9 @@ static void dump_asm()
 
 	FILE *fp = fopen(asm_file_name.c_str(), "w");
 	assert(fp);
+	string s = "#========== " + asm_file_name + " ==========#";
 
-	PRINT_ASM_HEAD("#========== asm ==========#");
+	PRINT_ASM_HEAD("%s", s.c_str());
 	PRINT_ASM_HEAD(".intel_syntax noprefix");
 	PRINT_ASM_HEAD(".extern printf");
 

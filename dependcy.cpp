@@ -19,11 +19,8 @@ void create_dependcy_RAW(int a, int b)
 		return;
 
 	auto &pred = mcs_predecessor[a].mcs;
-
 	if (std::find(pred.begin(), pred.end(), b) != pred.end())
-	{
 		return;
-	}
 
 	// a depend on b, data flow: b -> a
 	mcs_predecessor[a].mcs.push_back(b);
@@ -35,17 +32,8 @@ void create_dependcy_WAW(int a, int b)
 }
 void create_dependcy_WAR(int a, vector<int> &_prev_read)
 {
-	auto &pred = mcs_predecessor[a].mcs;
-
 	for (int b : _prev_read)
-	{
-		if (std::find(pred.begin(), pred.end(), b) != pred.end())
-			continue;
-
-		// a depend on b, data flow: b -> a
-		mcs_predecessor[a].mcs.push_back(b);
-		mcs_successor[b].mcs.push_back(a);
-	}
+		create_dependcy_RAW(a, b);
 }
 
 void gen_use_def_chain(vector<X64mc> &x64mc)
