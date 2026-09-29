@@ -2,6 +2,12 @@
 
 set -e
 
+current_branch=$(git rev-parse --abbrev-ref HEAD)
+if [[ "$current_branch" != "dev" ]]; then
+    echo "Error: current branch is '$current_branch', but only 'dev' branch is allowed."
+    echo "Please switch to dev branch first: git checkout dev"
+    exit 1
+fi
 
 if [[ $# -eq 0 ]]; then
     echo "Error: commit message is required."
