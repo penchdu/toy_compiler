@@ -102,10 +102,10 @@ static void dump_scope(Scope *s, int depth)
 		printf(" virtual");
 	printf("\n");
 
-	for (auto &it : *(s->symb_tabel))
+	for (auto p : *(s->symb_table))
 	{
 		print_blank(depth);
-		printf("symbol: %s\n", it.second->unique_name.c_str());
+		printf("symbol: %s\n", p->unique_name.c_str());
 	}
 
 	for (auto ast : s->asts)

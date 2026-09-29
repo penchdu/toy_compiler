@@ -99,7 +99,7 @@ static int get_pr(BasicBlock *bb, int mc_idx)
 	{
 		int vr = pr2vr[i].vr;
 		if (vr != INVALID__VR
-		    && vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
+		    && vr_manager.ast[vr]->symb_stamp == SYMB_PRIVATE_transient
 		    && (mc.mc_stamp == MC_ASSIGN && vr == mc.s2))
 			vr_manager.ast[vr]->consume_cnt++;
 	}
@@ -110,7 +110,7 @@ static int get_pr(BasicBlock *bb, int mc_idx)
 		if (vr == INVALID__VR)
 			return i;
 
-		if (vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
+		if (vr_manager.ast[vr]->symb_stamp == SYMB_PRIVATE_transient
 		    && vr_manager.ast[vr]->consume_cnt >= vr_manager.ast[vr]->use_cnt
 		    && vr != mc.s1
 		    && vr != mc.s2

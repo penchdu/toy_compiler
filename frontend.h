@@ -97,7 +97,7 @@ private:
 };
 
 struct Scope;
-struct SymbolVar
+struct SymbolVariable
 {
 //	Semantic_type semty;
 	Type type = INT;
@@ -114,8 +114,8 @@ struct SymbolVar
 	int cld_use_cnt = 0;
 	int cld_consume_cnt = 0;
 
-	Scope *scp;
-	vector<SymbolVar*> cld;
+	Scope *scp = 0;
+	vector<SymbolVariable*> cld;
 };
 struct SymbolFunc
 {
@@ -125,7 +125,7 @@ struct SymbolFunc
 	Scope *func_scope;
 };
 
-enum Symbol_live_region {
+enum SymbolStamp {
 	SYMB_PRIVATE,
 	SYMB_PRIVATE_transient,
 	SYMB_OUTER,
@@ -146,12 +146,12 @@ public:
 	// var
 	// for op, var_type is type of temp vr
 	Type type;		// var_type in ast or symtable?
+	int const_value;
 
-	Symbol_live_region symb_live_region = SYMB_INVALID;
-	SymbolVar *var_symb = 0;
+	SymbolStamp symb_stamp = SYMB_INVALID;
+	SymbolVariable *var_symb = 0;
 	int use_cnt = 0;
 	int consume_cnt = 0;
-	int const_value;
 
 	Token tk;
 	Ast *parent = 0;
@@ -283,9 +283,9 @@ public:
 	Semantic sem_stamp = SEM_INVALID;
 
 	vector<Ast*> asts;
-	map<string, SymbolVar*> _symb_table;
-	map<string, SymbolVar*> *symb_tabel = &_symb_table;
-	SymbolVar *outer_var_fake_symb = 0;
+	vector<SymbolVariable*> _symb_table;
+	vector<SymbolVariable*> *symb_table = &_symb_table;
+	SymbolVariable *outer_var_fake_symb = 0;
 
 	Scope *parent;
 	vector<Scope*> clds;
@@ -309,8 +309,8 @@ public:
 	// for function
 	Scope *return_label = 0;
 	enum Type return_type = INVALID_TYPE;
-	map<string, SymbolFunc*> _func_table;
-	map<string, SymbolFunc*> *func_table = &_func_table;
+	vector<SymbolFunc*> _func_table;
+	vector<SymbolFunc*> *func_table = &_func_table;
 
 	Scope* new_cld()
 	{

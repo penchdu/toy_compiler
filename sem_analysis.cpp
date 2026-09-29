@@ -9,7 +9,7 @@
 #include "frontend.h"
 
 extern Scope file_scp;
-map<string, SymbolVar*> global_unique_src_name_tbl;
+vector<SymbolVariable*> global_unique_src_name_tbl;
 
 static int case_sem_assign(Ast *p)
 {
@@ -88,22 +88,27 @@ static int case_sem_save_retuen_up_down(Ast *p)
 static int case_sem_var(Ast *p)
 {
 	Scope *scp = p->this_scp;
-	auto r = scp->symb_tabel->find(p->tk.src);
-	if (r != scp->symb_tabel->end())
+
+	for (auto symb : *(scp->symb_table))
 	{
-		p->symb_live_region = SYMB_PRIVATE;
-		p->var_symb = r->second;
-		return 0;
+		if (symb->src == p->tk.src)
+		{
+			p->symb_stamp = SYMB_PRIVATE;
+			p->var_symb = symb;
+			return 0;
+		}
 	}
 
-	while ((scp = scp->parent) && scp->symb_tabel)
+	while ((scp = scp->parent) && scp->symb_table)
 	{
-		auto r = scp->symb_tabel->find(p->tk.src);
-		if (r != scp->symb_tabel->end())
+		for (auto symb : *(scp->symb_table))
 		{
-			p->symb_live_region = SYMB_OUTER;
-			p->var_symb = r->second;
-			break;
+			if (symb->src == p->tk.src)
+			{
+				p->symb_stamp = SYMB_OUTER;
+				p->var_symb = symb;
+				break;
+			}
 		}
 	}
 	if (!p->var_symb)
@@ -123,25 +128,34 @@ static int case_sem_variable_declare(Ast *ty)
 	assert(ty->parent == nullptr);
 
 	Scope *scp = ty->this_scp;
-	auto tbl = scp->symb_tabel;
 
 	Ast *var = ty->left;
 	var->type = ty->type;
 
-	if (tbl->find(var->tk.src) != tbl->end())
-		ERR("%s is already declared", var->tk.src.c_str());
+	for (auto s : *(scp->symb_table))
+	{
+		if (s->src == var->tk.src)
+			ERR("%s is already declared", var->tk.src.c_str());
+	}
 
-	SymbolVar *symb = new SymbolVar;
-//	symb->semty = sem_var;
+	SymbolVariable *symb = new SymbolVariable;
 	symb->type = var->type;
 	symb->src = var->tk.src;
-//	symb->vr = get_vr(var);
 
 // get a unique name
-	if (global_unique_src_name_tbl.find(var->tk.src) == global_unique_src_name_tbl.end())
+	bool is_unique_name = 1;
+	for (auto p : global_unique_src_name_tbl)
+	{
+		if (p->src == var->tk.src)
+		{
+			is_unique_name = 0;
+			break;
+		}
+	}
+	if (is_unique_name)
 	{
 		symb->unique_name = var->tk.src;
-		global_unique_src_name_tbl[var->tk.src] = symb;
+		global_unique_src_name_tbl.push_back(symb);
 	}
 	else
 	{
@@ -150,9 +164,9 @@ static int case_sem_variable_declare(Ast *ty)
 	}
 
 	symb->explicit_unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
-	var->symb_live_region = SYMB_PRIVATE;
+	var->symb_stamp = SYMB_PRIVATE;
 	var->var_symb = symb;
-	tbl->insert({var->tk.src, symb});
+	scp->symb_table->push_back(symb);
 	return 0;
 }
 static int trace_ast_up_down__named_variable_declare(Ast *p)
@@ -201,6 +215,25 @@ static void sem_analysis_named_var(Scope *scp)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
+static void increase_use_cnt(Ast *p)
+{
+	if (p->symb_stamp == SYMB_OUTER)
+		p->var_symb->cld_use_cnt++;
+	else
+		p->var_symb->use_cnt++;
+}
+static void new_PRIVATE_transient_symb(Ast *p)
+{
+	SymbolVariable *symb = new SymbolVariable;
+	symb->type = p->type;
+	symb->src = to_string(p->vr_id);
+	symb->vr = p->vr_id;
+//	symb->use_cnt = 1;
+
+	p->var_symb = symb;
+	p->this_scp->symb_table->push_back(symb);
+}
+
 static int case_op(Ast *p)
 {
 	switch (p->op)
@@ -211,7 +244,7 @@ static int case_op(Ast *p)
 			ERR("assign type mismatch %d %d", p->left->type, p->right->type);
 
 		p->type = p->left->type;
-		assert(p->left->symb_live_region != SYMB_PRIVATE_transient);
+		assert(p->left->symb_stamp != SYMB_PRIVATE_transient);
 		// assign do not gen a new vr, just return left
 		p->vr_id = p->left->vr_id;
 		return p->vr_id;
@@ -233,8 +266,9 @@ static int case_op(Ast *p)
 
 		p->type = p->left->type;
 		p->vr_id = vr_manager.new_vr(p);
-		p->symb_live_region = SYMB_PRIVATE_transient;
-		p->use_cnt = 1;
+		p->symb_stamp = SYMB_PRIVATE_transient;
+		p->use_cnt++;
+		new_PRIVATE_transient_symb(p);
 		return p->vr_id;
 
 	case OP_LOGIC_AND:
@@ -265,7 +299,7 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 
 	int b = trace_ast_down_up_gen_vr(p->right);
 	int a = trace_ast_down_up_gen_vr(p->left);
-	SymbolVar *symb = 0;
+	SymbolVariable *symb = 0;
 	(void) a;
 	(void) b;
 
@@ -284,8 +318,9 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 
 	case SEM_CONST_NUM:
 		p->vr_id = vr_manager.new_vr(p);
-		p->symb_live_region = SYMB_PRIVATE_transient;
+		p->symb_stamp = SYMB_PRIVATE_transient;
 		p->use_cnt = 1;
+		new_PRIVATE_transient_symb(p);
 		return p->vr_id;
 
 	case SEM_OPERATOR:

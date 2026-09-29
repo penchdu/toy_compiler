@@ -112,11 +112,17 @@ static int case_tk_func()
 	Scope *cur_file_scope = current_scope_pointer;
 	assert(cur_file_scope->sem_stamp == SEM_FILE_SCOPE);
 
-	if (cur_file_scope->symb_tabel->find(func_name) != cur_file_scope->symb_tabel->end())
-		ERR("%s already declared", func_name.c_str());
+	for (auto symb : *(cur_file_scope->symb_table))
+	{
+		if (symb->src == func_name)
+			ERR("%s already declared", func_name.c_str());
+	}
 
-	if (cur_file_scope->func_table->find(func_name) != cur_file_scope->func_table->end())
-		ERR("%s already declared", func_name.c_str());
+	for (auto symb : *(cur_file_scope->func_table))
+	{
+		if (symb->name == func_name)
+			ERR("%s already declared", func_name.c_str());
+	}
 
 	Scope *func = new_scope_and_drop_in();
 	func->sem_stamp = SEM_FUNC_DEFINE;
@@ -133,7 +139,7 @@ static int case_tk_func()
 	sym->argc = 0;
 	sym->func_scope = current_scope_pointer;
 
-	cur_file_scope->func_table->insert( {func_name, sym});
+	cur_file_scope->func_table->push_back(sym);
 
 	in_func_define = 1;
 	parse_scope();
