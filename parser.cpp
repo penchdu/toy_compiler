@@ -31,6 +31,13 @@ static Scope* new_cld_scp(bool is_virtual)
 	current_scope_pointer->id = scope_id++;
 	current_scope_pointer->name = "b" + std::to_string(current_scope_pointer->id);
 
+	if(is_virtual)
+	{
+		assert(current_scope_pointer->parent->is_virtual == false);
+		current_scope_pointer->symb_table = current_scope_pointer->parent->symb_table;
+		current_scope_pointer->func_table = current_scope_pointer->parent->func_table;
+	}
+
 	return current_scope_pointer;
 }
 Scope* new_scope_and_drop_in()

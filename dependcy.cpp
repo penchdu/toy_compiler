@@ -15,6 +15,7 @@ vector<McDepend> mcs_successor;
 
 void create_dependcy_RAW(int a, int b)
 {
+	assert(a >= 0);
 	if (b < 0)
 		return;
 
@@ -38,53 +39,56 @@ void create_dependcy_WAR(int a, vector<int> &_prev_read)
 
 void gen_use_def_chain(vector<X64mc> &x64mc)
 {
-	memset(prev_write.data(), -1, prev_write.size() * sizeof(int));
-	for (auto &v : prev_read)
-		v.clear();
+	prev_write.clear();
+	prev_write.resize(vr_declare_manager.size(), -1);
+	prev_read.clear();
+	prev_read.resize(vr_declare_manager.size());
+//	for (auto &v : prev_read)
+//		v.clear();
 
 	mcs_predecessor.clear();
-	mcs_successor.clear();
 	mcs_predecessor.resize(x64mc.size());
+	mcs_successor.clear();
 	mcs_successor.resize(x64mc.size());
 
 	LOG("%zu, %zu\n", x64mc.size(), prev_write.size());
 
-	for (int mc = 0; mc < x64mc.size(); mc++)
+	for (int idx = 0; idx < x64mc.size(); idx++)
 	{
-		MachineCodeStamp mc_stamp = x64mc[mc].mc_stamp;
-		int s1 = x64mc[mc].s1;
-		int s2 = x64mc[mc].s2;
-		int dst = x64mc[mc].dst;
+		MachineCodeStamp mc_stamp = x64mc[idx].mc_stamp;
+		int s1 = x64mc[idx].s1;
+		int s2 = x64mc[idx].s2;
+		int dst = x64mc[idx].dst;
 
 		switch (mc_stamp)
 		{
 		case MC_LI:
-			prev_write[s1] = mc;
+			prev_write[s1] = idx;
 			prev_read[s1].clear();
 			break;
 
 		case MC_ASSIGN:
 			assert(s1 != s2);
-			create_dependcy_WAW(mc, prev_write[s1]);
-			create_dependcy_WAR(mc, prev_read[s1]);
-			prev_write[s1] = mc;
+			create_dependcy_WAW(idx, prev_write[s1]);
+			create_dependcy_WAR(idx, prev_read[s1]);
+			prev_write[s1] = idx;
 			prev_read[s1].clear();
 
-			create_dependcy_RAW(mc, prev_write[s2]);
-			prev_read[s2].push_back(mc);
+			create_dependcy_RAW(idx, prev_write[s2]);
+			prev_read[s2].push_back(idx);
 			break;
 
 		case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
 			case MC_DIV:
-			create_dependcy_RAW(mc, prev_write[s1]);
-			create_dependcy_WAR(mc, prev_read[s1]);
-			prev_write[s1] = mc;
+			create_dependcy_RAW(idx, prev_write[s1]);
+			create_dependcy_WAR(idx, prev_read[s1]);
+			prev_write[s1] = idx;
 			prev_read[s1].clear();
 
-			create_dependcy_RAW(mc, prev_write[s2]);
-			prev_read[s2].push_back(mc);
+			create_dependcy_RAW(idx, prev_write[s2]);
+			prev_read[s2].push_back(idx);
 			break;
 
 		case MC_CMP_E:	// ???
@@ -93,22 +97,22 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 			case MC_CMP_LE:
 			case MC_CMP_G:
 			case MC_CMP_GE:
-			create_dependcy_RAW(mc, prev_write[s1]);
-			prev_read[s1].push_back(mc);
+			create_dependcy_RAW(idx, prev_write[s1]);
+			prev_read[s1].push_back(idx);
 
-			create_dependcy_RAW(mc, prev_write[s2]);
-			prev_read[s2].push_back(mc);
+			create_dependcy_RAW(idx, prev_write[s2]);
+			prev_read[s2].push_back(idx);
 
-			create_dependcy_WAW(mc, prev_write[dst]);
-			create_dependcy_WAR(mc, prev_read[dst]);
-			prev_write[dst] = mc;
+			create_dependcy_WAW(idx, prev_write[dst]);
+			create_dependcy_WAR(idx, prev_read[dst]);
+			prev_write[dst] = idx;
 			prev_read[dst].clear();
 			break;
 
 		case MC_SAVE_RET:
 			printf("MC_SAVE_RET_VALUE %d %d, %lu\n", s1, s2, prev_read.size());
-			create_dependcy_RAW(mc, prev_write[s1]);
-			prev_read[s1].push_back(mc);
+			create_dependcy_RAW(idx, prev_write[s1]);
+			prev_read[s1].push_back(idx);
 			break;
 
 		default:
@@ -123,7 +127,20 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 		r.edges = r.mcs.size();
 
 }
-void dump_chain()
+static void print_mc_err(int a, int b, const X64mc &mc)
+{
+	int dst = mc.dst;
+	int s1 = mc.s1;
+	int s2 = mc.s2;
+	MachineCodeStamp stamp = mc.mc_stamp;
+
+	printf("%d %d, %s %s(%%%d) %s(%%%d) %s(%%%d) \n", a, b,
+		mc_info[stamp].mc_code.c_str(),
+		dst >= 0 ? vr_declare_manager.declare_at[dst]->tk.src.c_str() : "", dst,
+		s1 >= 0 ? vr_declare_manager.declare_at[s1]->tk.src.c_str() : "", s1,
+			s2 >= 0 ? vr_declare_manager.declare_at[s2]->tk.src.c_str() : "", s2);
+}
+void dump_chain(vector<X64mc> &x64mc)
 {
 	printf("dep\n");
 	for (int i = 0; i < mcs_predecessor.size(); i++)
@@ -136,7 +153,7 @@ void dump_chain()
 			ERR();
 
 		for (auto r : v)
-			printf("%d %d,    ", i, r);
+			print_mc_err(i, r, x64mc[i]);
 	}
 
 	printf("\nbdep\n");

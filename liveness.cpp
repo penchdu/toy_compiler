@@ -13,12 +13,12 @@ static void gen_vr_liveness(Scope *scp, int vr, int usage)
 {
 	Ast *declare_at = vr_declare_manager.declare_at[vr];
 	Scope *scp_declare_at = declare_at->this_scp;
-	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
-	assert(declare_at->this_scp == declare_at->home_scp);
+//	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
+//	assert(declare_at->this_scp == declare_at->home_scp);
 
 	SymbolVariable *symb = declare_at->symb;
 
-	if (scp != scp_declare_at)	// outer
+	if (scp->symb_table != scp_declare_at->symb_table)	// outer
 	{
 		assert(declare_at->symb_stamp != SYMB_PRIVATE_transient);
 
@@ -32,6 +32,8 @@ static void gen_vr_liveness(Scope *scp, int vr, int usage)
 
 		if (usage & VR_USAGE_WRITE)
 			symb->appear_cnt++;
+
+		scp->appear_cnt_in_bb[vr]++;
 	}
 	else
 	{	// private
@@ -43,6 +45,8 @@ static void gen_vr_liveness(Scope *scp, int vr, int usage)
 		}
 		if (usage & VR_USAGE_WRITE)
 			symb->appear_cnt++;
+
+		scp->appear_cnt_in_bb[vr]++;
 	}
 }
 
@@ -50,6 +54,7 @@ static void _gen_liveness(Scope *scp)
 {
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 	scp->use_cnt_in_bb.resize(vr_declare_manager.size());
+	scp->appear_cnt_in_bb.resize(vr_declare_manager.size());
 
 	for (auto &mc : bb->x64mc)
 	{

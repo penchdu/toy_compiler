@@ -44,8 +44,12 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 			printf("[var %s %%%d]\n", p->symb->unique_name.c_str(), p->symb->vr);
 	}
 	else if (p->sem_stamp == SEM_CONST_NUM)
-		printf("[num %d]\n", p->const_value);
-
+	{
+		if (!p->symb)
+			printf("[num %d]\n", p->const_value);
+		else
+			printf("[num %d %%%d]\n", p->const_value, p->symb->vr);
+	}
 	else if (p->sem_stamp == SEM_FUNC_CALL)
 		printf("[func_call %s]\n", p->tk.src.c_str());
 
@@ -102,10 +106,10 @@ static void dump_scope(Scope *s, int depth)
 		printf(" virtual");
 	printf("\n");
 
-	for (auto p : *(s->symb_table))
+	for (auto p : s->scope_symb_table)
 	{
 		print_blank(depth);
-		printf("symbol: %s\n", p->unique_name.c_str());
+		printf("symbol: %s %d\n", p->unique_name.c_str(), p->vr);
 	}
 
 	for (auto ast : s->asts)

@@ -22,6 +22,7 @@
 #include <list>
 #include <stack>
 #include <algorithm>
+#include <cmath>
 
 using std::vector;
 using std::string;
@@ -164,7 +165,7 @@ public:
 	Ast *right = 0;
 
 	Scope *this_scp = 0;
-	Scope *home_scp = 0;
+	Scope *home_scp = 0;	// useless
 
 	Ast(const Token &_token)
 	{
@@ -288,8 +289,8 @@ public:
 	Semantic sem_stamp = SEM_INVALID;
 
 	vector<Ast*> asts;
-	vector<SymbolVariable*> _symb_table;
-	vector<SymbolVariable*> *symb_table = &_symb_table;
+	vector<SymbolVariable*> scope_symb_table;
+	vector<SymbolVariable*> *symb_table = &scope_symb_table;
 	SymbolVariable *fake_outer_symb = 0;
 
 	Scope *parent;
@@ -304,6 +305,7 @@ public:
 	vector<int> outer_symb_used;
 
 	vector<int> use_cnt_in_bb;
+	vector<int> appear_cnt_in_bb;
 	vector<int> consume_cnt_in_bb;	// only use in schedule
 
 	// continue, break

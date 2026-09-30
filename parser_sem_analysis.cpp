@@ -144,6 +144,7 @@ static int case_sem_variable_declare(Ast *ty)
 	symb->type = var->type;
 	symb->src = var->tk.src;
 
+
 	// get a unique name
 	int i = 0;
 	for (; i < global_unique_src_name_tbl.size(); i++)
@@ -151,22 +152,17 @@ static int case_sem_variable_declare(Ast *ty)
 		if (global_unique_src_name_tbl[i]->src == var->tk.src)
 			break;
 	}
-	if (i < global_unique_src_name_tbl.size())
-	{
+	if (i == global_unique_src_name_tbl.size())
 		symb->unique_name = var->tk.src;
-		global_unique_src_name_tbl.push_back(symb);
-	}
 	else
-	{
-		// a scope declared var->src_name before this point
 		symb->unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
-	}
 
 	symb->explicit_unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
 	var->home_scp = var->this_scp;
 	var->symb_stamp = SYMB_PRIVATE;
 	var->symb = symb;
 	scp->symb_table->push_back(symb);
+	global_unique_src_name_tbl.push_back(symb);
 	return 0;
 }
 static int trace_ast_up_down__named_variable_declare(Ast *p)
@@ -226,8 +222,9 @@ static void new_PRIVATE_transient_symb(Ast *p)
 {
 	SymbolVariable *symb = new SymbolVariable;
 	symb->type = p->type;
-	symb->src = to_string(p->vr);
 	symb->vr = p->vr;
+	symb->src = "%" + to_string(p->vr);
+	symb->unique_name = symb->src;
 	symb->stamp = SYMB_PRIVATE_transient;
 //	symb->use_cnt = 1;
 

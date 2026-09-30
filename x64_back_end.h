@@ -281,11 +281,13 @@ struct X64mc {
 
 
 void gen_machine_code();
+void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx);
 
 void gen_use_def_chain(vector<X64mc> &x64mc);
-void dump_chain();
+void dump_chain(vector<X64mc> &x64mc);
 void gen_schdu_chain_latency(vector<X64mc> &x64mc);
 
+void update_bb_consume_cnt(Scope *scp, const X64mc &mc);
 void mc_schedule();
 void x64_reg_alloc();
 void wave_reg_alloc();
