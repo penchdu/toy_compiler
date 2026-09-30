@@ -19,7 +19,7 @@ build/
 .cproject
 .settings
 .project
-
+*.bak
 
 t1
 t2
