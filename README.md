@@ -47,6 +47,19 @@ I tested programs containing deeply nested scopes and multiple `if/else` branche
 Next steps: SSA, -O1 register allocation.
 
 
+### 2026.9.29
+
+**Liveness Analysis & Wavefront Register Allocation (-O1)**
+
+Implemented liveness analysis and an innovative wavefront-based register allocation algorithm for -O1 optimization:
+
+- Liveness & Usage Analysis: Added block-level variable usage and liveness analysis to track variable reading, writing, and cross-scope references.
+- Wavefront Score Model: Introduced an asymmetric decay wave model for virtual registers. It simulates usage peaks and rapid post-use decay, dynamically scoring registers for allocation choices.
+- Wavefront Register Allocator: Implemented dynamic register allocation driven by wavefront scores (`a1.s`), reducing unnecessary memory spill/load instructions compared to the baseline -O0 strategy (`a0.s`).
+- Score-Driven Instruction Scheduler : Refined instruction scheduling using critical path latency, functional unit availability (ALU/IMUL/DIV), and scope-level transient variable consumption scores.
+
+
+
 ## Project Status
 - [x] Lexer
 - [x] two-stack Parser
@@ -61,9 +74,9 @@ Next steps: SSA, -O1 register allocation.
 - [x] basic Semantic analysis
 - [x] Three-address IR
 - [x] x64 Inst-select
-- [x] x64 Inst-schedule
+- [x] x64 Inst-schedule (BasicBlock-level score)
 - [x] x64 -O0 reg-alloc
-- [ ] x64 -O1 reg-alloc
+- [x] x64 -O1 reg-alloc (BasicBlock-level Wavefront)
 - [x] x64 asm
 
 
