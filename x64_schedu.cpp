@@ -18,11 +18,10 @@ struct ScheduleScore {
 	int idx_in_mc_list = -1;
 	int critical_path = 0;
 
-	bool can_emit = 0;
+	bool can_use_alu = 0;
 
 //	int left_use = -1;
 	int score = 0;
-//	int vr = -1;
 };
 
 using std::multimap;
@@ -46,9 +45,7 @@ bool has_function_unit(MachineCodeStamp stamp)
 	case MC_LI:
 		case MC_ASSIGN:
 		case MC_SAVE_RET:
-		return true;
-
-	case MC_ADD:
+		case MC_ADD:
 		case MC_SUB:
 		case MC_CMP_E:
 		case MC_CMP_NE:
@@ -76,9 +73,7 @@ bool get_function_unit(MachineCodeStamp stamp)
 	{
 	case MC_LI:
 		case MC_ASSIGN:
-		return true;
-
-	case MC_ADD:
+		case MC_ADD:
 		case MC_SUB:
 		case MC_CMP_E:
 		case MC_CMP_NE:
@@ -86,6 +81,7 @@ bool get_function_unit(MachineCodeStamp stamp)
 		case MC_CMP_LE:
 		case MC_CMP_G:
 		case MC_CMP_GE:
+		case MC_SAVE_RET:
 
 		if (free_alu_unit > 0)
 		{
@@ -110,10 +106,6 @@ bool get_function_unit(MachineCodeStamp stamp)
 		}
 		break;
 
-	case MC_SAVE_RET:
-		return true;
-		break;
-
 	default:
 		ERR("%d \n", stamp);
 		break;
@@ -127,9 +119,7 @@ void free_function_unit(MachineCodeStamp stamp)
 	{
 	case MC_LI:
 		case MC_ASSIGN:
-		break;
-
-	case MC_ADD:
+		case MC_ADD:
 		case MC_SUB:
 		case MC_CMP_E:
 		case MC_CMP_NE:
@@ -137,6 +127,7 @@ void free_function_unit(MachineCodeStamp stamp)
 		case MC_CMP_LE:
 		case MC_CMP_G:
 		case MC_CMP_GE:
+		case MC_SAVE_RET:
 
 		free_alu_unit++;
 		break;
@@ -149,9 +140,6 @@ void free_function_unit(MachineCodeStamp stamp)
 		free_div_unit++;
 		break;
 
-	case MC_SAVE_RET:
-		break;
-
 	default:
 		ERR("%d \n", stamp);
 		break;
@@ -162,98 +150,99 @@ void free_function_unit(MachineCodeStamp stamp)
 	assert(free_div_unit <= div_unit);
 }
 
-int mc_select(vector<X64mc> &x64mc)
+int mc_select(Scope *scp, vector<X64mc> &x64mc)
 {
 	int max_critical_path = 0;
-	int can_emit_idx_in_ready = -1;
-	vector<ScheduleScore> can_emit;
+	int unique_emit = -1;
+	int can_emit_cnt = 0;
+//	vector<ScheduleScore> can_emit;
 	for (int i = 0; i < ready.size(); i++)
 	{
-		int idx_in_mc_list = ready[i].idx_in_mc_list;
-		bool b = has_function_unit(x64mc[idx_in_mc_list].mc_stamp);
-		if (b)
+		int k = ready[i].idx_in_mc_list;
+		ready[i].can_use_alu = has_function_unit(x64mc[k].mc_stamp);
+		if (ready[i].can_use_alu)
 		{
-			can_emit.push_back(ready[i]);
-			can_emit_idx_in_ready = i;
+			unique_emit = i;
+			can_emit_cnt++;
 			max_critical_path = std::max(max_critical_path, ready[i].critical_path);
 		}
 	}
 
-	if (can_emit.size() == 1)
+	if (can_emit_cnt == 1)
 	{
-		int idx_in_mc_list = ready[can_emit_idx_in_ready].idx_in_mc_list;
-		bool r = get_function_unit(x64mc[idx_in_mc_list].mc_stamp);
+		int k = ready[unique_emit].idx_in_mc_list;
+		bool r = get_function_unit(x64mc[k].mc_stamp);
 		assert(r);
-		ready.erase(ready.begin() + can_emit_idx_in_ready);
-		return can_emit[0].idx_in_mc_list;
+		ready.erase(ready.begin() + unique_emit);
+		return k;
 	}
-	if (can_emit.size() == 0)
+	if (can_emit_cnt == 0)
 		return -1;
 
 	assert(max_critical_path > 0);
-//	std::sort(can_emit.begin(), can_emit.end(),
-//	    [](const ScheduleScore &a, const ScheduleScore &b)
-//	        {
-//		        return a.critical_path < b.critical_path;
-//	        });
-	for (int i = 0; i < can_emit.size(); i++)
+
+	for (int i = 0; i < ready.size(); i++)
 	{
-		int critical_path_score = ((float)can_emit[i].critical_path / max_critical_path) * can_emit.size();
-		can_emit[i].score += critical_path_score;
+		if (!ready[i].can_use_alu)
+			continue;
+		int critical_path_score = ((float) ready[i].critical_path / max_critical_path) * can_emit_cnt;
+		ready[i].score += critical_path_score;
 	}
 
-	int transient_score = can_emit.size() + 1;
+	int transient_score = ready.size() + 1;
 
-	for (auto &r : can_emit)
+	for (auto &r : ready)
 	{
-		int s1 = x64mc[r.idx_in_mc_list].s1;
-		if (s1 >= 0)
-		{
-			Ast *ps1 = vr_manager.ast[s1];
-			Scope *scp = ps1->this_scp;
-			if (ps1->symb_stamp == SYMB_PRIVATE_transient)
-				r.score += transient_score;
+		if (!r.can_use_alu)
+			continue;
 
-			assert(scp->used_cnt_in_bb[s1] > 0);
-			int consumed_ratio_score = ((float)scp->consume_cnt_in_bb[s1] / scp->used_cnt_in_bb[s1]) * can_emit.size();
-			r.score += consumed_ratio_score;
+		int s1 = x64mc[r.idx_in_mc_list].s1;
+		SymbolVariable *symb = 0;
+		for (SymbolVariable *p : *scp->symb_table)
+		{
+			if (p->vr == s1 && (symb = p) && p->stamp == SYMB_PRIVATE_transient)
+			{
+				r.score += transient_score;
+				break;
+			}
 		}
+		assert(symb);
+		assert(scp->use_cnt_in_bb[s1] > 0);
+		int consumed_ratio_score = ((float) scp->consume_cnt_in_bb[s1] / scp->use_cnt_in_bb[s1]) * can_emit_cnt;
+		r.score += consumed_ratio_score;
 
 		int s2 = x64mc[r.idx_in_mc_list].s2;
-		if (s2 >= 0)
+		symb = 0;
+		for (SymbolVariable *p : *scp->symb_table)
 		{
-			Ast *ps2 = vr_manager.ast[s2];
-			Scope *scp = ps2->this_scp;
-			if (ps2->symb_stamp == SYMB_PRIVATE_transient)
-				r.score += transient_score;
-
-			assert(scp->used_cnt_in_bb[s2] > 0);
-			int consumed_ratio_score = ((float)scp->consume_cnt_in_bb[s2] / scp->used_cnt_in_bb[s2]) * can_emit.size();
-			r.score += consumed_ratio_score;
+			if (p->vr == s2 && (symb = p) && (p->stamp == SYMB_PRIVATE_transient) && (r.score += transient_score))
+				break;
 		}
+		assert(symb);
+		assert(scp->use_cnt_in_bb[s2] > 0);
+		consumed_ratio_score = ((float) scp->consume_cnt_in_bb[s2] / scp->use_cnt_in_bb[s2]) * can_emit_cnt;
+		r.score += consumed_ratio_score;
 	}
 
-	std::sort(can_emit.begin(), can_emit.end(),
-	    [](const ScheduleScore &a, const ScheduleScore &b)
-	        {
-		        return a.score > b.score;
-	        });
-
-	int ret = can_emit[0].idx_in_mc_list;
-	can_emit.erase(can_emit.begin());
-
-	for (auto it = ready.begin(); it != ready.end(); ++it)
+	auto it_emit = ready.end();
+	int mx_score = -1;
+	for (auto it = ready.begin(); it != ready.end(); it++)
 	{
-		if (it->idx_in_mc_list == ret)
+		if (!it->can_use_alu)
+			continue;
+
+		if (mx_score < it->score)
 		{
-			bool r = get_function_unit(x64mc[ret].mc_stamp);
-			assert(r);
-			ready.erase(it);
-			break;
+			mx_score = it->score;
+			it_emit = it;
 		}
 	}
 
-	return ret;
+	int idx = it_emit->idx_in_mc_list;
+	bool r = get_function_unit(x64mc[idx].mc_stamp);
+	assert(r);
+	ready.erase(it_emit);
+	return idx;
 }
 
 void init_ready_queue(vector<X64mc> &x64mc)
@@ -295,7 +284,10 @@ static void update_bb_consume_cnt(Scope *scp, X64mc &mc)
 		break;
 
 	case MC_ASSIGN:
-		case MC_ADD:
+		scp->consume_cnt_in_bb[mc.s2]++;
+		break;
+
+	case MC_ADD:
 		case MC_SUB:
 		case MC_IMUL:
 		case MC_DIV:
@@ -351,7 +343,7 @@ static void mc_schdu(Scope *scp)
 	vector<X64mc> &x64mc = bb->x64mc;
 	vector<X64mc> &x64mc_schedu = bb->x64mc_schedu;
 
-	scp->consume_cnt_in_bb.resize(vr_manager.id + 1);
+	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
 
 	int cycle = 0;
 	init_ready_queue(x64mc);
@@ -387,7 +379,7 @@ static void mc_schdu(Scope *scp)
 		// select from ready[]
 		while (1)
 		{
-			int mc = mc_select(x64mc);
+			int mc = mc_select(scp, x64mc);
 			if (mc < 0)
 				break;
 
@@ -395,7 +387,7 @@ static void mc_schdu(Scope *scp)
 			x64mc_schedu.push_back(x64mc[mc]);
 			running.push_back(mc);
 
-			for (int vr : x64mc[mc].vr)
+			for (int vr : x64mc[mc].vr_list)
 			{
 				if (vr >= 0)
 					bb->vrids.push_back(vr);
@@ -410,8 +402,22 @@ static void mc_schdu(Scope *scp)
 		cycle++;
 	}
 
-	if (bb->x64mc_schedu.size() != bb->x64mc.size())
-		ERR("%lu %lu", bb->x64mc.size(), bb->x64mc_schedu.size());
+	if (x64mc_schedu.size() != x64mc.size())
+		ERR("%lu %lu", x64mc.size(), x64mc_schedu.size());
+
+	for (int i = 0; i < vr_declare_manager.size(); i++)
+	{
+		int use = scp->use_cnt_in_bb[i];
+		int consume = scp->consume_cnt_in_bb[i];
+		if (use != consume)
+		{
+			Ast *ast = vr_declare_manager.declare_at[i];
+			LOG("MISMATCH vr=%d use=%d consume=%d stamp=%d scp=%s",
+			    i, use, consume, ast->symb_stamp, scp->name.c_str());
+			ERR("%%%d, %d %d", i, use, consume);
+		}
+	}
+
 //	printf("max cycle: %d \n", cycle);
 
 //	auto &t = *x64mc_schedu.rbegin();
@@ -442,8 +448,8 @@ static void _mc_schedule(Scope *scp)
 }
 void mc_schedule()
 {
-	prev_write.resize(vr_manager.id + 1, -1);
-	prev_read.resize(vr_manager.id + 1);
+	prev_write.resize(vr_declare_manager.size(), -1);
+	prev_read.resize(vr_declare_manager.size());
 
 	_mc_schedule(&file_scp);
 

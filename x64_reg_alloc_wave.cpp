@@ -38,7 +38,7 @@ static void init_wave(BasicBlock *bb)
 		X64mc &mc = bb->x64mc_schedu[inst_idx];
 		for (int i = 0; i < 3; i++)
 		{
-			int vr = mc.vr[i];
+			int vr = mc.vr_list[i];
 			if (vr >= 0)
 			{
 				vrwave[vr].insts[inst_idx]++;
@@ -82,26 +82,26 @@ static int get_pr(BasicBlock *bb, int mc_idx)
 {
 	X64mc &mc = bb->x64mc_schedu[mc_idx];
 //	int vr = mc.s1;
-//	if (vr >= 0 && vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient)
-//		vr_manager.ast[vr]->consume_cnt++;
+//	if (vr >= 0 && vr_declare_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient)
+//		vr_declare_manager.ast[vr]->consume_cnt++;
 //
 //	vr = mc.s2;
-//	if (vr >= 0 && vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient)
-//		vr_manager.ast[vr]->consume_cnt++;
+//	if (vr >= 0 && vr_declare_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient)
+//		vr_declare_manager.ast[vr]->consume_cnt++;
 
-//	if(vr_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
+//	if(vr_declare_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
 //		&& (vr == bb->x64mc_schedu[mc_idx].s1 || vr == bb->x64mc_schedu[mc_idx].s2))
 //	{
-//		vr_manager.ast[vr]->consume_cnt++;
+//		vr_declare_manager.ast[vr]->consume_cnt++;
 //	}
 
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
 		int vr = pr2vr[i].vr;
 		if (vr != INVALID__VR
-		    && vr_manager.ast[vr]->symb_stamp == SYMB_PRIVATE_transient
+		    && vr_declare_manager.declare_at[vr]->symb_stamp == SYMB_PRIVATE_transient
 		    && (mc.mc_stamp == MC_ASSIGN && vr == mc.s2))
-			vr_manager.ast[vr]->consume_cnt++;
+			vr_declare_manager.declare_at[vr]->consume_cnt++;
 	}
 
 	for (int i = R10D; i < X64PR_MAX; i++)
@@ -110,8 +110,8 @@ static int get_pr(BasicBlock *bb, int mc_idx)
 		if (vr == INVALID__VR)
 			return i;
 
-		if (vr_manager.ast[vr]->symb_stamp == SYMB_PRIVATE_transient
-		    && vr_manager.ast[vr]->consume_cnt >= vr_manager.ast[vr]->use_cnt
+		if (vr_declare_manager.declare_at[vr]->symb_stamp == SYMB_PRIVATE_transient
+		    && vr_declare_manager.declare_at[vr]->consume_cnt >= vr_declare_manager.declare_at[vr]->use_cnt
 		    && vr != mc.s1
 		    && vr != mc.s2
 		    && vr != mc.dst)
@@ -257,10 +257,10 @@ static void _wave_reg_alloc(Scope *scp)
 }
 void wave_reg_alloc()
 {
-	vrwave.resize(vr_manager.id + 1);
+	vrwave.resize(vr_declare_manager.size());
 
 	vr2pr.clear();
-	vr2pr.resize(vr_manager.id + 1, {X64PR_MAX, VR_USEAGE_INVALID});
+	vr2pr.resize(vr_declare_manager.size(), {X64PR_MAX, VR_USEAGE_INVALID});
 	pr2vr.clear();
 	pr2vr.resize(X64PR_MAX, {INVALID__VR});
 

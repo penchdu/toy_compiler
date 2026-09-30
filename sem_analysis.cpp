@@ -95,6 +95,7 @@ static int case_sem_var(Ast *p)
 		{
 			p->symb_stamp = SYMB_PRIVATE;
 			p->symb = symb;
+			p->home_scp = scp;
 			return 0;
 		}
 	}
@@ -107,6 +108,7 @@ static int case_sem_var(Ast *p)
 			{
 				p->symb_stamp = SYMB_OUTER;
 				p->symb = symb;
+				p->home_scp = scp;
 				break;
 			}
 		}
@@ -142,17 +144,14 @@ static int case_sem_variable_declare(Ast *ty)
 	symb->type = var->type;
 	symb->src = var->tk.src;
 
-// get a unique name
-	bool is_unique_name = 1;
-	for (auto p : global_unique_src_name_tbl)
+	// get a unique name
+	int i = 0;
+	for (; i < global_unique_src_name_tbl.size(); i++)
 	{
-		if (p->src == var->tk.src)
-		{
-			is_unique_name = 0;
+		if (global_unique_src_name_tbl[i]->src == var->tk.src)
 			break;
-		}
 	}
-	if (is_unique_name)
+	if (i < global_unique_src_name_tbl.size())
 	{
 		symb->unique_name = var->tk.src;
 		global_unique_src_name_tbl.push_back(symb);
@@ -164,6 +163,7 @@ static int case_sem_variable_declare(Ast *ty)
 	}
 
 	symb->explicit_unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
+	var->home_scp = var->this_scp;
 	var->symb_stamp = SYMB_PRIVATE;
 	var->symb = symb;
 	scp->symb_table->push_back(symb);
@@ -226,12 +226,15 @@ static void new_PRIVATE_transient_symb(Ast *p)
 {
 	SymbolVariable *symb = new SymbolVariable;
 	symb->type = p->type;
-	symb->src = to_string(p->vr_id);
-	symb->vr = p->vr_id;
+	symb->src = to_string(p->vr);
+	symb->vr = p->vr;
+	symb->stamp = SYMB_PRIVATE_transient;
 //	symb->use_cnt = 1;
 
+	p->symb_stamp = SYMB_PRIVATE_transient;
 	p->symb = symb;
 	p->this_scp->symb_table->push_back(symb);
+	p->home_scp = p->this_scp;
 }
 
 static int case_op(Ast *p)
@@ -246,8 +249,8 @@ static int case_op(Ast *p)
 		p->type = p->left->type;
 		assert(p->left->symb_stamp != SYMB_PRIVATE_transient);
 		// assign do not gen a new vr, just return left
-		p->vr_id = p->left->vr_id;
-		return p->vr_id;
+		p->vr = p->left->vr;
+		return p->vr;
 
 // todo gen a assign inst
 	case OP_ADD:
@@ -265,11 +268,10 @@ static int case_op(Ast *p)
 			ERR("op type mismatch %d %d", p->left->type, p->right->type);
 
 		p->type = p->left->type;
-		p->vr_id = vr_manager.new_vr(p);
-		p->symb_stamp = SYMB_PRIVATE_transient;
+		p->vr = vr_declare_manager.new_vr(p);
 		p->use_cnt++;
 		new_PRIVATE_transient_symb(p);
-		return p->vr_id;
+		return p->vr;
 
 	case OP_LOGIC_AND:
 		default:
@@ -310,24 +312,23 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 		symb = p->symb;
 		assert(symb);
 		if (symb->vr < 0)
-			symb->vr = vr_manager.new_vr(p);
+			symb->vr = vr_declare_manager.new_vr(p);
 
 		// todo symb->vr to be defined in "new =" to gen ssa
-		p->vr_id = symb->vr;
+		p->vr = symb->vr;
 		return symb->vr;
 
 	case SEM_CONST_NUM:
-		p->vr_id = vr_manager.new_vr(p);
-		p->symb_stamp = SYMB_PRIVATE_transient;
+		p->vr = vr_declare_manager.new_vr(p);
 		p->use_cnt = 1;
 		new_PRIVATE_transient_symb(p);
-		return p->vr_id;
+		return p->vr;
 
 	case SEM_OPERATOR:
 		return case_op(p);
 
 	case SEM_SAVE_RET_VALUE:
-		p->vr_id = a;
+		p->vr = a;
 //		if(p->symb_live_region == SYMB_PRIVATE_transient)
 //			p->symb_live_region = SYMB_PRIVATE;
 		case_save_return_down_up(p);

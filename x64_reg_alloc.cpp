@@ -293,7 +293,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp)
 }
 static void dump_asm()
 {
-	int rsp_of = vr_manager.offset;
+	int rsp_of = vr_declare_manager.offset;
 	align16(rsp_of);
 	//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 
@@ -333,7 +333,7 @@ static void dump_asm()
 
 void x64_reg_alloc()
 {
-	vr2pr.resize(vr_manager.id + 1);
+	vr2pr.resize(vr_declare_manager.size());
 
 	_x64_reg_alloc_o0(&file_scp);
 	asm_file_name = "a0.s";

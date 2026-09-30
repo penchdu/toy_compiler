@@ -9,47 +9,47 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-static void gen_vr_liveness(int vrid, int usage)
+static void gen_vr_liveness(Scope *scp, int vr, int usage)
 {
-	VR_USAGE_READ,
-	    VR_USAGE_WRITE,
-	    VR_USAGE_READ_WRITE;
+	Ast *declare_at = vr_declare_manager.declare_at[vr];
+	Scope *scp_declare_at = declare_at->this_scp;
+	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
+	assert(declare_at->this_scp == declare_at->home_scp);
 
-	Ast *ast = vr_manager.ast[vrid];
-	SymbolVariable *symb = ast->symb;
-	Scope *scp = ast->this_scp;
+	SymbolVariable *symb = declare_at->symb;
 
-	if (ast->symb_stamp == SYMB_OUTER)
+	if (scp != scp_declare_at)	// outer
 	{
+		assert(declare_at->symb_stamp != SYMB_PRIVATE_transient);
+
 		if (usage & VR_USAGE_READ)
 		{
 			symb->cld_use_cnt++;
-			scp->used_cnt_in_bb[vrid]++;
-			scp->outer_symb_used.push_back(vrid);
 			symb->appear_cnt++;
+			scp->use_cnt_in_bb[vr]++;
+			scp->outer_symb_used.push_back(vr);
 		}
 
 		if (usage & VR_USAGE_WRITE)
 			symb->appear_cnt++;
-
-		return;
 	}
-	assert(ast->symb_stamp == SYMB_PRIVATE || ast->symb_stamp == SYMB_PRIVATE_transient);
-
-	if (usage & VR_USAGE_READ)
-	{
-		symb->use_cnt++;
-		scp->used_cnt_in_bb[vrid]++;
-		symb->appear_cnt++;
+	else
+	{	// private
+		if (usage & VR_USAGE_READ)
+		{
+			symb->use_cnt++;
+			symb->appear_cnt++;
+			scp->use_cnt_in_bb[vr]++;
+		}
+		if (usage & VR_USAGE_WRITE)
+			symb->appear_cnt++;
 	}
-	if (usage & VR_USAGE_WRITE)
-		symb->appear_cnt++;
 }
 
 static void _gen_liveness(Scope *scp)
 {
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
-	scp->used_cnt_in_bb.resize(vr_manager.id + 1);
+	scp->use_cnt_in_bb.resize(vr_declare_manager.size());
 
 	for (auto &mc : bb->x64mc)
 	{
@@ -58,29 +58,29 @@ static void _gen_liveness(Scope *scp)
 		switch (mc_stamp)
 		{
 		case MC_LI:
-			gen_vr_liveness(mc.s1, VR_USAGE_WRITE);
+			gen_vr_liveness(scp, mc.s1, VR_USAGE_WRITE);
 			break;
 
 		case MC_LD:
-			gen_vr_liveness(mc.s1, VR_USAGE_WRITE);
+			gen_vr_liveness(scp, mc.s1, VR_USAGE_WRITE);
 			break;
 
 		case MC_ST:
-			gen_vr_liveness(mc.s1, VR_USAGE_READ);
+			gen_vr_liveness(scp, mc.s1, VR_USAGE_READ);
 			PRINT_MORE
 			break;
 
 		case MC_ASSIGN:
-			gen_vr_liveness(mc.s1, VR_USAGE_WRITE);
-			gen_vr_liveness(mc.s2, VR_USAGE_READ);
+			gen_vr_liveness(scp, mc.s1, VR_USAGE_WRITE);
+			gen_vr_liveness(scp, mc.s2, VR_USAGE_READ);
 			break;
 
-			case MC_ADD:
+		case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
 			case MC_DIV:
-			gen_vr_liveness(mc.s1, VR_USAGE_READ_WRITE);
-			gen_vr_liveness(mc.s2, VR_USAGE_READ);
+			gen_vr_liveness(scp, mc.s1, VR_USAGE_READ_WRITE);
+			gen_vr_liveness(scp, mc.s2, VR_USAGE_READ);
 			break;
 
 		case MC_CMP_E:
@@ -89,13 +89,13 @@ static void _gen_liveness(Scope *scp)
 			case MC_CMP_LE:
 			case MC_CMP_G:
 			case MC_CMP_GE:
-			gen_vr_liveness(mc.s1, VR_USAGE_READ);
-			gen_vr_liveness(mc.s2, VR_USAGE_READ);
-			gen_vr_liveness(mc.dst, VR_USAGE_WRITE);
+			gen_vr_liveness(scp, mc.s1, VR_USAGE_READ);
+			gen_vr_liveness(scp, mc.s2, VR_USAGE_READ);
+			gen_vr_liveness(scp, mc.dst, VR_USAGE_WRITE);
 			break;
 
 		case MC_SAVE_RET:
-			gen_vr_liveness(mc.s1, VR_USAGE_READ);
+			gen_vr_liveness(scp, mc.s1, VR_USAGE_READ);
 			break;
 
 		default:

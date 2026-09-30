@@ -95,6 +95,16 @@ private:
 	vector<Token> v;
 	int i = 0;
 };
+extern Tokens tokens;
+
+
+enum SymbolStamp {
+	SYMB_PRIVATE,
+	SYMB_PRIVATE_transient,
+	SYMB_OUTER,
+
+	SYMB_INVALID,
+};
 
 struct Scope;
 struct SymbolVariable
@@ -115,6 +125,8 @@ struct SymbolVariable
 	int cld_consume_cnt = 0;
 
 	int appear_cnt = 0;
+
+	SymbolStamp stamp = SYMB_INVALID;
 	Scope *scp = 0;
 	vector<SymbolVariable*> cld;
 };
@@ -126,14 +138,6 @@ struct SymbolFunc
 	Scope *func_scope;
 };
 
-enum SymbolStamp {
-	SYMB_PRIVATE,
-	SYMB_PRIVATE_transient,
-	SYMB_OUTER,
-
-	SYMB_INVALID,
-};
-
 struct Ast {
 public:
 	Semantic sem_stamp;
@@ -142,7 +146,7 @@ public:
 	Operator op = OP_ALL;
 	OpPriority op_prio;
 	// for op, vr is temp vr
-	int vr_id = -1;
+	int vr = -1;
 
 	// var
 	// for op, var_type is type of temp vr
@@ -160,7 +164,7 @@ public:
 	Ast *right = 0;
 
 	Scope *this_scp = 0;
-	//	Scope *home_scp = 0;
+	Scope *home_scp = 0;
 
 	Ast(const Token &_token)
 	{
@@ -286,7 +290,7 @@ public:
 	vector<Ast*> asts;
 	vector<SymbolVariable*> _symb_table;
 	vector<SymbolVariable*> *symb_table = &_symb_table;
-	SymbolVariable *outer_var_fake_symb = 0;
+	SymbolVariable *fake_outer_symb = 0;
 
 	Scope *parent;
 	vector<Scope*> clds;
@@ -299,7 +303,7 @@ public:
 	Scope *jmp_out = 0;
 	vector<int> outer_symb_used;
 
-	vector<int> used_cnt_in_bb;
+	vector<int> use_cnt_in_bb;
 	vector<int> consume_cnt_in_bb;	// only use in schedule
 
 	// continue, break
@@ -330,39 +334,19 @@ public:
 		return p;
 	}
 };
+extern Scope *current_scope_pointer;
+extern Scope file_scp;
+extern int scope_id;
 
-//struct BasicBlock
-//{
-//public:
-//	int id;
-//	string name;
-//	Semantic sem = SEM_INVALID;
-//
-//	vector<Ast*> asts;
-//
-//	map<string, SymbolVar*> *var_table = 0;
-//	map<string, SymbolFunc*> *func_table = 0;
-//
-//	Scope *parent;
-//};
-//struct SemanticNode
-//{
-//	SemanticNodeType nodety;
-//	union
-//	{
-//		Ast *ast;
-//		Scope *scp;
-//	};
-//};
-
-struct VirtualRegManager
+struct VirtualRegDeclareManager
 {
 	int new_vr(Ast *p, int size = 4)
 	{
 		id++;
 		offset += size;
 		vr_off.push_back(offset);
-		ast.push_back(p);
+		declare_at.push_back(p);
+		p->home_scp = current_scope_pointer;
 		return id;
 	}
 
@@ -375,12 +359,18 @@ struct VirtualRegManager
 		}
 		return vr_off[id];
 	}
+	int size()
+	{
+		return id + 1;
+	}
 
 	int id = -1;
 	int offset = 0;
 	vector<int> vr_off;
-	vector<Ast*> ast;
+	vector<Ast*> declare_at;
 };
+extern VirtualRegDeclareManager vr_declare_manager;
+
 
 #if 0
 #define PARSER_LOG(fmt, ...) do{ \
@@ -395,13 +385,7 @@ struct VirtualRegManager
 #endif
 
 constexpr bool enable_bb_terminate = 1;
-
-extern Tokens tokens;
-extern Scope file_scp;
-extern Scope *current_scope_pointer;
-extern int scope_id;
 extern bool in_func_define;
-extern VirtualRegManager vr_manager;
 extern string mc_list_name;
 
 Scope* new_scope_and_drop_in();

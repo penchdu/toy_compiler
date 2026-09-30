@@ -16,10 +16,10 @@ extern Scope file_scp;
 //	Scope *scp = p->this_scp;
 //	Ast *cond = scp->asts[0];
 //	assert(cond->op >= OP_CMP_LT && cond->op <= OP_CMP_NE);
-//	cond->vr_id;
+//	cond->vr;
 
 //	ThreeAddrCode *inst = new ThreeAddrCode(p);
-//	inst->dst = p->vr_id;
+//	inst->dst = p->vr;
 //	inst->s1 = a;
 //	inst->s2 = b;
 //	three_addr_code.push_back(inst);
@@ -47,10 +47,10 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 
 	case SEM_CONST_NUM:
 		t = Tac(p);
-		t.dst = p->vr_id;
+		t.dst = p->vr;
 		t.const_num_value = p->const_value;
 		tacs.push_back(t);
-		return p->vr_id;
+		return p->vr;
 
 	case SEM_OPERATOR:
 		if (p->op == OP_ASSIGN)
@@ -68,11 +68,11 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 			ERR("op: %d", p->op);
 
 		t = Tac(p);
-		t.dst = p->vr_id;
+		t.dst = p->vr;
 		t.s1 = a;
 		t.s2 = b;
 		tacs.push_back(t);
-		return p->vr_id;
+		return p->vr;
 
 	case SEM_SAVE_RET_VALUE:
 		t = Tac(p);

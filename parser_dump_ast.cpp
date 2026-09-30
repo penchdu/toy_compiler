@@ -34,7 +34,7 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 		printf("[del %s]\n", Type_string[p->type]);
 
 	else if (p->sem_stamp == SEM_OPERATOR)	// OP_ALL
-		printf("[%s %%%d]\n", Operator_string[p->op], p->vr_id);
+		printf("[%s %%%d]\n", Operator_string[p->op], p->vr);
 
 	else if (p->sem_stamp == SEM_VAR)
 	{
@@ -50,7 +50,7 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 		printf("[func_call %s]\n", p->tk.src.c_str());
 
 	else if (p->sem_stamp == SEM_SAVE_RET_VALUE)
-		printf("[save-ret(%s) %%%d]\n", p->tk.src.c_str(), p->vr_id);
+		printf("[save-ret(%s) %%%d]\n", p->tk.src.c_str(), p->vr);
 
 	else if (p->sem_stamp == SEM_NONE)
 		printf("[none %s]\n", p->tk.src.c_str());
