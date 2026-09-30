@@ -58,7 +58,7 @@ Implemented liveness analysis and an innovative wavefront-based register allocat
 - Wavefront Register Allocator: Implemented dynamic register allocation driven by wavefront scores (`a1.s`), reducing unnecessary memory spill/load instructions compared to the baseline -O0 strategy (`a0.s`).
 - Score-Driven Instruction Scheduler : Refined instruction scheduling using critical path latency, functional unit availability (ALU/IMUL/DIV), and scope-level transient variable consumption scores.
 
-
+Next steps: global-Inst-select and global-reg-alloc
 
 ## Project Status
 - [x] Lexer
