@@ -250,11 +250,25 @@ int test()
 
 
 
+
+
 ```
+
+
+
+
 
 the **vsc** reads the test-file "**t1.txt**" in current location and generate assembly-file: **a0.s** and **a1.s**
 
+
+
+
+
 ```
+
+
+
+
 
 #========== a0.s ==========#
 .intel_syntax noprefix
