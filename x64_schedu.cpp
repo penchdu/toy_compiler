@@ -259,13 +259,13 @@ end:
 	bool r = get_function_unit(x64mc[mc_idx].mc_stamp);
 	assert(r);
 
-	printf("pulled %d, size %lu, rm %d, score: ", pulled, ready.size(), mc_idx);
+//	printf("pulled %d, size %lu, rm %d, score: ", pulled, ready.size(), mc_idx);
 	for (auto &r : ready)
 	{
-		printf("  %d=%f", r.idx_in_mc_list, r.score);
+//		printf("  %d=%f", r.idx_in_mc_list, r.score);
 		r.score = 0;
 	}
-	printf("\n");
+//	printf("\n");
 
 	ready.erase(ready.begin() + idx_emit);
 	return mc_idx;
@@ -419,7 +419,6 @@ static void mc_schdu(Scope *scp)
 
 			if (cycle >= x64mc[mc_idx].start_cycle + x64mc[mc_idx].latency)
 			{
-				LOG("finished %d", mc_idx);
 				free_function_unit(x64mc[mc_idx].mc_stamp);
 				update_bb_consume_cnt(scp, x64mc[mc_idx]);
 				finish_mc__update_ready_queue2(scp, x64mc, mc_idx);
@@ -491,7 +490,7 @@ static void _mc_schedule(Scope *scp)
 	if (bb->x64mc.size())
 	{
 		gen_use_def_chain(bb->x64mc);
-		dump_chain(bb->x64mc);
+//		dump_chain(bb->x64mc);
 		gen_schdu_chain_latency(bb->x64mc);
 
 		mc_schdu(scp);

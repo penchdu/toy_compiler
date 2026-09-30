@@ -81,40 +81,10 @@ static vector<int> x64pr_state(X64PR_MAX, INVALID__VR);
 static int get_pr(BasicBlock *bb, int mc_idx)
 {
 	X64mc &mc = bb->x64mc_schedu[mc_idx];
-//	int vr = mc.s1;
-//	if (vr >= 0 && vr_declare_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient)
-//		vr_declare_manager.ast[vr]->consume_cnt++;
-//
-//	vr = mc.s2;
-//	if (vr >= 0 && vr_declare_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient)
-//		vr_declare_manager.ast[vr]->consume_cnt++;
-
-//	if(vr_declare_manager.ast[vr]->symb_live_region == SYMB_PRIVATE_transient
-//		&& (vr == bb->x64mc_schedu[mc_idx].s1 || vr == bb->x64mc_schedu[mc_idx].s2))
-//	{
-//		vr_declare_manager.ast[vr]->consume_cnt++;
-//	}
 
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
-		int vr = pr2vr[i].vr;
-		if (vr != INVALID__VR
-		    && vr_declare_manager.declare_at[vr]->symb_stamp == SYMB_PRIVATE_transient
-		    && (mc.mc_stamp == MC_ASSIGN && vr == mc.s2))
-			vr_declare_manager.declare_at[vr]->consume_cnt++;
-	}
-
-	for (int i = R10D; i < X64PR_MAX; i++)
-	{
-		int vr = pr2vr[i].vr;
-		if (vr == INVALID__VR)
-			return i;
-
-		if (vr_declare_manager.declare_at[vr]->symb_stamp == SYMB_PRIVATE_transient
-		    && vr_declare_manager.declare_at[vr]->consume_cnt >= vr_declare_manager.declare_at[vr]->use_cnt
-		    && vr != mc.s1
-		    && vr != mc.s2
-		    && vr != mc.dst)
+		if (pr2vr[i].vr == INVALID__VR)
 			return i;
 	}
 
@@ -140,7 +110,6 @@ static int get_pr(BasicBlock *bb, int mc_idx)
 
 	int pr = vr2pr[min_score_vr].pr;
 	spill_vr(bb->x64mc_alloc_wave, min_score_vr);
-
 	return pr;
 }
 static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
@@ -186,13 +155,16 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 
 static void _wave_reg_alloc(Scope *scp)
 {
+	//	LOG("scp %s", scp->name.c_str());
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 
 	init_wave(bb);
 	gen_wave(bb);
 //	dump_wave(*bb);
 
-	X64mc inst;
+	scp->consume_cnt_in_bb.clear();
+	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
+
 	vector<X64mc> &x64mc_alloc = bb->x64mc_alloc_wave;
 
 	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
@@ -247,6 +219,44 @@ static void _wave_reg_alloc(Scope *scp)
 		default:
 			ERR("%d \n", mc_stamp);
 			break;
+		}
+
+		update_bb_consume_cnt(scp, bb->x64mc_schedu[i]);
+		for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+		{
+			Ast *declare_at = vr_declare_manager.declare_at[vr];
+//			Scope *scp_declare_at = declare_at->this_scp;
+			SymbolVariable *symb = declare_at->symb;
+
+			int use = scp->use_cnt_in_bb[vr];
+			int consume = scp->consume_cnt_in_bb[vr];
+			if (consume >= use
+				&& symb->cld_use_cnt == 0
+				&& vr2pr[vr].pr != X64PR_MAX
+//				&& mc_stamp != MC_SAVE_RET
+				)
+			{
+				int pr = vr2pr[vr].pr;
+
+				vr2pr[vr].pr = X64PR_MAX;
+				vr2pr[vr].u = VR_USEAGE_INVALID;
+
+				assert(pr2vr[pr].vr != INVALID__VR);
+				pr2vr[pr].vr = INVALID__VR;
+			}
+		}
+	}
+
+	for (int i = 0; i < vr_declare_manager.size(); i++)
+	{
+		int use = scp->use_cnt_in_bb[i];
+		int consume = scp->consume_cnt_in_bb[i];
+		if (use != consume)
+		{
+			Ast *ast = vr_declare_manager.declare_at[i];
+			LOG("MISMATCH vr=%d use=%d consume=%d stamp=%d scp=%s",
+				i, use, consume, ast->symb_stamp, scp->name.c_str());
+			ERR("%%%d, %d %d", i, use, consume);
 		}
 	}
 

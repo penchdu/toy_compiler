@@ -52,22 +52,3 @@ int test() {
 
 
 
-
-#include <stdio.h>
-/*
-int test() {
-    int a = 1;
-    int b = a + 10;
-    int c = a + 100;
-    int d = a + 1000;
-    int e = a + 0;
-    int f = 0;
-    int sum = 0;
-    int i = 0;
-
-	sum = sum + a + b + c + d + e + f;
-	sum = sum + 1;
-    return sum;
-}
-
-*/

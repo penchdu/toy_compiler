@@ -1,0 +1,294 @@
+#========== a1.s ==========#
+.intel_syntax noprefix
+.extern printf
+.section .rodata
+fmt:
+	.string "Result: %d\n" 
+.section .text
+.global main
+
+main:
+	push rbp 
+	mov rbp, rsp 
+	sub rsp, 256 
+	mov r10d, 1                            #li, idx 0, cyc 0
+	mov r11d, 10                           #li, idx 2, cyc 0
+	mov r12d, r10d                         #assign, idx 1, cyc 1
+	mov r10d, 100                          #li, idx 6, cyc 1
+	mov r13d, 1000                         #li, idx 10, cyc 2
+	mov r14d, 0                            #li, idx 14, cyc 2
+	mov r15d, r12d                         #add, idx 3, cyc 3
+	mov dword ptr [rbp - 36], r13d         #spill, idx 321, cyc -1
+	mov r13d, r12d                         #add, idx 7, cyc 3
+	add r15d, r11d                         #add, idx 4, cyc 4
+	add r13d, r10d                         #add, idx 8, cyc 4
+	mov dword ptr [rbp - 48], r14d         #spill, idx 322, cyc -1
+	mov r14d, r12d                         #add, idx 11, cyc 5
+	mov dword ptr [rbp - 12], r11d         #spill, idx 323, cyc -1
+	mov r11d, r12d                         #add, idx 15, cyc 5
+	mov dword ptr [rbp - 16], r15d         #spill, idx 324, cyc -1
+	mov r15d, dword ptr [rbp - 36]         #alloc, idx 325, cyc -1
+	add r14d, r15d                         #add, idx 12, cyc 6
+	mov dword ptr [rbp - 24], r10d         #spill, idx 326, cyc -1
+	mov r10d, dword ptr [rbp - 48]         #alloc, idx 327, cyc -1
+	add r11d, r10d                         #add, idx 16, cyc 6
+	mov dword ptr [rbp - 28], r13d         #spill, idx 328, cyc -1
+	mov r13d, 0                            #li, idx 18, cyc 7
+	mov r15d, 0                            #li, idx 20, cyc 7
+	mov dword ptr [rbp - 40], r14d         #spill, idx 329, cyc -1
+	mov r14d, 0                            #li, idx 22, cyc 8
+	mov dword ptr [rbp - 8], r12d          #spill, idx 330, cyc -1
+	mov r12d, dword ptr [rbp - 16]         #alloc, idx 331, cyc -1
+	mov r10d, r12d                         #assign, idx 5, cyc 8
+	mov dword ptr [rbp - 60], r13d         #spill, idx 332, cyc -1
+	mov dword ptr [rbp - 68], r15d         #spill, idx 333, cyc -1
+	mov r15d, dword ptr [rbp - 28]         #alloc, idx 334, cyc -1
+	mov r13d, r15d                         #assign, idx 9, cyc 9
+	mov dword ptr [rbp - 76], r14d         #spill, idx 335, cyc -1
+	mov dword ptr [rbp - 20], r10d         #spill, idx 336, cyc -1
+	mov r10d, dword ptr [rbp - 40]         #alloc, idx 337, cyc -1
+	mov r14d, r10d                         #assign, idx 13, cyc 9
+	mov r12d, r11d                         #assign, idx 17, cyc 10
+	mov dword ptr [rbp - 32], r13d         #spill, idx 338, cyc -1
+	mov r13d, dword ptr [rbp - 60]         #alloc, idx 339, cyc -1
+	mov r11d, r13d                         #assign, idx 19, cyc 10
+	mov dword ptr [rbp - 44], r14d         #spill, idx 340, cyc -1
+	mov r14d, dword ptr [rbp - 68]         #alloc, idx 341, cyc -1
+	mov r15d, r14d                         #assign, idx 21, cyc 11
+	mov dword ptr [rbp - 56], r12d         #spill, idx 342, cyc -1
+	mov r12d, dword ptr [rbp - 76]         #alloc, idx 343, cyc -1
+	mov r10d, r12d                         #assign, idx 23, cyc 11
+	mov dword ptr [rbp - 80], r10d         #spill, idx 344, cyc -1
+	mov dword ptr [rbp - 64], r11d         #spill, idx 345, cyc -1
+	mov dword ptr [rbp - 72], r15d         #spill, idx 346, cyc -1
+
+
+.L_b3_while_cond:
+	mov r10d, 12                           #li, idx 24, cyc 0
+	mov r12d, dword ptr [rbp - 80]         #alloc, idx 347, cyc -1
+	cmp r12d, r10d                         #cmpge, idx 25, cyc 1
+	setge r11b                             #cmpge, idx 25, cyc 1
+	movzx r11d, r11b                       #cmpge, idx 25, cyc 1
+	mov dword ptr [rbp - 84], r10d         #spill, idx 348, cyc -1
+	mov dword ptr [rbp - 88], r11d         #spill, idx 349, cyc -1
+	jge .L_b32_jmp_tail_of_while 
+
+
+.L_b4_while_body:
+
+
+.L_b6_if_cond:
+	mov r11d, dword ptr [rbp - 8]          #alloc, idx 350, cyc -1
+	mov r12d, dword ptr [rbp - 20]         #alloc, idx 351, cyc -1
+	cmp r11d, r12d                         #cmpge, idx 26, cyc 0
+	setge r10b                             #cmpge, idx 26, cyc 0
+	movzx r10d, r10b                       #cmpge, idx 26, cyc 0
+	mov dword ptr [rbp - 92], r10d         #spill, idx 352, cyc -1
+	jge .L_b17_if_else 
+	mov r10d, 3                            #li, idx 27, cyc 0
+	mov r12d, dword ptr [rbp - 8]          #alloc, idx 353, cyc -1
+	mov r11d, r12d                         #add, idx 28, cyc 0
+	add r11d, r10d                         #add, idx 29, cyc 1
+	mov r13d, 1                            #li, idx 31, cyc 1
+	mov r12d, r11d                         #assign, idx 30, cyc 2
+	mov r15d, dword ptr [rbp - 56]         #alloc, idx 354, cyc -1
+	mov r14d, r15d                         #add, idx 32, cyc 2
+	add r14d, r13d                         #add, idx 33, cyc 3
+	mov r15d, r14d                         #assign, idx 34, cyc 4
+	mov dword ptr [rbp - 96], r10d         #spill, idx 355, cyc -1
+	mov dword ptr [rbp - 100], r11d        #spill, idx 356, cyc -1
+	mov dword ptr [rbp - 8], r12d          #spill, idx 357, cyc -1
+	mov dword ptr [rbp - 104], r13d        #spill, idx 358, cyc -1
+	mov dword ptr [rbp - 108], r14d        #spill, idx 359, cyc -1
+	mov dword ptr [rbp - 56], r15d         #spill, idx 360, cyc -1
+
+
+.L_b9_if_cond:
+	mov r11d, dword ptr [rbp - 32]         #alloc, idx 361, cyc -1
+	mov r12d, dword ptr [rbp - 44]         #alloc, idx 362, cyc -1
+	cmp r11d, r12d                         #cmpge, idx 35, cyc 0
+	setge r10b                             #cmpge, idx 35, cyc 0
+	movzx r10d, r10b                       #cmpge, idx 35, cyc 0
+	mov dword ptr [rbp - 112], r10d        #spill, idx 363, cyc -1
+	jge .L_b12_if_else 
+	mov r10d, 5                            #li, idx 36, cyc 0
+	mov r12d, dword ptr [rbp - 32]         #alloc, idx 364, cyc -1
+	mov r11d, r12d                         #add, idx 37, cyc 0
+	add r11d, r10d                         #add, idx 38, cyc 1
+	mov r13d, 1                            #li, idx 40, cyc 1
+	mov r12d, r11d                         #assign, idx 39, cyc 2
+	mov r15d, dword ptr [rbp - 64]         #alloc, idx 365, cyc -1
+	mov r14d, r15d                         #add, idx 41, cyc 2
+	add r14d, r13d                         #add, idx 42, cyc 3
+	mov r15d, r14d                         #assign, idx 43, cyc 4
+	mov dword ptr [rbp - 116], r10d        #spill, idx 366, cyc -1
+	mov dword ptr [rbp - 120], r11d        #spill, idx 367, cyc -1
+	mov dword ptr [rbp - 32], r12d         #spill, idx 368, cyc -1
+	mov dword ptr [rbp - 124], r13d        #spill, idx 369, cyc -1
+	mov dword ptr [rbp - 128], r14d        #spill, idx 370, cyc -1
+	mov dword ptr [rbp - 64], r15d         #spill, idx 371, cyc -1
+	jmp .L_b14_jmp_tail_of_if 
+
+
+.L_b12_if_else:
+	mov r10d, 2                            #li, idx 44, cyc 0
+	mov r12d, dword ptr [rbp - 44]         #alloc, idx 372, cyc -1
+	mov r11d, r12d                         #sub, idx 45, cyc 0
+	sub r11d, r10d                         #sub, idx 46, cyc 1
+	mov r13d, 2                            #li, idx 48, cyc 1
+	mov r12d, r11d                         #assign, idx 47, cyc 2
+	mov r15d, dword ptr [rbp - 64]         #alloc, idx 373, cyc -1
+	mov r14d, r15d                         #add, idx 49, cyc 2
+	add r14d, r13d                         #add, idx 50, cyc 3
+	mov r15d, r14d                         #assign, idx 51, cyc 4
+	mov dword ptr [rbp - 132], r10d        #spill, idx 374, cyc -1
+	mov dword ptr [rbp - 136], r11d        #spill, idx 375, cyc -1
+	mov dword ptr [rbp - 44], r12d         #spill, idx 376, cyc -1
+	mov dword ptr [rbp - 140], r13d        #spill, idx 377, cyc -1
+	mov dword ptr [rbp - 144], r14d        #spill, idx 378, cyc -1
+	mov dword ptr [rbp - 64], r15d         #spill, idx 379, cyc -1
+
+
+.L_b14_jmp_tail_of_if:
+	jmp .L_b28_jmp_tail_of_if 
+
+
+.L_b17_if_else:
+	mov r10d, 2                            #li, idx 52, cyc 0
+	mov r12d, dword ptr [rbp - 20]         #alloc, idx 380, cyc -1
+	mov r11d, r12d                         #sub, idx 53, cyc 0
+	sub r11d, r10d                         #sub, idx 54, cyc 1
+	mov r13d, 2                            #li, idx 56, cyc 1
+	mov r12d, r11d                         #assign, idx 55, cyc 2
+	mov r15d, dword ptr [rbp - 56]         #alloc, idx 381, cyc -1
+	mov r14d, r15d                         #add, idx 57, cyc 2
+	add r14d, r13d                         #add, idx 58, cyc 3
+	mov r15d, r14d                         #assign, idx 59, cyc 4
+	mov dword ptr [rbp - 148], r10d        #spill, idx 382, cyc -1
+	mov dword ptr [rbp - 152], r11d        #spill, idx 383, cyc -1
+	mov dword ptr [rbp - 20], r12d         #spill, idx 384, cyc -1
+	mov dword ptr [rbp - 156], r13d        #spill, idx 385, cyc -1
+	mov dword ptr [rbp - 160], r14d        #spill, idx 386, cyc -1
+	mov dword ptr [rbp - 56], r15d         #spill, idx 387, cyc -1
+
+
+.L_b19_if_cond:
+	mov r11d, dword ptr [rbp - 32]         #alloc, idx 388, cyc -1
+	mov r12d, dword ptr [rbp - 44]         #alloc, idx 389, cyc -1
+	cmp r11d, r12d                         #cmple, idx 60, cyc 0
+	setle r10b                             #cmple, idx 60, cyc 0
+	movzx r10d, r10b                       #cmple, idx 60, cyc 0
+	mov dword ptr [rbp - 164], r10d        #spill, idx 390, cyc -1
+	jle .L_b22_if_else 
+	mov r10d, 3                            #li, idx 61, cyc 0
+	mov r12d, dword ptr [rbp - 32]         #alloc, idx 391, cyc -1
+	mov r11d, r12d                         #sub, idx 62, cyc 0
+	sub r11d, r10d                         #sub, idx 63, cyc 1
+	mov r13d, 3                            #li, idx 65, cyc 1
+	mov r12d, r11d                         #assign, idx 64, cyc 2
+	mov r15d, dword ptr [rbp - 64]         #alloc, idx 392, cyc -1
+	mov r14d, r15d                         #add, idx 66, cyc 2
+	add r14d, r13d                         #add, idx 67, cyc 3
+	mov r15d, r14d                         #assign, idx 68, cyc 4
+	mov dword ptr [rbp - 168], r10d        #spill, idx 393, cyc -1
+	mov dword ptr [rbp - 172], r11d        #spill, idx 394, cyc -1
+	mov dword ptr [rbp - 32], r12d         #spill, idx 395, cyc -1
+	mov dword ptr [rbp - 176], r13d        #spill, idx 396, cyc -1
+	mov dword ptr [rbp - 180], r14d        #spill, idx 397, cyc -1
+	mov dword ptr [rbp - 64], r15d         #spill, idx 398, cyc -1
+	jmp .L_b24_jmp_tail_of_if 
+
+
+.L_b22_if_else:
+	mov r10d, 4                            #li, idx 69, cyc 0
+	mov r12d, dword ptr [rbp - 44]         #alloc, idx 399, cyc -1
+	mov r11d, r12d                         #add, idx 70, cyc 0
+	add r11d, r10d                         #add, idx 71, cyc 1
+	mov r13d, 4                            #li, idx 73, cyc 1
+	mov r12d, r11d                         #assign, idx 72, cyc 2
+	mov r15d, dword ptr [rbp - 64]         #alloc, idx 400, cyc -1
+	mov r14d, r15d                         #add, idx 74, cyc 2
+	add r14d, r13d                         #add, idx 75, cyc 3
+	mov r15d, r14d                         #assign, idx 76, cyc 4
+	mov dword ptr [rbp - 184], r10d        #spill, idx 401, cyc -1
+	mov dword ptr [rbp - 188], r11d        #spill, idx 402, cyc -1
+	mov dword ptr [rbp - 44], r12d         #spill, idx 403, cyc -1
+	mov dword ptr [rbp - 192], r13d        #spill, idx 404, cyc -1
+	mov dword ptr [rbp - 196], r14d        #spill, idx 405, cyc -1
+	mov dword ptr [rbp - 64], r15d         #spill, idx 406, cyc -1
+
+
+.L_b24_jmp_tail_of_if:
+
+
+.L_b28_jmp_tail_of_if:
+	mov r11d, dword ptr [rbp - 72]         #alloc, idx 407, cyc -1
+	mov r10d, r11d                         #add, idx 77, cyc 0
+	mov r13d, dword ptr [rbp - 8]          #alloc, idx 408, cyc -1
+	mov r12d, r13d                         #add, idx 90, cyc 0
+	add r10d, r13d                         #add, idx 78, cyc 1
+	mov r15d, dword ptr [rbp - 20]         #alloc, idx 409, cyc -1
+	mov r14d, r15d                         #add, idx 93, cyc 1
+	mov r11d, r10d                         #add, idx 79, cyc 2
+	mov r10d, 1                            #li, idx 96, cyc 2
+	add r11d, r15d                         #add, idx 80, cyc 3
+	mov dword ptr [rbp - 224], r12d        #spill, idx 410, cyc -1
+	mov dword ptr [rbp - 228], r14d        #spill, idx 411, cyc -1
+	mov r14d, dword ptr [rbp - 80]         #alloc, idx 412, cyc -1
+	mov r12d, r14d                         #add, idx 97, cyc 3
+	mov r13d, r11d                         #add, idx 81, cyc 4
+	add r12d, r10d                         #add, idx 98, cyc 4
+	mov r14d, r12d                         #assign, idx 99, cyc 5
+	mov r11d, dword ptr [rbp - 32]         #alloc, idx 413, cyc -1
+	add r13d, r11d                         #add, idx 82, cyc 5
+	mov r15d, r13d                         #add, idx 83, cyc 6
+	mov r13d, dword ptr [rbp - 224]        #alloc, idx 414, cyc -1
+	mov dword ptr [rbp - 232], r10d        #spill, idx 415, cyc -1
+	mov r10d, dword ptr [rbp - 56]         #alloc, idx 416, cyc -1
+	add r13d, r10d                         #add, idx 91, cyc 6
+	mov dword ptr [rbp - 80], r14d         #spill, idx 417, cyc -1
+	mov r14d, r13d                         #assign, idx 92, cyc 7
+	mov r13d, dword ptr [rbp - 44]         #alloc, idx 418, cyc -1
+	add r15d, r13d                         #add, idx 84, cyc 7
+	mov r11d, r15d                         #add, idx 85, cyc 8
+	mov r15d, dword ptr [rbp - 228]        #alloc, idx 419, cyc -1
+	mov dword ptr [rbp - 236], r12d        #spill, idx 420, cyc -1
+	mov r12d, dword ptr [rbp - 64]         #alloc, idx 421, cyc -1
+	add r15d, r12d                         #add, idx 94, cyc 8
+	mov dword ptr [rbp - 8], r14d          #spill, idx 422, cyc -1
+	mov r14d, r15d                         #assign, idx 95, cyc 9
+	add r11d, r10d                         #add, idx 86, cyc 9
+	mov r15d, r11d                         #add, idx 87, cyc 10
+	add r15d, r12d                         #add, idx 88, cyc 11
+	mov r11d, r15d                         #assign, idx 89, cyc 12
+	mov dword ptr [rbp - 72], r11d         #spill, idx 423, cyc -1
+	mov dword ptr [rbp - 20], r14d         #spill, idx 424, cyc -1
+	mov dword ptr [rbp - 220], r15d        #spill, idx 425, cyc -1
+	jmp .L_b3_while_cond 
+
+
+.L_b32_jmp_tail_of_while:
+	mov r10d, 1                            #li, idx 100, cyc 0
+	mov r12d, dword ptr [rbp - 72]         #alloc, idx 426, cyc -1
+	mov r11d, r12d                         #add, idx 101, cyc 0
+	add r11d, r10d                         #add, idx 102, cyc 1
+	mov r12d, r11d                         #assign, idx 103, cyc 2
+	#---------------- print ret ----------------# 
+	mov esi, r12d 
+	lea rdi, [rip + fmt] 
+	mov eax, 0 
+	call printf@PLT 
+	#------------------------------------------# 
+	mov eax, r12d 
+	mov dword ptr [rbp - 240], r10d        #spill, idx 427, cyc -1
+	mov dword ptr [rbp - 244], r11d        #spill, idx 428, cyc -1
+	mov dword ptr [rbp - 72], r12d         #spill, idx 429, cyc -1
+	jmp .L_return 
+
+
+.L_return:
+	mov rsp, rbp 
+	pop rbp 
+	ret 
+
+.section .note.GNU-stack,"",@progbits
