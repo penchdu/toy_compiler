@@ -156,8 +156,6 @@ public:
 
 	SymbolStamp symb_stamp = SYMB_INVALID;
 	SymbolVariable *symb = 0;
-	int use_cnt = 0;
-	int consume_cnt = 0;
 
 	Token tk;
 	Ast *parent = 0;
@@ -306,7 +304,7 @@ public:
 
 	vector<int> use_cnt_in_bb;
 	vector<int> appear_cnt_in_bb;
-	vector<int> consume_cnt_in_bb;	// only use in schedule
+	vector<int> consume_cnt_in_bb;
 
 	// continue, break
 	vector<Scope*> continue__break;
@@ -388,7 +386,6 @@ extern VirtualRegDeclareManager vr_declare_manager;
 
 constexpr bool enable_bb_terminate = 1;
 extern bool in_func_define;
-extern string mc_list_name;
 
 Scope* new_scope_and_drop_in();
 Scope* new_virtual_scope_and_drop_in();

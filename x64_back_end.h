@@ -259,6 +259,9 @@ struct X64mc {
 	int of1 = -1;
 	int of2 = -1;
 
+//	VrUsage s1_usage;
+//	VrUsage s2_usage;
+
 	// alloced for vr
 	int pr_dst = -1;
 	int pr1 = -1;	//todo rename
@@ -287,7 +290,8 @@ void gen_use_def_chain(vector<X64mc> &x64mc);
 void dump_chain(vector<X64mc> &x64mc);
 void gen_schdu_chain_latency(vector<X64mc> &x64mc);
 
-void update_bb_consume_cnt(Scope *scp, const X64mc &mc);
+void update_vr_consume_cnt(Scope *scp, const X64mc &mc);
+void clear_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 void x64_reg_alloc();
 void wave_reg_alloc();

@@ -9,8 +9,6 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-string mc_list_name = "x64mc";
-
 const McInfo mc_info[MC_INVALID + 1] = {
     [MC_LI] = {1, "mov"},
     [MC_LD] = {3, "mov"},
@@ -229,7 +227,7 @@ static void gen_mc(Scope *scp)
 #define PRINT_ASM_HEAD(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
 #define PRINT_ASM(fmt, ...) printf("\t" fmt , ##__VA_ARGS__)
 
-void dump_mc(Scope *scp)
+void dump_mc(Scope *scp, string mc_list_name)
 {
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 
@@ -315,16 +313,15 @@ void dump_mc(Scope *scp)
 	}
 
 	for (Scope *p : scp->clds)
-		dump_mc(p);
+		dump_mc(p, mc_list_name);
 }
 
 void gen_machine_code()
 {
 	gen_mc(&file_scp);
 
-	mc_list_name = "x64mc";
 	PRINT_ASM_HEAD("========== mc ==========");
-	dump_mc(&file_scp);
+	dump_mc(&file_scp, "x64mc");
 }
 
 #undef PRINT_ASM_HEAD

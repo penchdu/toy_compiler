@@ -170,7 +170,6 @@ static void compute_wave_decay(Wave &_wave)
 
 			if (prev__after_use_idx <= inst_idx)
 			{
-				// use 前：缓慢建立波峰
 				int distance = inst_idx - prev__after_use_idx;
 
 				if (distance <= left_radius)
@@ -178,7 +177,6 @@ static void compute_wave_decay(Wave &_wave)
 			}
 			else
 			{
-				// use 后：快速指数衰减
 				int d = prev__after_use_idx - inst_idx;
 				weight = std::exp(-decay * d);
 			}
@@ -192,9 +190,6 @@ static void gen_wave_decay_gemini_improved(Wave &_wave)
 	const int inst_size = _wave.insts.size();
 	std::fill(_wave.score.begin(), _wave.score.end(), 0.0f);
 
-	// 参数调整：
-	// 1. left_radius: use 前预热半径（不需要太长，3 即可）
-	// 2. decay: 右侧衰减系数（降为 0.35f，让密集使用的波峰能够有效叠加）
 	constexpr int left_radius = 3;
 	constexpr float decay = 0.35f;
 

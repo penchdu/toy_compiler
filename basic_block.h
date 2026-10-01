@@ -35,7 +35,7 @@ struct Wave {
 };
 extern vector<Wave> vrwave;
 
-void dump_mc(Scope *scp);
+void dump_mc(Scope *scp, string mc_list_name);
 void gen_wave(BasicBlock *bb);
 void dump_wave(BasicBlock *bb);
 void dump_wave_gnuplot(Wave &w, int vr);

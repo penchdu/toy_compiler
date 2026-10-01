@@ -221,28 +221,59 @@ static void _wave_reg_alloc(Scope *scp)
 			break;
 		}
 
-		update_bb_consume_cnt(scp, bb->x64mc_schedu[i]);
-		for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+		update_vr_consume_cnt(scp, mc);
+
+		for (int k = 0; k < 3; k++)
 		{
+			int vr = mc.vr_list[k];
+			if(vr < 0)
+				continue;
+
+			int bb_use = scp->use_cnt_in_bb[vr];
+			if (bb_use < 0)
+				continue;
+
 			Ast *declare_at = vr_declare_manager.declare_at[vr];
-//			Scope *scp_declare_at = declare_at->this_scp;
 			SymbolVariable *symb = declare_at->symb;
+			Scope *scp_declare_at = declare_at->this_scp;
 
-			int use = scp->use_cnt_in_bb[vr];
-			int consume = scp->consume_cnt_in_bb[vr];
-			if (consume >= use
-				&& symb->cld_use_cnt == 0
-				&& vr2pr[vr].pr != X64PR_MAX
-//				&& mc_stamp != MC_SAVE_RET
-				)
+			const char *s;
+			if (scp->symb_table != scp_declare_at->symb_table)
+				s = "outer  ";
+			else
+				s = "private";
+
+//			printf("%s, %s, %%%d, bb: %d %d, symb: %d %d, symb cld: %d %d \n",
+//				scp->name.c_str(), s, vr,
+//				bb_use, scp->consume_cnt_in_bb[vr],
+//				symb->use_cnt, symb->consume_cnt,
+//				symb->cld_use_cnt, symb->cld_consume_cnt);
+
+			if (scp->consume_cnt_in_bb[vr] >= bb_use)
 			{
-				int pr = vr2pr[vr].pr;
+				if (vr2pr[vr].pr != X64PR_MAX
+				    // && mc_stamp != MC_SAVE_RET
+#if 1
+					&& symb->cld_use_cnt == 0
+#else
+					&& symb->consume_cnt >= symb->use_cnt
+				    && symb->cld_consume_cnt >= symb->cld_use_cnt
+#endif
+				)
+				{
+					// last use in global
+					int pr = vr2pr[vr].pr;
 
-				vr2pr[vr].pr = X64PR_MAX;
-				vr2pr[vr].u = VR_USEAGE_INVALID;
+					vr2pr[vr].pr = X64PR_MAX;
+					vr2pr[vr].u = VR_USEAGE_INVALID;
 
-				assert(pr2vr[pr].vr != INVALID__VR);
-				pr2vr[pr].vr = INVALID__VR;
+					assert(pr2vr[pr].vr != INVALID__VR);
+					pr2vr[pr].vr = INVALID__VR;
+				}
+				else
+				{
+					// last use in bb
+				}
 			}
 		}
 	}

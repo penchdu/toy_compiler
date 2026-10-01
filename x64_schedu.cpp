@@ -165,7 +165,18 @@ void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx)
 	    s1 >= 0 ? vr_declare_manager.declare_at[s1]->tk.src.c_str() : "", s1,
 	    s2 >= 0 ? vr_declare_manager.declare_at[s2]->tk.src.c_str() : "", s2);
 }
+static bool is_private_transient(Scope *scp, int vr)
+{
+	if (vr < 0)
+		return false;
 
+	for (SymbolVariable *p : *scp->symb_table)
+	{
+		if (p->vr == vr && p->stamp == SYMB_PRIVATE_transient)
+			return true;
+	}
+	return false;
+}
 int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 {
 	int max_critical_path = 0;
@@ -193,14 +204,13 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 
 	for (int i = 0; i < ready.size(); i++)
 	{
+		ready[i].score = 0;
 		if (!ready[i].can_use_alu || max_critical_path <= 0)
 			continue;
-		float critical_path_score = ((float) ready[i].critical_path / max_critical_path) * can_emit_cnt;
+
+		float critical_path_score = ((float) ready[i].critical_path / max_critical_path);
 		ready[i].score += critical_path_score;
 	}
-
-	float transient_score;
-	transient_score = can_emit_cnt + 1;
 
 	for (auto &r : ready)
 	{
@@ -208,24 +218,40 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 			continue;
 
 		int mc_idx = r.idx_in_mc_list;
+		MachineCodeStamp mc_stamp = x64mc[mc_idx].mc_stamp;
+		float consume_transient_score = 1.0;
+
+		if (mc_stamp != MC_LI && mc_stamp != MC_ASSIGN)
+		{
+			if (is_private_transient(scp, x64mc[mc_idx].s1))
+				r.score += consume_transient_score;
+		}
+
+		if (is_private_transient(scp, x64mc[mc_idx].s2))
+			r.score += consume_transient_score;
+
+		float single_line_score = 1.0;
+		if (mc_stamp != MC_LI && mcs_successor[mc_idx].edges == 1)
+		{
+			int succ = mcs_successor[mc_idx].mcs[0];
+//			printf("succ %d\n", succ);
+			if (mcs_predecessor[succ].edges == 1)
+				r.score += single_line_score;
+		}
+
 		int ar[2] = {x64mc[mc_idx].s1, x64mc[mc_idx].s2};
 		for (int vr : ar)
 		{
 			if (vr < 0)
 				continue;
 
-			for (SymbolVariable *p : *scp->symb_table)
-			{
-				if (p->vr == vr && p->stamp == SYMB_PRIVATE_transient)
-				{
-					r.score += transient_score;
-					break;
-				}
-			}
 			if (scp->use_cnt_in_bb[vr] > 0)
 			{
-				float consumed_ratio_score =
-				    ((float) scp->consume_cnt_in_bb[vr] / scp->use_cnt_in_bb[vr]) * can_emit_cnt;
+				float last_use_score = 0.5;
+				if(scp->use_cnt_in_bb[vr] - scp->consume_cnt_in_bb[vr] == 1)
+				r.score += last_use_score;
+
+				float consumed_ratio_score = 0.5 * ((float) scp->consume_cnt_in_bb[vr] / scp->use_cnt_in_bb[vr]);
 				r.score += consumed_ratio_score;
 			}
 			if (scp->use_cnt_in_bb[vr] <= 0 && scp->appear_cnt_in_bb[vr] <= 0)
@@ -252,20 +278,20 @@ end:
 	if (idx_emit < 0)
 		return -1;
 
-	static int pulled = 0;
-	pulled++;
-
 	int mc_idx = ready[idx_emit].idx_in_mc_list;
 	bool r = get_function_unit(x64mc[mc_idx].mc_stamp);
 	assert(r);
 
-//	printf("pulled %d, size %lu, rm %d, score: ", pulled, ready.size(), mc_idx);
+#if 1
+	static int pulled = 0;
+	pulled++;
+	auto mc = x64mc[mc_idx];
+	printf("%d: size %lu, emit %d [%s %%%d %%%d %%%d], score: ",
+	    pulled, ready.size(), mc_idx, mc.ori_sem.c_str(), mc.dst, mc.s1, mc.s2);
 	for (auto &r : ready)
-	{
-//		printf("  %d=%f", r.idx_in_mc_list, r.score);
-		r.score = 0;
-	}
-//	printf("\n");
+		printf("  %d=%.3f", r.idx_in_mc_list, r.score);
+	printf("\n");
+#endif
 
 	ready.erase(ready.begin() + idx_emit);
 	return mc_idx;
@@ -280,20 +306,20 @@ void init_ready_queue(vector<X64mc> &x64mc)
 			    {i, x64mc[i].chain_latency});
 	}
 }
-void finish_mc__update_ready_queue(Scope *scp, vector<X64mc> &x64mc, int mc_finished)
-{
-	auto &mcs = mcs_successor[mc_finished].mcs;
-	for (int mc : mcs)
-	{
-		mcs_predecessor[mc].edges--;
-
-		if (mcs_predecessor[mc].edges < 0)
-			print_mc_err("update_ready_queue", scp, x64mc[mc], mc);
-
-		if (mcs_predecessor[mc].edges == 0)
-			ready.push_back({mc, x64mc[mc].chain_latency});
-	}
-}
+//void finish_mc__update_ready_queue(Scope *scp, vector<X64mc> &x64mc, int mc_finished)
+//{
+//	auto &mcs = mcs_successor[mc_finished].mcs;
+//	for (int mc : mcs)
+//	{
+//		mcs_predecessor[mc].edges--;
+//
+//		if (mcs_predecessor[mc].edges < 0)
+//			print_mc_err("update_ready_queue", scp, x64mc[mc], mc);
+//
+//		if (mcs_predecessor[mc].edges == 0)
+//			ready.push_back({mc, x64mc[mc].chain_latency});
+//	}
+//}
 void finish_mc__update_ready_queue2(Scope *scp, vector<X64mc> &x64mc, int mc_finished)
 {
 	auto &mcs = mcs_successor[mc_finished].mcs;
@@ -320,53 +346,6 @@ void finish_mc__update_ready_queue2(Scope *scp, vector<X64mc> &x64mc, int mc_fin
 			ready.push_back({mc_succ, x64mc[mc_succ].chain_latency});
 	}
 }
-void update_bb_consume_cnt(Scope *scp, const X64mc &mc)
-{
-	MachineCodeStamp mc_stamp = mc.mc_stamp;
-
-	switch (mc_stamp)
-	{
-	case MC_LI:
-		break;
-
-	case MC_LD:
-		break;
-
-	case MC_ST:
-		scp->consume_cnt_in_bb[mc.s1]++;
-		break;
-
-	case MC_ASSIGN:
-		scp->consume_cnt_in_bb[mc.s2]++;
-		break;
-
-	case MC_ADD:
-		case MC_SUB:
-		case MC_IMUL:
-		case MC_DIV:
-		scp->consume_cnt_in_bb[mc.s1]++;
-		scp->consume_cnt_in_bb[mc.s2]++;
-		break;
-
-	case MC_CMP_E:
-		case MC_CMP_NE:
-		case MC_CMP_L:
-		case MC_CMP_LE:
-		case MC_CMP_G:
-		case MC_CMP_GE:
-		scp->consume_cnt_in_bb[mc.s1]++;
-		scp->consume_cnt_in_bb[mc.s2]++;
-		break;
-
-	case MC_SAVE_RET:
-		scp->consume_cnt_in_bb[mc.s1]++;
-		break;
-
-	default:
-		ERR("%d \n", mc_stamp);
-		break;
-	}
-}
 
 static void mc_schdu(Scope *scp)
 {
@@ -386,7 +365,7 @@ static void mc_schdu(Scope *scp)
 	 *					break
 	 *
 	 *		for mc : running
-	 *			if mc.start_time + mc.latency >= cycle
+	 *			if cycle >= mc.start_time + mc.latency
 	 *				rm mc in running
 	 *				mv mc->edges[i] to ready if dep[i].deps == 0
 	 */
@@ -396,6 +375,7 @@ static void mc_schdu(Scope *scp)
 	vector<X64mc> &x64mc = bb->x64mc;
 	vector<X64mc> &x64mc_schedu = bb->x64mc_schedu;
 
+	scp->consume_cnt_in_bb.clear();
 	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
 
 	int cycle = 0;
@@ -420,7 +400,7 @@ static void mc_schdu(Scope *scp)
 			if (cycle >= x64mc[mc_idx].start_cycle + x64mc[mc_idx].latency)
 			{
 				free_function_unit(x64mc[mc_idx].mc_stamp);
-				update_bb_consume_cnt(scp, x64mc[mc_idx]);
+				update_vr_consume_cnt(scp, x64mc[mc_idx]);
 				finish_mc__update_ready_queue2(scp, x64mc, mc_idx);
 
 				it = running.erase(it);
@@ -466,7 +446,7 @@ static void mc_schdu(Scope *scp)
 		{
 			Ast *ast = vr_declare_manager.declare_at[i];
 			LOG("MISMATCH vr=%d use=%d consume=%d stamp=%d scp=%s",
-			    i, use, consume, ast->symb_stamp, scp->name.c_str());
+				i, use, consume, ast->symb_stamp, scp->name.c_str());
 			ERR("%%%d, %d %d", i, use, consume);
 		}
 	}
@@ -501,9 +481,10 @@ static void _mc_schedule(Scope *scp)
 }
 void mc_schedule()
 {
+	clear_vr_consume_cnt(&file_scp);
+
 	_mc_schedule(&file_scp);
 
-	mc_list_name = "x64mc_schedu";
 	printf("\n========== mc schedu ==========\n");
-	dump_mc(&file_scp);
+	dump_mc(&file_scp, "x64mc_schedu");
 }

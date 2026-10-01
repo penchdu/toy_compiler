@@ -266,7 +266,6 @@ static int case_op(Ast *p)
 
 		p->type = p->left->type;
 		p->vr = vr_declare_manager.new_vr(p);
-		p->use_cnt++;
 		new_PRIVATE_transient_symb(p);
 		return p->vr;
 
@@ -317,7 +316,6 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 
 	case SEM_CONST_NUM:
 		p->vr = vr_declare_manager.new_vr(p);
-		p->use_cnt = 1;
 		new_PRIVATE_transient_symb(p);
 		return p->vr;
 

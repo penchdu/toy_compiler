@@ -43,8 +43,6 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 	prev_write.resize(vr_declare_manager.size(), -1);
 	prev_read.clear();
 	prev_read.resize(vr_declare_manager.size());
-//	for (auto &v : prev_read)
-//		v.clear();
 
 	mcs_predecessor.clear();
 	mcs_predecessor.resize(x64mc.size());
@@ -63,6 +61,8 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 		switch (mc_stamp)
 		{
 		case MC_LI:
+			create_dependcy_WAW(idx, prev_write[s1]);
+			create_dependcy_WAR(idx, prev_read[s1]);
 			prev_write[s1] = idx;
 			prev_read[s1].clear();
 			break;
