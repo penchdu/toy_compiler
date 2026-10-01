@@ -5,20 +5,19 @@
 
 int test() {
     int a = 1;
-    int b = a + 10;
-    int c = a + 100;
-    int d = a + 1000;
+    int b = a + 1;
+    int c = a + 2;
+    int d = a + 3;
     int e = a + 0;
     int f = 0;
     int sum = 0;
     int i = 0;
 
-    while (i < 12) {
-        // 外层 if-else
+    while (i < 120000) {
         if (a < b) {
             a = a + 3;
             e = e + 1;
-            // 内层嵌套 if-else
+
             if (c < d) {
                 c = c + 5;
                 f = f + 1;
@@ -38,7 +37,7 @@ int test() {
             }
         }
 
-        // 跨分支边界累加: a/b/c/d/e/f 来自不同 BB
+
         sum = sum + a + b + c + d + e + f;
         a = a + e;
         b = b + f;

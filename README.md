@@ -74,9 +74,11 @@ Next steps: global-Inst-select and global-reg-alloc
 - [x] basic Semantic analysis
 - [x] Three-address IR
 - [x] x64 Inst-select
-- [x] x64 Inst-schedule (BasicBlock-level score, )
-- [x] x64 -O0 reg-alloc
+- [x] x64 Inst-schedule (BasicBlock-level, use score)
+- [ ] x64 Inst-schedule (global, use score)
+- [x] x64 -O0 reg-alloc	(spill/reload)
 - [x] x64 -O1 reg-alloc (BasicBlock-level Wavefront)
+- [ ] x64 -O1 reg-alloc (global Wavefront)
 - [x] x64 asm
 
 
