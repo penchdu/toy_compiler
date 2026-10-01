@@ -264,7 +264,7 @@ the **vsc** reads the test-file "**t1.txt**" in current location and generate as
 
 
 
-### a0.s
+### -O0  a0.s
 ```
 
 
@@ -636,7 +636,7 @@ main:
 ```
 
 
-### a1.s
+### -O1  a1.s
 
 
 ```
