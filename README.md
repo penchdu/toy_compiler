@@ -54,7 +54,7 @@ Next steps: SSA, -O1 register allocation.
 Implemented liveness analysis and an innovative wavefront-based register allocation algorithm for -O1 optimization:
 
 - Liveness & Usage Analysis: Added block-level variable usage and liveness analysis to track variable reading, writing, and cross-scope references.
-- Wavefront Score Model: Introduced an asymmetric decay wave model for virtual registers. It simulates usage peaks and rapid post-use decay, dynamically scoring registers for allocation choices.
+- Wavefront Score Model: Introduced an asymmetric decay wave model for virtual registers. It simulates usage peaks and rapid post-use decay, dynamically scoring registers for allocation choices.  The idea is that for a virtual register (VR), if it is used continuously or near-continuously in the near future, it generates a smoothly rising peak to signal to the allocator that this VR should not be spilled. If it remains unused beyond a certain range, it rapidly drops into a trough, indicating that this VR can be spilled. Ultimately, the allocator compares the peak values of all VRs at the current position to decide which VR to spill.
 - Wavefront Register Allocator: Implemented dynamic register allocation driven by wavefront scores (`a1.s`), reducing unnecessary memory spill/load instructions compared to the baseline -O0 strategy (`a0.s`).
 - Score-Driven Instruction Scheduler : Refined instruction scheduling using critical path latency, functional unit availability (ALU/IMUL/DIV), and scope-level transient variable consumption scores.
 
