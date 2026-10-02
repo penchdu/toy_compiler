@@ -53,9 +53,9 @@ Next steps: SSA, -O1 register allocation.
 
 Implemented an innovative wavefront-based reg-alloc method for -O1 optimization:
 
-- Wavefront Score Model: Introduced an asymmetric decay wave model for virtual registers. It simulates usage peaks and rapid post-use decay, dynamically scoring registers for allocation choices.  The idea is that for a virtual register (VR), if it is used continuously or near-continuously in the near future, it generates a smoothly rising peak to signal to the allocator that this VR should not be spilled. If it remains unused beyond a certain range, it rapidly drops into a trough, indicating that this VR can be spilled. Ultimately, the allocator compares the peak values of all VRs at the current position to decide which VR to spill.
-- Wavefront Register Allocator: Implemented dynamic register allocation driven by wavefront scores (`a1.s`), reducing unnecessary memory spill/load instructions compared to the baseline -O0 strategy (`a0.s`).
-- Score-Driven Instruction Scheduler : Refined instruction scheduling using critical path latency, functional unit availability (ALU/IMUL/DIV), and scope-level transient variable consumption scores. seems not bad.
+- Wavefront Score Model: Introduced an asymmetric decay wave model for virtual registers. It simulates usage peaks and rapid post-use decay, dynamically scoring registers for allocation choices.  The idea is that for a virtual register (VR), if it is used continuously or near-continuously in the near future, it generates a smoothly rising peak to signal to the allocator that this VR should not be spilled. If it remains unused beyond a certain range, it rapidly drops into a trough, indicating that this VR can be spilled. The allocator compares the peak values of all VRs at the current position to decide which VR to spill.
+- Wavefront Register Allocator: driven by wavefront scores (`a1.s`), reducing unnecessary spill compared to the baseline -O0 strategy (`a0.s`). Not spill on every vr use, but spill all vr at the end of every basic block.
+- Score-Driven Instruction Scheduler : BasicBlock level, consider critical path latency, functional unit availability (ALU/IMUL/DIV), consumption scores, transient variable, last use, single-line, seems not bad.
 
 Next steps: global-Inst-select and global-reg-alloc
 
