@@ -152,132 +152,53 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 
 	return vr2pr[vr].pr;
 }
-
-static void _wave_reg_alloc(Scope *scp)
+static void check_and_clear_vr(Scope *scp, int vr)
 {
-	//	LOG("scp %s", scp->name.c_str());
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	if (vr < 0)
+		return;
 
-	init_wave(bb);
-	gen_wave(bb);
-//	dump_wave(*bb);
+//	int bb_use = scp->use_cnt_in_bb[vr];
+//	if (bb_use < 0)
+//		return;
 
-	scp->consume_cnt_in_bb.clear();
-	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
+	Ast *declare_at = vr_declare_manager.declare_at[vr];
+	SymbolVariable *symb = declare_at->symb;
+	Scope *scp_declare_at = declare_at->this_scp;
 
-	vector<X64mc> &x64mc_alloc = bb->x64mc_alloc_wave;
+		const char *s;
+		if (scp->symb_table != scp_declare_at->symb_table)
+			s = "outer  ";
+		else
+			s = "private";
 
-	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
+		printf("%s, %s, %%%d, bb: %d %d, symb: %d %d"
+//			", symb cld: %d %d"
+			"\n",
+		    scp->name.c_str(), s, vr,
+		    scp->use_cnt_in_bb[vr], scp->consume_cnt_in_bb[vr],
+		    symb->use_cnt, symb->consume_cnt
+//		    ,symb->cld_use_cnt, symb->cld_consume_cnt
+		    );
+
+	if (vr2pr[vr].pr != X64PR_MAX
+		&& scp->consume_cnt_in_bb[vr] >= scp->use_cnt_in_bb[vr]
+	    && symb->consume_cnt >= symb->use_cnt
+//	    && symb->cld_consume_cnt >= symb->cld_use_cnt
+	    )
 	{
-		X64mc mc = bb->x64mc_schedu[i];
-		MachineCodeStamp mc_stamp = mc.mc_stamp;
+		// last use in global
+		int pr = vr2pr[vr].pr;
 
-		switch (mc_stamp)
-		{
-		case MC_LI:
-			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
-			x64mc_alloc.push_back(mc);
-			break;
+		vr2pr[vr].pr = X64PR_MAX;
+		vr2pr[vr].u = VR_USEAGE_INVALID;
 
-		case MC_ASSIGN:
-			if (mc.s1 == mc.s2)
-				break;
-
-			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
-			mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
-			x64mc_alloc.push_back(mc);
-			break;
-
-		case MC_ADD:
-			case MC_SUB:
-			case MC_IMUL:
-			case MC_DIV:
-
-			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ_WRITE, i);
-			mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
-			x64mc_alloc.push_back(mc);
-			break;
-
-		case MC_CMP_E:
-			case MC_CMP_NE:
-			case MC_CMP_L:
-			case MC_CMP_LE:
-			case MC_CMP_G:
-			case MC_CMP_GE:
-			mc.pr_dst = get_pr__load_vr(bb, mc.dst, VR_USAGE_WRITE, i);
-			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
-			mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
-
-			x64mc_alloc.push_back(mc);
-			break;
-
-		case MC_SAVE_RET:
-			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
-			x64mc_alloc.push_back(mc);
-			break;
-
-		default:
-			ERR("%d \n", mc_stamp);
-			break;
-		}
-
-		update_vr_consume_cnt(scp, mc);
-
-		for (int k = 0; k < 3; k++)
-		{
-			int vr = mc.vr_list[k];
-			if(vr < 0)
-				continue;
-
-			int bb_use = scp->use_cnt_in_bb[vr];
-			if (bb_use < 0)
-				continue;
-
-			Ast *declare_at = vr_declare_manager.declare_at[vr];
-			SymbolVariable *symb = declare_at->symb;
-			Scope *scp_declare_at = declare_at->this_scp;
-
-			const char *s;
-			if (scp->symb_table != scp_declare_at->symb_table)
-				s = "outer  ";
-			else
-				s = "private";
-
-//			printf("%s, %s, %%%d, bb: %d %d, symb: %d %d, symb cld: %d %d \n",
-//				scp->name.c_str(), s, vr,
-//				bb_use, scp->consume_cnt_in_bb[vr],
-//				symb->use_cnt, symb->consume_cnt,
-//				symb->cld_use_cnt, symb->cld_consume_cnt);
-
-			if (scp->consume_cnt_in_bb[vr] >= bb_use)
-			{
-				if (vr2pr[vr].pr != X64PR_MAX
-				    // && mc_stamp != MC_SAVE_RET
-#if 1
-					&& symb->cld_use_cnt == 0
-#else
-					&& symb->consume_cnt >= symb->use_cnt
-				    && symb->cld_consume_cnt >= symb->cld_use_cnt
-#endif
-				)
-				{
-					// last use in global
-					int pr = vr2pr[vr].pr;
-
-					vr2pr[vr].pr = X64PR_MAX;
-					vr2pr[vr].u = VR_USEAGE_INVALID;
-
-					assert(pr2vr[pr].vr != INVALID__VR);
-					pr2vr[pr].vr = INVALID__VR;
-				}
-				else
-				{
-					// last use in bb
-				}
-			}
-		}
+		assert(pr2vr[pr].vr != INVALID__VR);
+		pr2vr[pr].vr = INVALID__VR;
 	}
+}
 
+static void check_bb_use_cnt(Scope *scp)
+{
 	for (int i = 0; i < vr_declare_manager.size(); i++)
 	{
 		int use = scp->use_cnt_in_bb[i];
@@ -290,11 +211,123 @@ static void _wave_reg_alloc(Scope *scp)
 			ERR("%%%d, %d %d", i, use, consume);
 		}
 	}
+}
+static void _wave_reg_alloc(BasicBlock *bb, const X64mc &schedued, int i)
+{
+	vector<X64mc> &x64mc_alloc = bb->x64mc_alloc_wave;
+	X64mc mc = schedued;
+	MachineCodeStamp mc_stamp = mc.mc_stamp;
+
+	switch (mc_stamp)
+	{
+	case MC_LI:
+		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
+		x64mc_alloc.push_back(mc);
+		break;
+
+	case MC_ASSIGN:
+		if (mc.s1 == mc.s2)
+			break;
+
+		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
+		mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
+		x64mc_alloc.push_back(mc);
+		break;
+
+	case MC_ADD:
+		case MC_SUB:
+		case MC_IMUL:
+		case MC_DIV:
+
+		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ_WRITE, i);
+		mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
+		x64mc_alloc.push_back(mc);
+		break;
+
+	case MC_CMP_E:
+		case MC_CMP_NE:
+		case MC_CMP_L:
+		case MC_CMP_LE:
+		case MC_CMP_G:
+		case MC_CMP_GE:
+		mc.pr_dst = get_pr__load_vr(bb, mc.dst, VR_USAGE_WRITE, i);
+		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
+		mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
+
+		x64mc_alloc.push_back(mc);
+		break;
+
+	case MC_SAVE_RET:
+		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
+		x64mc_alloc.push_back(mc);
+		break;
+
+	default:
+		ERR("%d \n", mc_stamp);
+		break;
+	}
+}
+static void _wave_reg_alloc(Scope *scp)
+{
+	//	LOG("scp %s", scp->name.c_str());
+	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+
+	init_wave(bb);
+	gen_wave(bb);
+//	dump_wave(*bb);
+
+	if (scp->sem_stamp == SEM_WHILE)
+	{
+		printf("while %lu\n", scp->clds.size());
+		auto &a = scp->outer_symb_used;
+		auto &b = scp->clds[0]->outer_symb_used;
+		auto &c = scp->clds[1]->outer_symb_used;
+		a = b;
+		a.insert(a.end(), c.begin(), c.end());
+	}
+
+	scp->consume_cnt_in_bb.clear();
+	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
+
+	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
+	{
+		const X64mc &mc = bb->x64mc_schedu[i];
+		_wave_reg_alloc(bb, mc, i);
+
+		if (scp->parent && scp->parent->sem_stamp == SEM_WHILE)
+			update_vr_consume_cnt(scp, mc, SYMB_PRIVATE | SYMB_PRIVATE_transient);
+		else
+			update_vr_consume_cnt(scp, mc, SYMB_ALL);
+
+		check_and_clear_vr(scp, mc.dst);
+		check_and_clear_vr(scp, mc.s1);
+		check_and_clear_vr(scp, mc.s2);
+	}
+
+	if (scp->parent && scp->parent->sem_stamp != SEM_WHILE)
+		check_bb_use_cnt(scp);
 
 	spill_all_pr(bb);
 
 	for (Scope *p : scp->clds)
 		_wave_reg_alloc(p);
+
+	if (scp->sem_stamp == SEM_WHILE)
+	{
+		for (int vr : scp->outer_symb_used)
+		{
+			Ast *declare_at = vr_declare_manager.declare_at[vr];
+			SymbolVariable *symb = declare_at->symb;
+			Scope *scp_declare_at = declare_at->this_scp;
+			assert(scp_declare_at != scp);
+
+			symb->consume_cnt++;
+//			symb->cld_consume_cnt++;
+		}
+
+		for (int vr : scp->outer_symb_used)
+			check_and_clear_vr(scp, vr);
+	}
 }
 void wave_reg_alloc()
 {

@@ -100,11 +100,11 @@ extern Tokens tokens;
 
 
 enum SymbolStamp {
-	SYMB_PRIVATE,
-	SYMB_PRIVATE_transient,
-	SYMB_OUTER,
-
-	SYMB_INVALID,
+	SYMB_PRIVATE = 1 << 0,
+	SYMB_PRIVATE_transient = 1 << 1,
+	SYMB_OUTER = 1 << 2,
+	SYMB_ALL = SYMB_PRIVATE | SYMB_PRIVATE_transient | SYMB_OUTER ,
+	SYMB_INVALID = 0,
 };
 
 struct Scope;
@@ -122,8 +122,8 @@ struct SymbolVariable
 	int use_cnt = 0;
 	int consume_cnt = 0;
 
-	int cld_use_cnt = 0;
-	int cld_consume_cnt = 0;
+//	int cld_use_cnt = 0;
+//	int cld_consume_cnt = 0;
 
 	int appear_cnt = 0;
 

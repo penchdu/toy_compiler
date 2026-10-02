@@ -211,7 +211,7 @@ static void gen_mc(Scope *scp)
 		}
 		else
 		{
-			printf("NOTE: bb.exit_jmp=%s %d\n", scp->name.c_str(), scp->sem_stamp);
+			ERR("NOTE: bb.exit_jmp=%s %d\n", scp->name.c_str(), scp->sem_stamp);
 		}
 	}
 

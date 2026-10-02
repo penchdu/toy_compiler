@@ -211,13 +211,13 @@ static void sem_analysis_named_var(Scope *scp)
 
 ///////////////////////////////////////////////////////////////////////////////////
 
-static void increase_use_cnt(Ast *p)
-{
-	if (p->symb_stamp == SYMB_OUTER)
-		p->symb->cld_use_cnt++;
-	else
-		p->symb->use_cnt++;
-}
+//static void increase_use_cnt(Ast *p)
+//{
+//	if (p->symb_stamp == SYMB_OUTER)
+//		p->symb->cld_use_cnt++;
+//	else
+//		p->symb->use_cnt++;
+//}
 static void new_PRIVATE_transient_symb(Ast *p)
 {
 	SymbolVariable *symb = new SymbolVariable;

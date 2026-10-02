@@ -11,16 +11,34 @@
 
 void clear_vr_consume_cnt(Scope *scp)
 {
-	for(auto *p : scp->scope_symb_table)
+	for (auto *p : scp->scope_symb_table)
 	{
 		p->consume_cnt = 0;
-		p->cld_consume_cnt = 0;
+//		p->cld_consume_cnt = 0;
 	}
 
 	for (Scope *p : scp->clds)
 		clear_vr_consume_cnt(p);
 }
-static void _update_vr_consume_cnt(Scope *scp, int vr, int usage = VR_USAGE_READ)
+static bool is_private_symb(Scope *scp, int vr)
+{
+	Ast *declare_at = vr_declare_manager.declare_at[vr];
+	SymbolVariable *symb = declare_at->symb;
+
+	for (auto p : *(scp->symb_table))
+	{
+		if (p->vr == vr)
+		{
+			assert(p == symb);
+			return true;
+		}
+	}
+
+	return false;
+//	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
+}
+static void _update_vr_consume_cnt(Scope *scp, int vr,
+    int target_symb_stamp, int usage = VR_USAGE_READ)
 {
 	assert(usage & VR_USAGE_READ);
 	Ast *declare_at = vr_declare_manager.declare_at[vr];
@@ -29,20 +47,27 @@ static void _update_vr_consume_cnt(Scope *scp, int vr, int usage = VR_USAGE_READ
 //	assert(declare_at->this_scp == declare_at->home_scp);
 
 	SymbolVariable *symb = declare_at->symb;
+	bool is_private = is_private_symb(scp, vr);
 
-	if (scp->symb_table != scp_declare_at->symb_table)	// outer
+	if ((target_symb_stamp & SYMB_PRIVATE) || (target_symb_stamp & SYMB_PRIVATE_transient))
 	{
-		assert(declare_at->symb_stamp != SYMB_PRIVATE_transient);
-		symb->cld_consume_cnt++;
+		if (is_private)
+			symb->consume_cnt++;	// private
 	}
-	else
+
+	if (target_symb_stamp & SYMB_OUTER)
 	{
-		symb->consume_cnt++;	// private
+		// outer
+		if (!is_private)
+		{
+			assert(declare_at->symb_stamp != SYMB_PRIVATE_transient);
+			symb->consume_cnt++;
+		}
 	}
 
 	scp->consume_cnt_in_bb[vr]++;
 }
-void update_vr_consume_cnt(Scope *scp, const X64mc &mc)
+void update_vr_consume_cnt(Scope *scp, const X64mc &mc, int target_symb_stamp)
 {
 	MachineCodeStamp mc_stamp = mc.mc_stamp;
 
@@ -55,19 +80,19 @@ void update_vr_consume_cnt(Scope *scp, const X64mc &mc)
 		break;
 
 	case MC_ST:
-		_update_vr_consume_cnt(scp, mc.s1);
+		_update_vr_consume_cnt(scp, mc.s1, target_symb_stamp);
 		break;
 
 	case MC_ASSIGN:
-		_update_vr_consume_cnt(scp, mc.s2);
+		_update_vr_consume_cnt(scp, mc.s2, target_symb_stamp);
 		break;
 
 	case MC_ADD:
 		case MC_SUB:
 		case MC_IMUL:
 		case MC_DIV:
-		_update_vr_consume_cnt(scp, mc.s1);
-		_update_vr_consume_cnt(scp, mc.s2);
+		_update_vr_consume_cnt(scp, mc.s1, target_symb_stamp);
+		_update_vr_consume_cnt(scp, mc.s2, target_symb_stamp);
 		break;
 
 	case MC_CMP_E:
@@ -76,12 +101,12 @@ void update_vr_consume_cnt(Scope *scp, const X64mc &mc)
 		case MC_CMP_LE:
 		case MC_CMP_G:
 		case MC_CMP_GE:
-		_update_vr_consume_cnt(scp, mc.s1);
-		_update_vr_consume_cnt(scp, mc.s2);
+		_update_vr_consume_cnt(scp, mc.s1, target_symb_stamp);
+		_update_vr_consume_cnt(scp, mc.s2, target_symb_stamp);
 		break;
 
 	case MC_SAVE_RET:
-		_update_vr_consume_cnt(scp, mc.s1);
+		_update_vr_consume_cnt(scp, mc.s1, target_symb_stamp);
 		break;
 
 	default:
@@ -105,7 +130,8 @@ static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 
 		if (usage & VR_USAGE_READ)
 		{
-			symb->cld_use_cnt++;
+			symb->use_cnt++;
+//			symb->cld_use_cnt++;
 			symb->appear_cnt++;
 			scp->use_cnt_in_bb[vr]++;
 			scp->outer_symb_used.push_back(vr);

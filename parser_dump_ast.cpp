@@ -11,7 +11,7 @@
 static string indent_str(int n)
 {
 	n = std::max(n, 0);
-	return string(n * 8, ' ');
+	return string(n * 4, ' ');
 }
 static void print_blank(int n)
 {

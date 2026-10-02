@@ -194,7 +194,7 @@ void case_tk_while()
 	// cond
 	// while only have one condition express
 	Scope *while_cond = cond_to_negative();
-	while_cond->sem_stamp = SEM_COND_JMP;
+	while_cond->sem_stamp = SEM_COND_JMP;	// todo, SEM_WHILE_COND
 	while_cond->name += "_while_cond";
 
 	// body

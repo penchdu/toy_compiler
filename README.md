@@ -38,7 +38,6 @@ VSC can now handle:
 - nested `if/else`
 - nested `while` `continue` `break`
 - nested block scopes
-- variable shadowing
 - control-flow basic blocks
 - conditional branches and jumps
 
@@ -49,12 +48,12 @@ Next steps: SSA, -O1 register allocation.
 
 ### 2026.9.29
 
-**score-based inst-selecter & wavefront reg-alloc (-O1)**
+**score based inst-selecter & wavefront reg-alloc (-O1)**
 
-Implemented an innovative wavefront-based reg-alloc method for -O1 optimization:
+Implemented an innovative wavefront based reg-alloc method for -O1 optimization:
 
-- Wavefront Score Model: Introduced an asymmetric decay wave model for virtual registers. It simulates usage peaks and rapid post-use decay, dynamically scoring registers for allocation choices.  The idea is that for a virtual register (VR), if it is used continuously or near-continuously in the near future, it generates a smoothly rising peak to signal to the allocator that this VR should not be spilled. If it remains unused beyond a certain range, it rapidly drops into a trough, indicating that this VR can be spilled. The allocator compares the peak values of all VRs at the current position to decide which VR to spill.
-- Wavefront Register Allocator: driven by wavefront scores (`a1.s`), reducing unnecessary spill compared to the baseline -O0 strategy (`a0.s`). Not spill on every vr use, but spill all vr at the end of every basic block.
+- **Wavefront Score Model**: Introduced an asymmetric decay wave model for virtual registers. It simulates usage peaks and rapid post-use decay, dynamically scoring registers for allocation choices.  The idea is that for a virtual register (VR), if it is used continuously or near-continuously in the near future, it generates a smoothly rising peak to signal to the allocator that this VR should not be spilled. If it remains unused beyond a certain range, it rapidly drops into a trough, indicating that this VR can be spilled. The allocator compares the peak values of all VRs at the current position to decide which VR to spill.
+- Wavefront Register Allocator: driven by wavefront scores (`a1.s`), reducing unnecessary spill compared to the baseline -O0 strategy (`a0.s`). Not spill on every vr use, but spill all vr at the end of every BasicBlock.
 - Score-Driven Instruction Scheduler : BasicBlock level, consider critical path latency, functional unit availability (ALU/IMUL/DIV), consumption scores, transient variable, last use, single-line, seems not bad.
 
 Next steps: global-Inst-select and global-reg-alloc
@@ -65,7 +64,7 @@ Next steps: global-Inst-select and global-reg-alloc
 - [ ] Pratt Parser
 - [x] AST
 - [x] namespace Scope manage
-- [x] Control flow Scope manage / Basic Block
+- [x] Control flow Scope manage / BasicBlock
 - [x] Symbol table
 - [ ] Liveness analysis
 - [ ] SSA
@@ -90,9 +89,8 @@ Next steps: global-Inst-select and global-reg-alloc
 
 ## Language Restrictions
 - only one function: `main` with no parameters
-- no function calls
-- no ABI handling
-- type only 'int'
+- no function calls, no ABI
+- type only `int`
 - identifiers follow the same naming rules as in the C language
 
 

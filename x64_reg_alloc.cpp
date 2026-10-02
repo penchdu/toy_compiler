@@ -187,7 +187,7 @@ string asm_file_name = "a0.s";
 int _asm_len = 0;
 #define PRINT_ASM_HEAD(fmt, ...) fprintf(fp, fmt "\n", ##__VA_ARGS__)
 #define PRINT_ASM(fmt, ...) _asm_len = 8 + fprintf(fp, "\t" fmt , ##__VA_ARGS__)
-#define PRINT_ASM_sem	fprintf(fp, "%*s#%s %%%d %%%d,  idx %d, cyc %d", \
+#define PRINT_ASM_sem	fprintf(fp, "%*s#%s %%%d, %%%d,  idx %d, cyc %d", \
 	        (_asm_len < 48) ? (48 - _asm_len) : 2, "", \
 	        mc.ori_sem.c_str(), mc.s1, mc.s2, mc.idx, mc.start_cycle);	\
 	        fprintf(fp, "\n");

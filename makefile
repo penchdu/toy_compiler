@@ -1,7 +1,7 @@
 
 
 # 1. 定义编译器，如果系统装了 ccache 就自动用 ccache 包装，没装就退回 clang++
-CCACHE := $(shell command -v ccache 2> /dev/null)
+#CCACHE := $(shell command -v ccache 2> /dev/null)
 CXX := $(CCACHE) clang++
 
 

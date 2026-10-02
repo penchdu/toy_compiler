@@ -177,6 +177,8 @@ static bool is_private_transient(Scope *scp, int vr)
 	}
 	return false;
 }
+
+static int select_pulled = 0;
 int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 {
 	int max_critical_path = 0;
@@ -282,12 +284,10 @@ end:
 	bool r = get_function_unit(x64mc[mc_idx].mc_stamp);
 	assert(r);
 
-#if 1
-	static int pulled = 0;
-	pulled++;
+#if 0
 	auto mc = x64mc[mc_idx];
 	printf("%d: size %lu, emit %d [%s %%%d %%%d %%%d], score: ",
-	    pulled, ready.size(), mc_idx, mc.ori_sem.c_str(), mc.dst, mc.s1, mc.s2);
+	    select_pulled++, ready.size(), mc_idx, mc.ori_sem.c_str(), mc.dst, mc.s1, mc.s2);
 	for (auto &r : ready)
 		printf("  %d=%.3f", r.idx_in_mc_list, r.score);
 	printf("\n");
@@ -465,6 +465,7 @@ static void mc_schdu(Scope *scp)
 
 static void _mc_schedule(Scope *scp)
 {
+	select_pulled = 0;
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 
 	if (bb->x64mc.size())
