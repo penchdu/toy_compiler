@@ -87,7 +87,7 @@ static int case_sem_save_retuen_up_down(Ast *p)
 }
 static int case_sem_var(Ast *p)
 {
-	Scope *scp = p->this_scp;
+	Scope *scp = p->scope;
 
 	for (auto symb : *(scp->symb_table))
 	{
@@ -95,7 +95,6 @@ static int case_sem_var(Ast *p)
 		{
 //			p->symb_stamp = SYMB_PRIVATE;
 			p->symb = symb;
-			p->home_scp = scp;
 			return 0;
 		}
 	}
@@ -108,11 +107,11 @@ static int case_sem_var(Ast *p)
 			{
 //				p->symb_stamp = SYMB_OUTER;
 				p->symb = symb;
-				p->home_scp = scp;
-				break;
+				return 0;
 			}
 		}
 	}
+
 	if (!p->symb)
 		ERR("error: %s is undeclared", p->tk.src.c_str());
 
@@ -129,21 +128,21 @@ static int case_sem_variable_declare(Ast *ty)
 	assert(ty->right == nullptr);
 	assert(ty->parent == nullptr);
 
-	Scope *scp = ty->this_scp;
+	Scope *scp = ty->scope;
 
 	Ast *var = ty->left;
 	var->type = ty->type;
 
-	for (auto s : *(scp->symb_table))
+	for (auto symb : *(scp->symb_table))
 	{
-		if (s->src == var->tk.src)
+		if (symb->src == var->tk.src)
 			ERR("%s is already declared", var->tk.src.c_str());
 	}
 
 	SymbolVariable *symb = new SymbolVariable;
 	symb->type = var->type;
 	symb->src = var->tk.src;
-
+	symb->depth = var->scope->depth;
 
 	// get a unique name
 	int i = 0;
@@ -158,7 +157,6 @@ static int case_sem_variable_declare(Ast *ty)
 		symb->unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
 
 	symb->explicit_unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
-	var->home_scp = var->this_scp;
 //	var->symb_stamp = SYMB_PRIVATE;
 	var->symb = symb;
 	scp->symb_table->push_back(symb);
@@ -205,8 +203,8 @@ static void sem_analysis_named_var(Scope *scp)
 	for (Ast *p : scp->asts)
 		trace_ast_up_down__named_variable_declare(p);
 
-	for (Scope *p : scp->clds)
-		sem_analysis_named_var(p);
+	for (Scope *cld : scp->clds)
+		sem_analysis_named_var(cld);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -226,12 +224,12 @@ static void new_PRIVATE_transient_symb(Ast *p)
 	symb->src = "%" + to_string(p->vr);
 	symb->unique_name = symb->src;
 	symb->stamp = SYMB_PRIVATE_transient;
+	symb->depth = p->scope->depth;
 //	symb->use_cnt = 1;
 
 //	p->symb_stamp = SYMB_PRIVATE_transient;
 	p->symb = symb;
-	p->this_scp->symb_table->push_back(symb);
-	p->home_scp = p->this_scp;
+	p->scope->symb_table->push_back(symb);
 }
 
 static int case_op(Ast *p)
@@ -278,7 +276,7 @@ static void case_save_return_down_up(Ast *p)
 {
 	LOG("%s", p->tk.src.c_str());
 
-	Scope *func = p->this_scp;
+	Scope *func = p->scope;
 	while (func && func->sem_stamp != SEM_FUNC_DEFINE)
 		func = func->parent;
 
@@ -352,8 +350,8 @@ static void sem_analysis_gen_vr(Scope *scp)
 	for (Ast *p : scp->asts)
 		trace_ast_down_up_gen_vr(p);
 
-	for (Scope *p : scp->clds)
-		sem_analysis_gen_vr(p);
+	for (Scope *cld : scp->clds)
+		sem_analysis_gen_vr(cld);
 }
 
 void sem_analysis()

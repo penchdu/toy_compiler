@@ -117,6 +117,7 @@ struct SymbolVariable
 	string src;
 	string unique_name;		// global unique
 	string explicit_unique_name;	// global explicit unique
+	int depth = 0;
 
 	int vr = -1;
 	int use_cnt = 0;
@@ -162,8 +163,7 @@ public:
 	Ast *left = 0;
 	Ast *right = 0;
 
-	Scope *this_scp = 0;
-	Scope *home_scp = 0;	// useless
+	Scope *scope = 0;
 
 	Ast(const Token &_token)
 	{
@@ -287,6 +287,8 @@ public:
 	Semantic sem_stamp = SEM_INVALID;
 
 	vector<Ast*> asts;
+
+	int depth;
 	vector<SymbolVariable*> scope_symb_table;
 	vector<SymbolVariable*> *symb_table = &scope_symb_table;
 	SymbolVariable *fake_outer_symb = 0;
@@ -301,6 +303,9 @@ public:
 	vector<Scope*> jmp_in;
 	Scope *jmp_out = 0;
 	vector<int> outer_symb_used;
+
+	vector<int> outer_symb_read;
+	vector<int> outer_symb_write;
 
 	vector<int> use_cnt_in_bb;
 	vector<int> appear_cnt_in_bb;
@@ -346,7 +351,6 @@ struct VirtualRegDeclareManager
 		offset += size;
 		vr_off.push_back(offset);
 		declare_at.push_back(p);
-		p->home_scp = current_scope_pointer;
 		return id;
 	}
 

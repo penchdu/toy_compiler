@@ -9,6 +9,12 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
+struct WhileUsedOuterSymb {
+	Scope *while_scp;
+	int scope_depth;
+};
+vector<WhileUsedOuterSymb> while_used_outer_symb;
+
 void clear_vr_consume_cnt(Scope *scp)
 {
 	for (auto *p : scp->scope_symb_table)
@@ -49,7 +55,7 @@ void update_vr_consume_cnt(Scope *scp, int vr, int target_symb_stamp, int usage)
 {
 	assert(usage & VR_USAGE_READ);
 	Ast *declare_at = vr_declare_manager.declare_at[vr];
-	Scope *scp_declare_at = declare_at->this_scp;
+	Scope *scp_declare_at = declare_at->scope;
 //	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
 //	assert(declare_at->this_scp == declare_at->home_scp);
 
@@ -120,7 +126,7 @@ void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int target_symb_stamp)
 static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 {
 	Ast *declare_at = vr_declare_manager.declare_at[vr];
-	Scope *scp_declare_at = declare_at->this_scp;
+	Scope *scp_declare_at = declare_at->scope;
 //	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
 //	assert(declare_at->this_scp == declare_at->home_scp);
 
@@ -222,10 +228,126 @@ static void _gen_liveness(Scope *scp)
 		_gen_liveness(p);
 }
 
+static void _check_while_used_outer_symb(int vr, int usage)
+{
+	Ast *p = vr_declare_manager.declare_at[vr];
+	SymbolVariable *symb = p->symb;
+	for (auto &r : while_used_outer_symb)
+	{
+		if (symb->depth < r.scope_depth)
+		{
+			if (usage & VR_USAGE_READ)
+				r.while_scp->outer_symb_read.push_back(vr);
+			if (usage & VR_USAGE_WRITE)
+				r.while_scp->outer_symb_write.push_back(vr);
+		}
+	}
+}
+static void check_while_used_outer_symb(Scope *scp)
+{
+	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	scp->use_cnt_in_bb.resize(vr_declare_manager.size());
+	scp->appear_cnt_in_bb.resize(vr_declare_manager.size());
+
+	for (auto &mc : bb->x64mc)
+	{
+		MachineCodeStamp mc_stamp = mc.mc_stamp;
+
+		switch (mc_stamp)
+		{
+		case MC_LI:
+			_check_while_used_outer_symb(mc.s1, VR_USAGE_WRITE);
+			break;
+
+		case MC_LD:
+			_check_while_used_outer_symb(mc.s1, VR_USAGE_WRITE);
+			break;
+
+		case MC_ST:
+			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ);
+			PRINT_MORE
+			break;
+
+		case MC_ASSIGN:
+			_check_while_used_outer_symb(mc.s1, VR_USAGE_WRITE);
+			_check_while_used_outer_symb(mc.s2, VR_USAGE_READ);
+			break;
+
+		case MC_ADD:
+			case MC_SUB:
+			case MC_IMUL:
+			case MC_DIV:
+			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ_WRITE);
+			_check_while_used_outer_symb(mc.s2, VR_USAGE_READ);
+			break;
+
+		case MC_CMP_E:
+			case MC_CMP_NE:
+			case MC_CMP_L:
+			case MC_CMP_LE:
+			case MC_CMP_G:
+			case MC_CMP_GE:
+			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ);
+			_check_while_used_outer_symb(mc.s2, VR_USAGE_READ);
+			_check_while_used_outer_symb(mc.dst, VR_USAGE_WRITE);
+			break;
+
+		case MC_SAVE_RET:
+			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ);
+			break;
+
+		default:
+			ERR("%d \n", mc_stamp);
+			break;
+		}
+	}
+}
+static void find_while_used_outer_symb(Scope *scp)
+{
+	if (scp->sem_stamp == SEM_WHILE)
+		while_used_outer_symb.push_back({scp, scp->depth});
+
+	if (while_used_outer_symb.size() > 0)
+		check_while_used_outer_symb(scp);
+
+	for (Scope *p : scp->clds)
+		find_while_used_outer_symb(p);
+
+	if (scp->sem_stamp == SEM_WHILE)
+		while_used_outer_symb.pop_back();
+}
+void dump_while_outer_use_cnt(Scope *scp)
+{
+	if (scp->outer_symb_read.size() || scp->outer_symb_read.size())
+		printf("%d %s \n", scp->id, scp->name.c_str());
+
+	if (scp->outer_symb_read.size())
+	{
+		printf("outer_symb_read: ");
+		for (auto vr : scp->outer_symb_read)
+			printf(" ,%d %s", vr, vr_declare_manager.declare_at[vr]->tk.src.c_str());
+		printf("\n");
+	}
+	if (scp->outer_symb_read.size())
+	{
+		printf("outer_symb_write: ");
+		for (auto vr : scp->outer_symb_write)
+			printf(" ,%d %s", vr, vr_declare_manager.declare_at[vr]->tk.src.c_str());
+		printf("\n");
+	}
+
+	for (Scope *p : scp->clds)
+		dump_while_outer_use_cnt(p);
+}
 void gen_liveness()
 {
 	_gen_liveness(&file_scp);
 
+	find_while_used_outer_symb(&file_scp);
+
+	printf("========== while_outer_use_cnt ==========\n");
+	dump_while_outer_use_cnt(&file_scp);
+	printf("====================\n");
 //	mc_list_name = "x64mc";
 //	PRINT_ASM_HEAD("========== mc ==========");
 //	dump_mc(&file_scp);

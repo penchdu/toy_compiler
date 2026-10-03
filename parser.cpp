@@ -12,6 +12,7 @@
 Scope file_scp;
 Scope *current_scope_pointer;
 int scope_id = 0;
+//int scope_depth = 0;
 bool in_func_define = 0;
 
 
@@ -26,16 +27,22 @@ static Scope* new_cld_scp(bool is_virtual)
 		exit_current_scope();
 	assert(current_scope_pointer->is_virtual == false);
 
-	current_scope_pointer = current_scope_pointer->new_cld();
+	Scope *parent = current_scope_pointer;
+	current_scope_pointer = parent->new_cld();
 	current_scope_pointer->is_virtual = is_virtual;
 	current_scope_pointer->id = scope_id++;
 	current_scope_pointer->name = "b" + std::to_string(current_scope_pointer->id);
 
 	if(is_virtual)
 	{
-		assert(current_scope_pointer->parent->is_virtual == false);
-		current_scope_pointer->symb_table = current_scope_pointer->parent->symb_table;
-		current_scope_pointer->func_table = current_scope_pointer->parent->func_table;
+//		assert(current_scope_pointer->parent->is_virtual == false);
+		current_scope_pointer->symb_table = parent->symb_table;
+		current_scope_pointer->func_table = parent->func_table;
+		current_scope_pointer->depth = parent->depth;
+	}
+	else
+	{
+		current_scope_pointer->depth = parent->depth + 1;
 	}
 
 	return current_scope_pointer;
@@ -81,7 +88,7 @@ static Ast* new_ast_node(Token t)
 {
 	Ast *p = new Ast(t);
 
-	p->this_scp = current_scope_pointer;
+	p->scope = current_scope_pointer;
 	return p;
 }
 enum Type get_declare_type(enum TokenStamp ty)
@@ -597,6 +604,7 @@ void parser()
 	current_scope_pointer = &file_scp;
 	current_scope_pointer->sem_stamp = SEM_FILE_SCOPE;
 	current_scope_pointer->id = scope_id++;
+	current_scope_pointer->depth = 0;
 	current_scope_pointer->name = "b" + std::to_string(current_scope_pointer->id);
 	current_scope_pointer->is_virtual = false;
 	current_scope_pointer->parent = 0;

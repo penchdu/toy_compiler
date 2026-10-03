@@ -7,7 +7,7 @@
 
 #include <stdio.h>
 
-int test2()
+int f1()
 {
 	int a = 1;
 	int b = a + 10;
@@ -128,7 +128,7 @@ int f2()
 	return a + b + c;
 }
 
-int f()
+int f3()
 {
 	int a = 1;
 	int b = 1;
@@ -177,7 +177,7 @@ int f()
 	return 0;
 }
 
-int f3()
+int f4()
 {
 	int a = 0;
 	int b = 0;
