@@ -146,7 +146,13 @@ void case_tk_if()
 		else_branch->sem_stamp = SEM_ELSE;
 		else_branch->name += "_if_else";
 	}
-
+//	else
+//	{
+//		else_branch = new_scope_and_drop_in();
+//		else_branch->sem_stamp = SEM_ELSE;
+//		else_branch->name += "_if_else_empty";
+//		exit_current_scope();
+//	}
 	// end work
 	Scope *tail = new_jmp_tail_for_cond_imp(cond);
 	tail->name += "_of_if";

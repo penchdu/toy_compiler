@@ -400,7 +400,7 @@ static void mc_schdu(Scope *scp)
 			if (cycle >= x64mc[mc_idx].start_cycle + x64mc[mc_idx].latency)
 			{
 				free_function_unit(x64mc[mc_idx].mc_stamp);
-				update_vr_consume_cnt(scp, x64mc[mc_idx]);
+				update_mc_consume_cnt(scp, x64mc[mc_idx]);
 				finish_mc__update_ready_queue2(scp, x64mc, mc_idx);
 
 				it = running.erase(it);

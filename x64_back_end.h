@@ -290,11 +290,14 @@ void gen_use_def_chain(vector<X64mc> &x64mc);
 void dump_chain(vector<X64mc> &x64mc);
 void gen_schdu_chain_latency(vector<X64mc> &x64mc);
 
-void update_vr_consume_cnt(Scope *scp, const X64mc &mc, int target_symb_stamp = SYMB_ALL);
+bool is_private_symb(Scope *scp, int vr);
+void update_vr_consume_cnt(Scope *scp, int vr, int target_symb_stamp, int usage = VR_USAGE_READ);
+void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int target_symb_stamp = SYMB_ALL);
 void clear_vr_consume_cnt(Scope *scp);
+void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 void x64_reg_alloc();
-void wave_reg_alloc();
+void x64_reg_alloc_wave();
 
 
 

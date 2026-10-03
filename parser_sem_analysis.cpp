@@ -93,7 +93,7 @@ static int case_sem_var(Ast *p)
 	{
 		if (symb->src == p->tk.src)
 		{
-			p->symb_stamp = SYMB_PRIVATE;
+//			p->symb_stamp = SYMB_PRIVATE;
 			p->symb = symb;
 			p->home_scp = scp;
 			return 0;
@@ -106,7 +106,7 @@ static int case_sem_var(Ast *p)
 		{
 			if (symb->src == p->tk.src)
 			{
-				p->symb_stamp = SYMB_OUTER;
+//				p->symb_stamp = SYMB_OUTER;
 				p->symb = symb;
 				p->home_scp = scp;
 				break;
@@ -159,7 +159,7 @@ static int case_sem_variable_declare(Ast *ty)
 
 	symb->explicit_unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
 	var->home_scp = var->this_scp;
-	var->symb_stamp = SYMB_PRIVATE;
+//	var->symb_stamp = SYMB_PRIVATE;
 	var->symb = symb;
 	scp->symb_table->push_back(symb);
 	global_unique_src_name_tbl.push_back(symb);
@@ -228,7 +228,7 @@ static void new_PRIVATE_transient_symb(Ast *p)
 	symb->stamp = SYMB_PRIVATE_transient;
 //	symb->use_cnt = 1;
 
-	p->symb_stamp = SYMB_PRIVATE_transient;
+//	p->symb_stamp = SYMB_PRIVATE_transient;
 	p->symb = symb;
 	p->this_scp->symb_table->push_back(symb);
 	p->home_scp = p->this_scp;
@@ -244,7 +244,7 @@ static int case_op(Ast *p)
 			ERR("assign type mismatch %d %d", p->left->type, p->right->type);
 
 		p->type = p->left->type;
-		assert(p->left->symb_stamp != SYMB_PRIVATE_transient);
+		assert(p->left->symb->stamp != SYMB_PRIVATE_transient);
 		// assign do not gen a new vr, just return left
 		p->vr = p->left->vr;
 		return p->vr;

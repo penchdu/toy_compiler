@@ -1,38 +1,8 @@
 
 
 
-int test() 
-{
-    int a = 1;
-    int b = 2;
-    int c = 3;
-    int d = 4;
-    int e = 5;
-    int sum = 0;
-    int i = 0;
 
-    while (i + a < 100)
-    {
-        a = a + b;
-        c = c + d;
-        e = e + a + c;
-
-        sum = sum + a + b + c + d + e;
-
-        b = b + 1;
-        d = d + 2;
-
-        i = i + 1;
-    }
-
-    sum = sum + a + b + c + d + e;
-    return sum;
-}
-
-
-#include <stdio.h>
-
-int test5() {
+int test() {
     int a = 1;
 	int b = a + 2;
 	int c = a + 3;
@@ -76,49 +46,19 @@ int test5() {
 			}
 		}
 
-		sum = sum + a + b + c + d + e + f;
-		a = a + e;
-		b = b + f;
-
-		i = i + 1;
+		{
+			sum = sum + a + b + c + d + e + f;
+		}
+		
+		{{
+			a = a + e;
+			b = b + f;
+			i = i + 1;
+		}}
 	}
 
+//	i = a + b + c + d + e + f;
 	sum = sum + 1;
 	return sum;
 }
-
-
-
-#include <stdio.h>
-int test4() {
-    int a = 1;
-    int b = 2;
-    int c = 3;
-    int d = 4;
-    int e = 5;
-    int f = 6;
-    int g = 7;
-    int h = 8;
-
-    int r1 = a + b;
-    int r2 = c + d;
-    int r3 = e + f;
-    int r4 = g + h;
-
-    int r5 = r1 + r2;
-    int r6 = r3 + r4;
-
-    e = 50;
-    g = 70;
-
-    int r7 = a + e;
-    int r8 = c + g;
-
-    int r9 = r5 + r6;
-    int r10 = r7 + r8;
-
-    return r9 + r10;
-}
-
-
 

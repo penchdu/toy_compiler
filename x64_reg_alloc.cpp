@@ -96,7 +96,7 @@ static void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
 	spill_pr(x64mc_alloced, vr2);
 }
 
-static void _x64_reg_alloc_o0(Scope *scp)
+static void x64_reg_alloc_o0(Scope *scp)
 {
 	X64mc inst;
 
@@ -117,8 +117,8 @@ static void _x64_reg_alloc_o0(Scope *scp)
 			break;
 
 		case MC_ASSIGN:
-			//				if (mc.s1 == mc.s2)
-//					break;
+//			if (mc.s1 == mc.s2)
+//				break;
 
 			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_WRITE);
 			mc.pr2 = get_pr__load_vr(x64mc_alloc, mc.s2, VR_USAGE_READ);
@@ -165,7 +165,7 @@ static void _x64_reg_alloc_o0(Scope *scp)
 	}
 
 	for (Scope *p : scp->clds)
-		_x64_reg_alloc_o0(p);
+		x64_reg_alloc_o0(p);
 }
 
 int align16(int &n)
@@ -183,7 +183,7 @@ int align16(int &n)
 //	dump_mc(&file_scp);
 //}
 
-string asm_file_name = "a0.s";
+
 int _asm_len = 0;
 #define PRINT_ASM_HEAD(fmt, ...) fprintf(fp, fmt "\n", ##__VA_ARGS__)
 #define PRINT_ASM(fmt, ...) _asm_len = 8 + fprintf(fp, "\t" fmt , ##__VA_ARGS__)
@@ -192,19 +192,19 @@ int _asm_len = 0;
 	        mc.ori_sem.c_str(), mc.s1, mc.s2, mc.idx, mc.start_cycle);	\
 	        fprintf(fp, "\n");
 
-static void dump_bb_asm(FILE *fp, Scope *scp)
+static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 {
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 	if (bb->entry_label != 0 && bb->entry_label->name != "test")
 		PRINT_ASM_HEAD("\n\n%s:", bb->entry_label->name.c_str());
 
 	vector<X64mc> *mc_list;
-	if(asm_file_name == "a0.s")
+	if (asm_file == "a0.s")
 		mc_list = &bb->x64mc_alloc_o0;
-	else if(asm_file_name == "a1.s")
+	else if (asm_file == "a1.s")
 		mc_list = &bb->x64mc_alloc_wave;
 	else
-		ERR("%s", asm_file_name.c_str());
+		ERR("%s", asm_file.c_str());
 
 	for (X64mc &r : *mc_list)
 	{
@@ -285,21 +285,21 @@ static void dump_bb_asm(FILE *fp, Scope *scp)
 	if (scp->jmp_out != 0)
 	{
 		PRINT_ASM("%s %s \n", mc_info[bb->jmp_mc_stamp].mc_code.c_str(),
-			scp->jmp_out->name.c_str());
+		    scp->jmp_out->name.c_str());
 	}
 
 	for (Scope *p : scp->clds)
-		dump_bb_asm(fp, p);
+		dump_bb_asm(fp, p, asm_file);
 }
-static void dump_asm()
+static void dump_asm(const string &asm_file)
 {
 	int rsp_of = vr_declare_manager.offset;
 	align16(rsp_of);
 	//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 
-	FILE *fp = fopen(asm_file_name.c_str(), "w");
+	FILE *fp = fopen(asm_file.c_str(), "w");
 	assert(fp);
-	string s = "#========== " + asm_file_name + " ==========#";
+	string s = "#========== " + asm_file + " ==========#";
 
 	PRINT_ASM_HEAD("%s", s.c_str());
 	PRINT_ASM_HEAD(".intel_syntax noprefix");
@@ -317,7 +317,7 @@ static void dump_asm()
 	PRINT_ASM("mov rbp, rsp \n");
 	PRINT_ASM("sub rsp, %d \n", rsp_of);
 
-	dump_bb_asm(fp, &file_scp);
+	dump_bb_asm(fp, &file_scp, asm_file);
 
 	PRINT_ASM_HEAD("\n\n.L_return:");
 	PRINT_ASM("mov rsp, rbp \n");
@@ -334,19 +334,15 @@ static void dump_asm()
 void x64_reg_alloc()
 {
 	vr2pr.resize(vr_declare_manager.size());
-	clear_vr_consume_cnt(&file_scp);
 
-	_x64_reg_alloc_o0(&file_scp);
-	asm_file_name = "a0.s";
-	dump_asm();
+	x64_reg_alloc_o0(&file_scp);
+	dump_asm("a0.s");
 	system("gcc a0.s -o a0");
 	system("./a0");
 
-//	usleep(1000);
-	clear_vr_consume_cnt(&file_scp);
-	wave_reg_alloc();
-	asm_file_name = "a1.s";
-	dump_asm();
+	usleep(1000);
+	x64_reg_alloc_wave();
+	dump_asm("a1.s");
 	system("gcc a1.s -o a1");
 	system("./a1");
 }

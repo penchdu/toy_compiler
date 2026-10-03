@@ -163,29 +163,18 @@ static void check_and_clear_vr(Scope *scp, int vr)
 
 	Ast *declare_at = vr_declare_manager.declare_at[vr];
 	SymbolVariable *symb = declare_at->symb;
-	Scope *scp_declare_at = declare_at->this_scp;
 
-		const char *s;
-		if (scp->symb_table != scp_declare_at->symb_table)
-			s = "outer  ";
-		else
-			s = "private";
-
-		printf("%s, %s, %%%d, bb: %d %d, symb: %d %d"
-//			", symb cld: %d %d"
-			"\n",
-		    scp->name.c_str(), s, vr,
-		    scp->use_cnt_in_bb[vr], scp->consume_cnt_in_bb[vr],
-		    symb->use_cnt, symb->consume_cnt
-//		    ,symb->cld_use_cnt, symb->cld_consume_cnt
-		    );
+	LOG("scp=%2d, %s %%%3d name=%5s, bb: %2d %2d, symb: %2d %2d",
+	    scp->id, is_private_symb(scp, vr) ? "private" : "outer  ",
+	    vr, symb->src.c_str(),
+	    scp->use_cnt_in_bb[vr], scp->consume_cnt_in_bb[vr],
+	    symb->use_cnt, symb->consume_cnt);
 
 	if (vr2pr[vr].pr != X64PR_MAX
-		&& scp->consume_cnt_in_bb[vr] >= scp->use_cnt_in_bb[vr]
-	    && symb->consume_cnt >= symb->use_cnt
-//	    && symb->cld_consume_cnt >= symb->cld_use_cnt
-	    )
+	    && symb->consume_cnt >= symb->use_cnt)
+	//	    && symb->cld_consume_cnt >= symb->cld_use_cnt
 	{
+		assert(scp->consume_cnt_in_bb[vr] >= scp->use_cnt_in_bb[vr]);
 		// last use in global
 		int pr = vr2pr[vr].pr;
 
@@ -197,18 +186,28 @@ static void check_and_clear_vr(Scope *scp, int vr)
 	}
 }
 
-static void check_bb_use_cnt(Scope *scp)
+static void check_bb_use_cnt(Scope *scp, int target_symb_stamp = SYMB_ALL)
 {
-	for (int i = 0; i < vr_declare_manager.size(); i++)
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
-		int use = scp->use_cnt_in_bb[i];
-		int consume = scp->consume_cnt_in_bb[i];
+		Ast *declare_at = vr_declare_manager.declare_at[vr];
+		SymbolVariable *symb = declare_at->symb;
+		bool is_private = is_private_symb(scp, vr);
+
+		if (!is_private && ((target_symb_stamp & SYMB_PRIVATE) || (target_symb_stamp & SYMB_PRIVATE_transient)))
+			return;
+
+		if (is_private && (target_symb_stamp & SYMB_OUTER))
+			return;
+
+		int use = scp->use_cnt_in_bb[vr];
+		int consume = scp->consume_cnt_in_bb[vr];
 		if (use != consume)
 		{
-			Ast *ast = vr_declare_manager.declare_at[i];
-			LOG("MISMATCH vr=%d use=%d consume=%d stamp=%d scp=%s",
-				i, use, consume, ast->symb_stamp, scp->name.c_str());
-			ERR("%%%d, %d %d", i, use, consume);
+			Ast *ast = vr_declare_manager.declare_at[vr];
+			LOG("MISMATCH  scp=%s vr=%%%d name=%s, use=%d consume=%d stamp=%d",
+			    scp->name.c_str(), vr, symb->src.c_str(), use, consume, ast->symb->stamp);
+			ERR("%%%d, %d %d", vr, use, consume);
 		}
 	}
 }
@@ -278,12 +277,14 @@ static void _wave_reg_alloc(Scope *scp)
 
 	if (scp->sem_stamp == SEM_WHILE)
 	{
-		printf("while %lu\n", scp->clds.size());
 		auto &a = scp->outer_symb_used;
 		auto &b = scp->clds[0]->outer_symb_used;
 		auto &c = scp->clds[1]->outer_symb_used;
 		a = b;
 		a.insert(a.end(), c.begin(), c.end());
+
+//		for(int i = 0; i < vr_declare_manager.size(); i++)
+//			scp->use_cnt_in_bb
 	}
 
 	scp->consume_cnt_in_bb.clear();
@@ -294,18 +295,18 @@ static void _wave_reg_alloc(Scope *scp)
 		const X64mc &mc = bb->x64mc_schedu[i];
 		_wave_reg_alloc(bb, mc, i);
 
-		if (scp->parent && scp->parent->sem_stamp == SEM_WHILE)
-			update_vr_consume_cnt(scp, mc, SYMB_PRIVATE | SYMB_PRIVATE_transient);
-		else
-			update_vr_consume_cnt(scp, mc, SYMB_ALL);
-
-		check_and_clear_vr(scp, mc.dst);
-		check_and_clear_vr(scp, mc.s1);
-		check_and_clear_vr(scp, mc.s2);
+//		if (scp->parent && scp->parent->sem_stamp == SEM_WHILE)
+//			update_mc_consume_cnt(scp, mc, SYMB_PRIVATE | SYMB_PRIVATE_transient);
+//		else
+//			update_mc_consume_cnt(scp, mc, SYMB_ALL);
+//
+//		check_and_clear_vr(scp, mc.dst);
+//		check_and_clear_vr(scp, mc.s1);
+//		check_and_clear_vr(scp, mc.s2);
 	}
 
-	if (scp->parent && scp->parent->sem_stamp != SEM_WHILE)
-		check_bb_use_cnt(scp);
+//	if (scp->parent && scp->parent->sem_stamp != SEM_WHILE)
+//		check_bb_use_cnt(scp, SYMB_PRIVATE | SYMB_PRIVATE_transient);
 
 	spill_all_pr(bb);
 
@@ -316,21 +317,20 @@ static void _wave_reg_alloc(Scope *scp)
 	{
 		for (int vr : scp->outer_symb_used)
 		{
-			Ast *declare_at = vr_declare_manager.declare_at[vr];
-			SymbolVariable *symb = declare_at->symb;
-			Scope *scp_declare_at = declare_at->this_scp;
-			assert(scp_declare_at != scp);
-
-			symb->consume_cnt++;
-//			symb->cld_consume_cnt++;
+			assert(!is_private_symb(scp, vr));
+			update_vr_consume_cnt(scp, vr, SYMB_OUTER);
 		}
 
-		for (int vr : scp->outer_symb_used)
-			check_and_clear_vr(scp, vr);
+//		for (int vr : scp->outer_symb_used)
+//			check_and_clear_vr(scp, vr);
+
+//		check_bb_use_cnt(scp, SYMB_OUTER);
 	}
+
 }
-void wave_reg_alloc()
+void x64_reg_alloc_wave()
 {
+	clear_vr_consume_cnt(&file_scp);
 	vrwave.resize(vr_declare_manager.size());
 
 	vr2pr.clear();
@@ -339,5 +339,7 @@ void wave_reg_alloc()
 	pr2vr.resize(X64PR_MAX, {INVALID__VR});
 
 	_wave_reg_alloc(&file_scp);
+
+	check_vr_consume_cnt(&file_scp);
 }
 
