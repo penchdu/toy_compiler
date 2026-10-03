@@ -9,7 +9,7 @@
 #include "frontend.h"
 
 extern Scope file_scp;
-vector<SymbolVariable*> global_unique_src_name_tbl;
+vector<Symbol*> global_unique_src_name_tbl;
 
 static int case_sem_assign(Ast *p)
 {
@@ -139,7 +139,7 @@ static int case_sem_variable_declare(Ast *ty)
 			ERR("%s is already declared", var->tk.src.c_str());
 	}
 
-	SymbolVariable *symb = new SymbolVariable;
+	Symbol *symb = new Symbol;
 	symb->type = var->type;
 	symb->src = var->tk.src;
 	symb->depth = var->scope->depth;
@@ -218,7 +218,7 @@ static void sem_analysis_named_var(Scope *scp)
 //}
 static void new_PRIVATE_transient_symb(Ast *p)
 {
-	SymbolVariable *symb = new SymbolVariable;
+	Symbol *symb = new Symbol;
 	symb->type = p->type;
 	symb->vr = p->vr;
 	symb->src = "%" + to_string(p->vr);
@@ -295,7 +295,7 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 
 	int b = trace_ast_down_up_gen_vr(p->right);
 	int a = trace_ast_down_up_gen_vr(p->left);
-	SymbolVariable *symb = 0;
+	Symbol *symb = 0;
 	(void) a;
 	(void) b;
 

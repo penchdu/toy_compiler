@@ -108,7 +108,7 @@ enum SymbolStamp {
 };
 
 struct Scope;
-struct SymbolVariable
+struct Symbol
 {
 //	Semantic_type semty;
 	Type type = INT;
@@ -130,7 +130,7 @@ struct SymbolVariable
 
 	SymbolStamp stamp = SYMB_INVALID;
 	Scope *scp = 0;
-	vector<SymbolVariable*> cld;
+	vector<Symbol*> cld;
 };
 struct SymbolFunc
 {
@@ -156,7 +156,7 @@ public:
 	int const_value;
 
 	SymbolStamp symb_stamp = SYMB_INVALID;
-	SymbolVariable *symb = 0;
+	Symbol *symb = 0;
 
 	Token tk;
 	Ast *parent = 0;
@@ -289,9 +289,9 @@ public:
 	vector<Ast*> asts;
 
 	int depth;
-	vector<SymbolVariable*> scope_symb_table;
-	vector<SymbolVariable*> *symb_table = &scope_symb_table;
-	SymbolVariable *fake_outer_symb = 0;
+	vector<Symbol*> scope_symb_table;
+	vector<Symbol*> *symb_table = &scope_symb_table;
+	Symbol *fake_outer_symb = 0;
 
 	Scope *parent;
 	vector<Scope*> clds;
@@ -302,7 +302,7 @@ public:
 //	Scope *jmp_else = 0;
 	vector<Scope*> jmp_in;
 	Scope *jmp_out = 0;
-	vector<int> outer_symb_used;
+//	vector<int> outer_symb_used;
 
 	vector<int> outer_symb_read;
 	vector<int> outer_symb_write;
@@ -388,7 +388,7 @@ extern VirtualRegDeclareManager vr_declare_manager;
 #define PARSER_LOG(fmt, ...)
 #endif
 
-constexpr bool enable_bb_terminate = 1;
+constexpr bool enable_bb_terminate = 0;
 extern bool in_func_define;
 
 Scope* new_scope_and_drop_in();

@@ -50,7 +50,7 @@ int test() {
 			sum = sum + a + b + c + d + e + f;
 		}
 		
-		while (i < 12)
+		while (i < 15)
 		{
 			int e = 12;
 			a = a + e;
@@ -75,4 +75,3 @@ int test() {
 	sum = sum + 1;
 	return sum;
 }
-

@@ -32,7 +32,7 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 
 	int b = trace_ast_down_up_gen_3_address_code(tacs, p->right);
 	int a = trace_ast_down_up_gen_3_address_code(tacs, p->left);
-	SymbolVariable *symb = 0;
+	Symbol *symb = 0;
 	Tac t;
 
 	switch (p->sem_stamp)

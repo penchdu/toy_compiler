@@ -32,12 +32,12 @@ void check_vr_consume_cnt(Scope *scp)
 		assert(p->consume_cnt == p->use_cnt);
 
 	for (Scope *p : scp->clds)
-		clear_vr_consume_cnt(p);
+		check_vr_consume_cnt(p);
 }
 bool is_private_symb(Scope *scp, int vr)
 {
 	Ast *declare_at = vr_declare_manager.declare_at[vr];
-	SymbolVariable *symb = declare_at->symb;
+	Symbol *symb = declare_at->symb;
 
 	for (auto p : *(scp->symb_table))
 	{
@@ -59,7 +59,7 @@ void update_vr_consume_cnt(Scope *scp, int vr, int target_symb_stamp, int usage)
 //	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
 //	assert(declare_at->this_scp == declare_at->home_scp);
 
-	SymbolVariable *symb = declare_at->symb;
+	Symbol *symb = declare_at->symb;
 	bool is_private = is_private_symb(scp, vr);
 
 	if (is_private && ((target_symb_stamp & SYMB_PRIVATE) || (target_symb_stamp & SYMB_PRIVATE_transient)))
@@ -130,7 +130,7 @@ static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 //	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
 //	assert(declare_at->this_scp == declare_at->home_scp);
 
-	SymbolVariable *symb = declare_at->symb;
+	Symbol *symb = declare_at->symb;
 
 	if (scp->symb_table != scp_declare_at->symb_table)	// outer
 	{
@@ -142,7 +142,7 @@ static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 //			symb->cld_use_cnt++;
 			symb->appear_cnt++;
 			scp->use_cnt_in_bb[vr]++;
-			scp->outer_symb_used.push_back(vr);
+//			scp->outer_symb_used.push_back(vr);
 		}
 
 		if (usage & VR_USAGE_WRITE)
@@ -231,7 +231,7 @@ static void _gen_liveness(Scope *scp)
 static void _check_while_used_outer_symb(int vr, int usage)
 {
 	Ast *p = vr_declare_manager.declare_at[vr];
-	SymbolVariable *symb = p->symb;
+	Symbol *symb = p->symb;
 	for (auto &r : while_used_outer_symb)
 	{
 		if (symb->depth < r.scope_depth)
@@ -316,28 +316,28 @@ static void find_while_used_outer_symb(Scope *scp)
 	if (scp->sem_stamp == SEM_WHILE)
 		while_used_outer_symb.pop_back();
 }
-void dump_while_outer_use_cnt(Scope *scp)
+void dump_while_used_outer_symb(Scope *scp)
 {
 	if (scp->outer_symb_read.size() || scp->outer_symb_read.size())
 		printf("%d %s \n", scp->id, scp->name.c_str());
 
 	if (scp->outer_symb_read.size())
 	{
-		printf("outer_symb_read: ");
+		printf("	outer_symb_read: ");
 		for (auto vr : scp->outer_symb_read)
-			printf(" ,%d %s", vr, vr_declare_manager.declare_at[vr]->tk.src.c_str());
+			printf(" ,%%%d %s", vr, vr_declare_manager.declare_at[vr]->tk.src.c_str());
 		printf("\n");
 	}
-	if (scp->outer_symb_read.size())
+	if (scp->outer_symb_write.size())
 	{
-		printf("outer_symb_write: ");
+		printf("	outer_symb_write: ");
 		for (auto vr : scp->outer_symb_write)
-			printf(" ,%d %s", vr, vr_declare_manager.declare_at[vr]->tk.src.c_str());
+			printf(" ,%%%d %s", vr, vr_declare_manager.declare_at[vr]->tk.src.c_str());
 		printf("\n");
 	}
 
 	for (Scope *p : scp->clds)
-		dump_while_outer_use_cnt(p);
+		dump_while_used_outer_symb(p);
 }
 void gen_liveness()
 {
@@ -346,7 +346,7 @@ void gen_liveness()
 	find_while_used_outer_symb(&file_scp);
 
 	printf("========== while_outer_use_cnt ==========\n");
-	dump_while_outer_use_cnt(&file_scp);
+	dump_while_used_outer_symb(&file_scp);
 	printf("====================\n");
 //	mc_list_name = "x64mc";
 //	PRINT_ASM_HEAD("========== mc ==========");

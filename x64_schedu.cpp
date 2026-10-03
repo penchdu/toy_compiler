@@ -170,7 +170,7 @@ static bool is_private_transient(Scope *scp, int vr)
 	if (vr < 0)
 		return false;
 
-	for (SymbolVariable *p : *scp->symb_table)
+	for (Symbol *p : *scp->symb_table)
 	{
 		if (p->vr == vr && p->stamp == SYMB_PRIVATE_transient)
 			return true;
