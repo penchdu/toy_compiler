@@ -147,6 +147,7 @@ static void gen_mc(Scope *scp)
 
 	if (scp->sem_stamp == SEM_FUNC_DEFINE
 	    || scp->sem_stamp == SEM_COND_JMP	// if, while
+	    || scp->sem_stamp == SEM_WHILE_COND
 	    || scp->sem_stamp == SEM_WHILE_BODY
 	    || scp->sem_stamp == SEM_LABEL
 	    || scp->jmp_in.size() > 0)
@@ -194,7 +195,8 @@ static void gen_mc(Scope *scp)
 //
 	if (scp->jmp_out)
 	{
-		if (scp->sem_stamp == SEM_COND_JMP)
+		Semantic stamp = scp->sem_stamp;
+		if (stamp == SEM_COND_JMP || stamp == SEM_WHILE_COND)
 		{
 			printf("bb.exit_jmp=%s \n", scp->name.c_str());
 			assert(scp->asts.size());
@@ -202,16 +204,16 @@ static void gen_mc(Scope *scp)
 			Ast *cond = scp->asts[0];
 			bb->jmp_mc_stamp = op2jmp_mc[cond->op];
 		}
-		else if (scp->sem_stamp == SEM_JMP)
+		else if (stamp == SEM_JMP)
 			bb->jmp_mc_stamp = MC_JMP;
-		else if (scp->sem_stamp == SEM_SAVE_RET_VALUE)
+		else if (stamp == SEM_SAVE_RET_VALUE)
 		{
 			ERR();
 			bb->jmp_mc_stamp = MC_JMP;
 		}
 		else
 		{
-			ERR("NOTE: bb.exit_jmp=%s %d\n", scp->name.c_str(), scp->sem_stamp);
+			ERR("NOTE: bb.exit_jmp=%s %d\n", scp->name.c_str(), stamp);
 		}
 	}
 
@@ -235,9 +237,9 @@ void dump_mc(Scope *scp, string mc_list_name)
 		PRINT_ASM_HEAD("\n%s:", bb->entry_label->name.c_str());
 
 	vector<X64mc> *mc_list;
-	if(mc_list_name == "x64mc")
+	if (mc_list_name == "x64mc")
 		mc_list = &bb->x64mc;
-	else if(mc_list_name == "x64mc_schedu")
+	else if (mc_list_name == "x64mc_schedu")
 		mc_list = &bb->x64mc_schedu;
 	else
 		ERR("%s", mc_list_name.c_str());

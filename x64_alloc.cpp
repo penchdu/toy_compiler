@@ -11,8 +11,8 @@
 
 extern Mc2mc fake_cmp_mc_to_real_mc[];
 
-static vector<VrToPr> vr2pr;
-static vector<PrToVr> pr2vr(X64PR_MAX, {INVALID__VR});
+vector<VrToPr> vr2pr;
+vector<PrToVr> pr2vr(X64PR_MAX, {INVALID__VR});
 
 static X64pr get_pr()
 {
@@ -187,9 +187,12 @@ int align16(int &n)
 int _asm_len = 0;
 #define PRINT_ASM_HEAD(fmt, ...) fprintf(fp, fmt "\n", ##__VA_ARGS__)
 #define PRINT_ASM(fmt, ...) _asm_len = 8 + fprintf(fp, "\t" fmt , ##__VA_ARGS__)
-#define PRINT_ASM_sem	fprintf(fp, "%*s#%s %%%d, %%%d,  idx %d, cyc %d", \
+#define PRINT_ASM_sem	fprintf(fp, "%*s#%s %s=%%%d, %s=%%%d,  idx %d, cyc %d", \
 	        (_asm_len < 48) ? (48 - _asm_len) : 2, "", \
-	        mc.ori_sem.c_str(), mc.s1, mc.s2, mc.idx, mc.start_cycle);	\
+	        mc.ori_sem.c_str(),	\
+	        mc.s1 >= 0 ? vr_declare_manager.declare_at[mc.s1]->tk.src.c_str() : "", mc.s1,	\
+        	mc.s2 >= 0 ? vr_declare_manager.declare_at[mc.s2]->tk.src.c_str() : "", mc.s2, 	\
+			mc.idx, mc.start_cycle);	\
 	        fprintf(fp, "\n");
 
 static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)

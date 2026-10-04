@@ -70,9 +70,9 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 	[SEM_CONST_NUM] = "SEM_CONST_NUM",
 
 	[SEM_IF] = "SEM_IF",
-	[SEM_COND_JMP] = "SEM_COND_JMP",
 	[SEM_THEN] = "SEM_THEN",
 	[SEM_ELSE] = "SEM_ELSE",
+	[SEM_COND_JMP] = "SEM_COND_JMP",
 	[SEM_JMP] = "SEM_JMP",
 	[SEM_LABEL] = "SEM_LABEL",
 

@@ -97,9 +97,9 @@ enum Semantic {
 	SEM_CONST_NUM,
 
 	SEM_IF,
-	SEM_COND_JMP,
 	SEM_THEN,
 	SEM_ELSE,
+	SEM_COND_JMP,
 	SEM_JMP,
 	SEM_LABEL,
 

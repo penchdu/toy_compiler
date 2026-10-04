@@ -14,32 +14,32 @@ int test() {
 
 	while (i < 120)
 	{
-		if (a < b)
+//		if (a < b)
 		{
 			a = a + 3;
 			e = e + 1;
 
-			if (c < d)
+//			if (c < d)
 			{
 				c = c + 5;
 				f = f + 1;
 			}
-			else
+//			else
 			{
 				d = d - 2;
 				f = f + 2;
 			}
 		}
-		else
+//		else
 		{
 			b = b - 2;
 			e = e + 2;
-			if (c > d)
+//			if (c > d)
 			{
 				c = c - 3;
 				f = f + 3;
 			}
-			else
+//			else
 			{
 				d = d + 4;
 				f = f + 4;

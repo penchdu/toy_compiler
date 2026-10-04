@@ -22,7 +22,6 @@ static Scope* cond_to_negative()
 		ERR("unexpect token %s", tk.src.c_str());
 
 	Scope *cond = new_scope_and_drop_in();
-	cond->sem_stamp = SEM_COND_JMP;
 	cond->name = ".L_" + cond->name;
 
 	// if-cond SEM_IF only have one condition express
@@ -186,6 +185,13 @@ void case_tk_if()
 	return;
 }
 
+//static Ast* new_ast_node(Token t)
+//{
+//	Ast *p = new Ast(t);
+//
+//	p->scope = current_scope_pointer;
+//	return p;
+//}
 void case_tk_while()
 {
 	PARSER_LOG();
@@ -196,11 +202,15 @@ void case_tk_while()
 	Scope *while_scp = new_scope_and_drop_in();
 	while_scp->sem_stamp = SEM_WHILE;
 	while_scp->name = ".L_" + while_scp->name + "_while";
+//	Ast *p = new_ast_node({"int", TK_INT});
+//	p->left = new_ast_node({"swap_vr", TK_VAR});
+//	p->type = INT;
+//	while_scp->asts.push_back(p);
 
 	// cond
 	// while only have one condition express
 	Scope *while_cond = cond_to_negative();
-	while_cond->sem_stamp = SEM_COND_JMP;	// todo, SEM_WHILE_COND
+	while_cond->sem_stamp = SEM_WHILE_COND;	// todo, SEM_WHILE_COND
 	while_cond->name += "_while_cond";
 
 	// body

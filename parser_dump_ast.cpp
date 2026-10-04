@@ -93,9 +93,11 @@ static void dump_scope(Scope *s, int depth)
 //		    s->jmp_then ? s->jmp_then->id : 0,
 //		    s->jmp_else ? s->jmp_else->id : 0);
 
-	printf("====== %s out=%d",
-	    s->sem_stamp == SEM_INVALID ? "" : Semantic_string[s->sem_stamp],
-	    s->jmp_out ? s->jmp_out->id : 0);
+	printf("====== %s",
+	    s->sem_stamp == SEM_INVALID ? "" : Semantic_string[s->sem_stamp]);
+
+	if(s->jmp_out != 0)
+		printf(" out=%d", s->jmp_out->id);
 
 	if (s->jmp_in.size())
 		printf("  in=");

@@ -11,8 +11,6 @@
 #include <cmath>
 
 vector<Wave> vrwave;
-static vector<VrToPr> vr2pr;
-static vector<PrToVr> pr2vr(X64PR_MAX, {INVALID__VR});
 
 static void init_wave(BasicBlock *bb)
 {
@@ -47,7 +45,7 @@ static void init_wave(BasicBlock *bb)
 	}
 }
 
-static void spill_vr(vector<X64mc> &x64mc_alloced, int vr)
+void spill_vr(vector<X64mc> &x64mc_alloced, int vr)
 {
 	int &pr = vr2pr[vr].pr;
 	int &u = vr2pr[vr].u;
@@ -68,7 +66,7 @@ static void spill_vr(vector<X64mc> &x64mc_alloced, int vr)
 	pr = X64PR_MAX;
 	u = VR_USEAGE_INVALID;
 }
-static void spill_all_pr(BasicBlock *bb)
+void spill_all_pr(BasicBlock *bb)
 {
 	for (int pr = R10D; pr < X64PR_MAX; pr++)
 	{
@@ -78,7 +76,7 @@ static void spill_all_pr(BasicBlock *bb)
 }
 static vector<int> x64pr_state(X64PR_MAX, INVALID__VR);
 
-static int get_pr(BasicBlock *bb, int mc_idx)
+int wave_get_pr(BasicBlock *bb, int mc_idx)
 {
 	X64mc &mc = bb->x64mc_schedu[mc_idx];
 
@@ -124,7 +122,7 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 
 	if (vr2pr[vr].pr == X64PR_MAX)
 	{
-		int pr = get_pr(bb, mc_idx);
+		int pr = wave_get_pr(bb, mc_idx);
 		vr2pr[vr].pr = pr;
 		vr2pr[vr].u = u;
 		pr2vr[pr].vr = vr;
@@ -152,7 +150,7 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 
 	return vr2pr[vr].pr;
 }
-static void check_and_clear_vr(Scope *scp, int vr)
+void check_and_clear_vr(Scope *scp, int vr)
 {
 	if (vr < 0)
 		return;
@@ -164,7 +162,7 @@ static void check_and_clear_vr(Scope *scp, int vr)
 	Ast *declare_at = vr_declare_manager.declare_at[vr];
 	Symbol *symb = declare_at->symb;
 
-	LOG("scp=%2d, %s %%%3d name=%5s, bb: %2d %2d, symb: %2d %2d",
+	LOG("scp=%d, %s %%%d name=%s, bb: %d %d, symb: %d %d",
 	    scp->id, is_private_symb(scp, vr) ? "private" : "outer  ",
 	    vr, symb->src.c_str(),
 	    scp->use_cnt_in_bb[vr], scp->consume_cnt_in_bb[vr],
@@ -181,6 +179,12 @@ static void check_and_clear_vr(Scope *scp, int vr)
 		vr2pr[vr].pr = X64PR_MAX;
 		vr2pr[vr].u = VR_USEAGE_INVALID;
 
+		if (pr2vr[pr].vr == INVALID__VR)
+		{
+			int vr = pr2vr[pr].vr;
+			ERR("scp=%s %s=%%%d", scp->name.c_str(),
+			    vr_declare_manager.declare_at[vr]->tk.src.c_str(), vr);
+		}
 		assert(pr2vr[pr].vr != INVALID__VR);
 		pr2vr[pr].vr = INVALID__VR;
 	}
@@ -211,7 +215,40 @@ static void check_bb_use_cnt(Scope *scp, int target_symb_stamp = SYMB_ALL)
 		}
 	}
 }
-static void _wave_reg_alloc(BasicBlock *bb, const X64mc &schedued, int i)
+
+static void check_pr_vr_consistency()
+{
+//	int e_vr = -1;
+//	int e_pr = -1;
+	for (int pr = R10D; pr < X64PR_MAX; pr++)
+	{
+		int vr = pr2vr[pr].vr;
+		if (vr == INVALID__VR)
+			continue;
+
+		if (vr2pr[vr].pr != pr)
+		{
+			Ast *declare = vr_declare_manager.declare_at[vr];
+			ERR("  MISMATCH pr2vr[R%d].vr=%%%d(%s) but vr2pr[%%%d].pr=%d\n",
+			    pr, vr, declare ? declare->tk.src.c_str() : "?", vr, vr2pr[vr].pr);
+		}
+	}
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	{
+		int pr = vr2pr[vr].pr;
+		if (pr == X64PR_MAX)
+			continue;
+
+		if (pr2vr[pr].vr != vr)
+		{
+			Ast *declare = vr_declare_manager.declare_at[vr];
+			ERR("  MISMATCH vr2pr[%%%d(%s)].pr=R%d but pr2vr[R%d].vr=%%%d\n",
+			    vr, declare ? declare->tk.src.c_str() : "?", pr, pr, pr2vr[pr].vr);
+		}
+	}
+}
+
+static void reg_alloc_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 {
 	vector<X64mc> &x64mc_alloc = bb->x64mc_alloc_wave;
 	X64mc mc = schedued;
@@ -268,7 +305,7 @@ static void _wave_reg_alloc(BasicBlock *bb, const X64mc &schedued, int i)
 }
 
 int enable_while_opt = 1;
-static void _wave_reg_alloc(Scope *scp)
+void reg_alloc_wave__scope(Scope *scp)
 {
 	//	LOG("scp %s", scp->name.c_str());
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
@@ -277,8 +314,16 @@ static void _wave_reg_alloc(Scope *scp)
 	gen_wave(bb);
 //	dump_wave(*bb);
 
-	if (enable_while_opt && scp->sem_stamp == SEM_WHILE)
+	scp->consume_cnt_in_bb.clear();
+	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
+
+	if (scp->sem_stamp == SEM_WHILE)
 	{
+		if (enable_while_opt)
+		{
+			reg_alloc_wave__while(scp);
+			return;
+		}
 		for (int vr : scp->outer_symb_read)
 		{
 			Ast *p = vr_declare_manager.declare_at[vr];
@@ -293,34 +338,29 @@ static void _wave_reg_alloc(Scope *scp)
 		}
 	}
 
-	scp->consume_cnt_in_bb.clear();
-	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
+	////////////////////////////////////////////////////////////
 
 	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
 	{
 		const X64mc &mc = bb->x64mc_schedu[i];
-		_wave_reg_alloc(bb, mc, i);
+		reg_alloc_wave__mc(bb, mc, i);
 
-//		if (scp->parent && scp->parent->sem_stamp == SEM_WHILE)
-//			update_mc_consume_cnt(scp, mc, SYMB_PRIVATE | SYMB_PRIVATE_transient);
-//		else
-			update_mc_consume_cnt(scp, mc, SYMB_ALL);
-
+		update_mc_consume_cnt(scp, mc, SYMB_ALL);
 
 		check_and_clear_vr(scp, mc.dst);
 		check_and_clear_vr(scp, mc.s1);
 		check_and_clear_vr(scp, mc.s2);
+
+		check_pr_vr_consistency();
 	}
 
-//	if (scp->parent && scp->parent->sem_stamp != SEM_WHILE)
-//		check_bb_use_cnt(scp, SYMB_PRIVATE | SYMB_PRIVATE_transient);
-
-	spill_all_pr(bb);
+//	spill_all_pr(bb);
 
 	for (Scope *p : scp->clds)
-		_wave_reg_alloc(p);
+		reg_alloc_wave__scope(p);
 
-	if (enable_while_opt && scp->sem_stamp == SEM_WHILE)
+	////////////////////////////////////////////////////////////
+	if (scp->sem_stamp == SEM_WHILE && !enable_while_opt)
 	{
 		for (int vr : scp->outer_symb_read)
 		{
@@ -340,21 +380,8 @@ static void _wave_reg_alloc(Scope *scp)
 		for (int vr : scp->outer_symb_write)
 			check_and_clear_vr(scp, vr);
 	}
-//	if (scp->sem_stamp == SEM_WHILE)
-//	{
-//		for (int vr : scp->outer_symb_used)
-//		{
-//			assert(!is_private_symb(scp, vr));
-//			update_vr_consume_cnt(scp, vr, SYMB_OUTER);
-//		}
-
-//		for (int vr : scp->outer_symb_used)
-//			check_and_clear_vr(scp, vr);
-
-//		check_bb_use_cnt(scp, SYMB_OUTER);
-//	}
-
 }
+
 void x64_reg_alloc_wave()
 {
 	clear_vr_consume_cnt(&file_scp);
@@ -365,7 +392,7 @@ void x64_reg_alloc_wave()
 	pr2vr.clear();
 	pr2vr.resize(X64PR_MAX, {INVALID__VR});
 
-	_wave_reg_alloc(&file_scp);
+	reg_alloc_wave__scope(&file_scp);
 
 	check_vr_consume_cnt(&file_scp);
 }

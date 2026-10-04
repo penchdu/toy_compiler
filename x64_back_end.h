@@ -126,7 +126,9 @@ struct VrToPr
 {
 	int pr = X64PR_MAX;
 	int u = VR_USEAGE_INVALID;
+	int score = 0;
 };
+extern vector<VrToPr> vr2pr;
 
 constexpr int INVALID__VR = -1;
 struct PrToVr
@@ -134,7 +136,7 @@ struct PrToVr
 	int vr = INVALID__VR;
 //	int u = VR_USEAGE_INVALID;
 };
-
+extern vector<PrToVr> pr2vr;
 
 struct McDepend {
 	vector<int> mcs;
@@ -236,10 +238,10 @@ struct X64mc {
 		latency = mc_info[_mc_stamp].mc_latency;
 		idx = mcidx++;
 	}
-//	X64mc(MachineCodeStamp _mc_stamp)
-//	{
-//		mc_stamp = _mc_stamp;
-//	}
+	X64mc(MachineCodeStamp _mc_stamp)
+	{
+		mc_stamp = _mc_stamp;
+	}
 	X64mc()
 	{
 		mc_stamp = MC_INVALID;
@@ -279,6 +281,35 @@ struct X64mc {
 };
 
 
+struct BasicBlock {
+	Scope *entry_label = 0;
+	vector<X64mc> x64mc;
+	vector<X64mc> x64mc_schedu;
+	vector<int> vrids;
+
+//	Scope *exit_jmp = 0;
+	Scope *jmp_to = 0;
+	MachineCodeStamp jmp_mc_stamp = MC_INVALID;
+
+	//
+	vector<X64mc> x64mc_alloc_o0;
+	vector<X64mc> x64mc_alloc_wave;
+//	float max_wave_value = 0;
+};
+
+struct Wave {
+	int vr;
+	vector<float> score;
+	vector<int> insts;		// >=0, <= 3
+};
+extern vector<Wave> vrwave;
+
+void dump_mc(Scope *scp, string mc_list_name);
+void gen_wave(BasicBlock *bb);
+void dump_wave(BasicBlock *bb);
+void dump_wave_gnuplot(Wave &w, int vr);
+//void dump_asm();
+
 //void spill_pr(vector<X64mc> &x64mc_alloced, int vr);
 //void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2);
 
@@ -296,9 +327,16 @@ void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int target_symb_stamp = 
 void clear_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
-void x64_reg_alloc();
-void x64_reg_alloc_wave();
 
+void spill_vr(vector<X64mc> &x64mc_alloced, int vr);
+void spill_all_pr(BasicBlock *bb);
+void x64_reg_alloc();
+
+void check_and_clear_vr(Scope *scp, int vr);
+int wave_get_pr(BasicBlock *bb, int mc_idx);
+void x64_reg_alloc_wave();
+void reg_alloc_wave__scope(Scope *scp);
+void reg_alloc_wave__while(Scope *scp);
 
 
 #endif /* X64_BACK_END_H_ */
