@@ -370,7 +370,7 @@ static void mc_schdu(Scope *scp)
 	 *				mv mc->edges[i] to ready if dep[i].deps == 0
 	 */
 
-	LOG("scp %s", scp->name.c_str());
+//	LOG("scp %s", scp->name.c_str());
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 	vector<X64mc> &x64mc = bb->x64mc;
 	vector<X64mc> &x64mc_schedu = bb->x64mc_schedu;

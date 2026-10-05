@@ -9,6 +9,38 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
+const char *pr_name[] = {
+    [R10D] = "r10d",
+    [R11D] = "r11d",
+    [R12D] = "r12d",
+    [R13D] = "r13d",
+    [R14D] = "r14d",
+    [R15D] = "r15d",
+//	[eax] = "eax",
+    };
+
+const char* pr_name_byte(int pr)
+{
+	switch (pr)
+	{
+	case R10D:
+		return "r10b";
+	case R11D:
+		return "r11b";
+	case R12D:
+		return "r12b";
+	case R13D:
+		return "r13b";
+	case R14D:
+		return "r14b";
+	case R15D:
+		return "r15b";
+	}
+
+	ERR("no byte register");
+	return 0;
+}
+
 extern Mc2mc fake_cmp_mc_to_real_mc[];
 
 vector<VrToPr> vr2pr;
@@ -197,6 +229,7 @@ int _asm_len = 0;
 
 static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 {
+//	LOG("scp: %s", scp->name.c_str());
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 	if (bb->entry_label != 0 && bb->entry_label->name != "test")
 		PRINT_ASM_HEAD("\n\n%s:", bb->entry_label->name.c_str());

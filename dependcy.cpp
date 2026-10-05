@@ -49,7 +49,7 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 	mcs_successor.clear();
 	mcs_successor.resize(x64mc.size());
 
-	LOG("%zu, %zu\n", x64mc.size(), prev_write.size());
+//	LOG("%zu, %zu\n", x64mc.size(), prev_write.size());
 
 	for (int idx = 0; idx < x64mc.size(); idx++)
 	{

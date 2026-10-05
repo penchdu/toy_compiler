@@ -107,7 +107,7 @@ static Scope* get_inner_tail_of_scope(Scope *scope)
 	assert(inner_tail->asts.size() == 0);
 	return inner_tail;
 }
-static void rm_duplicit_jmp_in(Scope *tail)
+static void rm_duplicant_jmp_in(Scope *tail)
 {
 	auto &v = tail->jmp_in;
 	std::sort(v.begin(), v.end());
@@ -171,7 +171,7 @@ void case_tk_if()
 	then_branch_inner_tail->jmp_out = tail;
 	tail->jmp_in.push_back(then_branch_inner_tail);
 
-	rm_duplicit_jmp_in(tail);
+	rm_duplicant_jmp_in(tail);
 
 	//exit if_scp
 	assert(current_scope_pointer == if_scp || current_scope_pointer->parent == if_scp);
@@ -240,7 +240,7 @@ void case_tk_while()
 		p->sem_stamp = SEM_JMP;
 	}
 
-	rm_duplicit_jmp_in(tail);
+	rm_duplicant_jmp_in(tail);
 
 	//exit while_scp
 	assert(current_scope_pointer == while_scp || current_scope_pointer->parent == while_scp);

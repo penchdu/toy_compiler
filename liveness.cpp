@@ -24,8 +24,11 @@ void clear_vr_consume_cnt(Scope *scp)
 }
 void check_vr_consume_cnt(Scope *scp)
 {
-	for (auto *p : scp->scope_symb_table)
-		assert(p->consume_cnt == p->use_cnt);
+	for (Symbol *p : scp->scope_symb_table)
+	{
+		if (p->consume_cnt != p->use_cnt)
+			ERR("%s %%%d %d %d", p->src.c_str(), p->vr, p->use_cnt, p->consume_cnt);
+	}
 
 	for (Scope *p : scp->clds)
 		check_vr_consume_cnt(p);
@@ -300,8 +303,8 @@ static void check_while_used_outer_symb(Scope *scp)
 static void find_while_used_outer_symb(Scope *scp)
 {
 	if (scp->sem_stamp == SEM_WHILE
-		||scp->sem_stamp == SEM_WHILE_COND
-		||scp->sem_stamp == SEM_WHILE_BODY)
+	    || scp->sem_stamp == SEM_WHILE_COND
+	    || scp->sem_stamp == SEM_WHILE_BODY)
 	{
 		while_used_outer_symb.push_back({scp});
 	}
@@ -313,8 +316,8 @@ static void find_while_used_outer_symb(Scope *scp)
 		find_while_used_outer_symb(p);
 
 	if (scp->sem_stamp == SEM_WHILE
-		||scp->sem_stamp == SEM_WHILE_COND
-		||scp->sem_stamp == SEM_WHILE_BODY)
+	    || scp->sem_stamp == SEM_WHILE_COND
+	    || scp->sem_stamp == SEM_WHILE_BODY)
 	{
 		while_used_outer_symb.pop_back();
 	}

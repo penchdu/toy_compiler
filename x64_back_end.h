@@ -80,38 +80,8 @@ enum X64pr {
 	X64PR_MAX,
 };
 
-static const char *pr_name[] = {
-    [R10D] = "r10d",
-    [R11D] = "r11d",
-    [R12D] = "r12d",
-    [R13D] = "r13d",
-    [R14D] = "r14d",
-    [R15D] = "r15d",
-//	[eax] = "eax",
-    };
-
-static const char* pr_name_byte(int pr)
-{
-	switch (pr)
-	{
-	case R10D:
-		return "r10b";
-	case R11D:
-		return "r11b";
-	case R12D:
-		return "r12b";
-	case R13D:
-		return "r13b";
-	case R14D:
-		return "r14b";
-	case R15D:
-		return "r15b";
-	}
-
-	ERR("no byte register");
-	return 0;
-}
-
+extern const char *pr_name[];
+const char* pr_name_byte(int pr);
 
 enum VrUsage
 {
@@ -241,6 +211,9 @@ struct X64mc {
 	X64mc(MachineCodeStamp _mc_stamp)
 	{
 		mc_stamp = _mc_stamp;
+
+		asm_code = mc_info[_mc_stamp].mc_code;
+		idx = mcidx++;
 	}
 	X64mc()
 	{
@@ -332,10 +305,16 @@ void spill_vr(vector<X64mc> &x64mc_alloced, int vr);
 void spill_all_pr(BasicBlock *bb);
 void x64_reg_alloc();
 
+void check_pr_vr_consistency();
 void check_and_clear_vr(Scope *scp, int vr);
+void init_wave(BasicBlock *bb);
 int wave_get_pr(BasicBlock *bb, int mc_idx);
+void reg_alloc_wave__mc(BasicBlock *bb, const X64mc &schedued, int i);
 void x64_reg_alloc_wave();
 void reg_alloc_wave__scope(Scope *scp);
+
+void while__pre_work(Scope *scp);
+void while__end_work(Scope *scp);
 void reg_alloc_wave__while(Scope *scp);
 
 
