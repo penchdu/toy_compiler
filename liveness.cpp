@@ -12,7 +12,7 @@
 struct WhileUsedOuterSymb {
 	Scope *while_scp;
 };
-vector<WhileUsedOuterSymb> while_used_outer_symb;
+vector<WhileUsedOuterSymb> while__use_outer_symb;
 
 void clear_vr_consume_cnt(Scope *scp)
 {
@@ -230,14 +230,14 @@ static void _check_while_used_outer_symb(int vr, int usage)
 {
 	Ast *p = vr_declare_manager.declare_at[vr];
 	Symbol *symb = p->symb;
-	for (auto &r : while_used_outer_symb)
+	for (auto &r : while__use_outer_symb)
 	{
 		if (symb->depth < r.while_scp->depth)
 		{
 			if (usage & VR_USAGE_READ)
-				r.while_scp->outer_symb_read.push_back(vr);
+				r.while_scp->outer_symb_read[vr]++;
 			if (usage & VR_USAGE_WRITE)
-				r.while_scp->outer_symb_write.push_back(vr);
+				r.while_scp->outer_symb_write[vr]++;
 		}
 	}
 }
@@ -306,10 +306,15 @@ static void find_while_used_outer_symb(Scope *scp)
 	    || scp->sem_stamp == SEM_WHILE_COND
 	    || scp->sem_stamp == SEM_WHILE_BODY)
 	{
-		while_used_outer_symb.push_back({scp});
+		while__use_outer_symb.push_back({scp});
+
+		assert(scp->outer_symb_read.size() == 0);
+		assert(scp->outer_symb_write.size() == 0);
+		scp->outer_symb_read.resize(vr_declare_manager.size());
+		scp->outer_symb_write.resize(vr_declare_manager.size());
 	}
 
-	if (while_used_outer_symb.size() > 0)
+	if (while__use_outer_symb.size() > 0)
 		check_while_used_outer_symb(scp);
 
 	for (Scope *p : scp->clds)
@@ -319,7 +324,7 @@ static void find_while_used_outer_symb(Scope *scp)
 	    || scp->sem_stamp == SEM_WHILE_COND
 	    || scp->sem_stamp == SEM_WHILE_BODY)
 	{
-		while_used_outer_symb.pop_back();
+		while__use_outer_symb.pop_back();
 	}
 }
 void dump_while_used_outer_symb(Scope *scp)
@@ -330,15 +335,23 @@ void dump_while_used_outer_symb(Scope *scp)
 	if (scp->outer_symb_read.size())
 	{
 		printf("	outer_symb_read: ");
-		for (auto vr : scp->outer_symb_read)
-			printf(" %s=%%%d", vr_declare_manager.declare_at[vr]->tk.src.c_str(), vr);
+		for (int vr = 0; vr < scp->outer_symb_read.size(); vr++)
+		{
+			int cnt = scp->outer_symb_read[vr];
+			if (cnt > 0)
+				printf(" %s=%%%d(%d)", vr_declare_manager.declare_at[vr]->tk.src.c_str(), vr, cnt);
+		}
 		printf("\n");
 	}
 	if (scp->outer_symb_write.size())
 	{
 		printf("	outer_symb_write: ");
-		for (auto vr : scp->outer_symb_write)
-			printf(" %s=%%%d", vr_declare_manager.declare_at[vr]->tk.src.c_str(), vr);
+		for (int vr = 0; vr < scp->outer_symb_write.size(); vr++)
+		{
+			int cnt = scp->outer_symb_write[vr];
+			if (cnt > 0)
+				printf(" %s=%%%d(%d)", vr_declare_manager.declare_at[vr]->tk.src.c_str(), vr, cnt);
+		}
 		printf("\n");
 	}
 
