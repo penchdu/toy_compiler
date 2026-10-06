@@ -229,7 +229,7 @@ int _asm_len = 0;
 
 static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 {
-	LOG("scp: %s", scp->name.c_str());
+//	LOG("scp: %s", scp->name.c_str());
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 	if (bb->entry_label != 0 && bb->entry_label->name != "test")
 		PRINT_ASM_HEAD("\n\n%s:", bb->entry_label->name.c_str());

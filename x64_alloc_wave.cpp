@@ -188,7 +188,7 @@ void check_and_clear_vr(Scope *scp, int vr)
 
 		// last use in global
 		int pr = vr2pr[vr].pr;
-		LOG("%s clear %s %s", scp->name.c_str(), symb->src.c_str(), pr_name[pr]);
+//		LOG("%s clear %s %s", scp->name.c_str(), symb->src.c_str(), pr_name[pr]);
 
 		vr2pr[vr].pr = X64PR_MAX;
 		vr2pr[vr].u = VR_USEAGE_INVALID;
