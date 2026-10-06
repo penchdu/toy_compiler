@@ -399,6 +399,8 @@ Ast* parse_stmt();
 Ast* parse_expr_with_paren();
 void parse_scope(bool eat = true);
 void case_tk_right_brace(bool eat = true);
+
+Scope* get_inner_tail_of_scope(Scope *scope);
 void case_tk_if();
 void case_tk_while();
 void case_tk_continue();

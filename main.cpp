@@ -6,15 +6,15 @@
  */
 
 #include "frontend.h"
+#include "test/print_test.cpp"
 #include "x64_back_end.h"
-#include "test/test.cpp"
 
 VirtualRegDeclareManager vr_declare_manager;
 
 
 int main(int argc, char **argv)
 {
-	FILE *fp = fopen("./t1.txt", "r");
+	FILE *fp = fopen("./test/test.cpp", "r");
 	assert(fp);
 
 	lexer(fp);
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 	x64_reg_alloc();		// create a.s in current location
 
 
-	test__print();
+	print__test();
 	fclose(fp);
 	return 0;
 }

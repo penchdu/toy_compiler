@@ -56,7 +56,10 @@ Scope* new_virtual_scope_and_drop_in()
 {
 	PARSER_LOG();
 //	Token tk = tokens.peek();
-	return new_cld_scp(true);
+	Scope * scp = new_cld_scp(true);
+	scp->sem_stamp = SEM_LABEL;
+	scp->name = ".L_" + scp->name;
+	return scp;
 }
 void exit_current_scope()
 {
@@ -487,6 +490,7 @@ void case_tk_right_brace(bool eat)
 	))
 	{
 		new_virtual_scope_and_drop_in();
+		tail->sem_stamp = SEM_LABEL;
 	}
 
 	PARSER_LOG();

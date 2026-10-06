@@ -45,7 +45,7 @@ void init_wave(BasicBlock *bb)
 	}
 }
 
-void spill_vr(vector<X64mc> &x64mc_alloced, int vr)
+void spill_vr(vector<X64mc> &x64mc_alloced, int vr, const string &tag)
 {
 	int &pr = vr2pr[vr].pr;
 	int &u = vr2pr[vr].u;
@@ -58,7 +58,7 @@ void spill_vr(vector<X64mc> &x64mc_alloced, int vr)
 	{
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;
-		mc.ori_sem = "spill";
+		mc.ori_sem = tag + "spill";
 		x64mc_alloced.push_back(mc);
 	}
 

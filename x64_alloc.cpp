@@ -229,7 +229,7 @@ int _asm_len = 0;
 
 static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 {
-//	LOG("scp: %s", scp->name.c_str());
+	LOG("scp: %s", scp->name.c_str());
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 	if (bb->entry_label != 0 && bb->entry_label->name != "test")
 		PRINT_ASM_HEAD("\n\n%s:", bb->entry_label->name.c_str());
@@ -329,8 +329,8 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 }
 static void dump_asm(const string &asm_file)
 {
-	int rsp_of = vr_declare_manager.offset;
-	align16(rsp_of);
+	int rsp_off = vr_declare_manager.offset;
+	align16(rsp_off);
 	//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 
 	FILE *fp = fopen(asm_file.c_str(), "w");
@@ -351,7 +351,7 @@ static void dump_asm(const string &asm_file)
 	PRINT_ASM_HEAD("\nmain:");
 	PRINT_ASM("push rbp \n");
 	PRINT_ASM("mov rbp, rsp \n");
-	PRINT_ASM("sub rsp, %d \n", rsp_of);
+	PRINT_ASM("sub rsp, %d \n\n", rsp_off);
 
 	dump_bb_asm(fp, &file_scp, asm_file);
 

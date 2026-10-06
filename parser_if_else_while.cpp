@@ -82,13 +82,10 @@ static Scope* new_jmp_tail_for_cond_imp(Scope *cond)
 
 	Scope *tail = new_virtual_scope_and_drop_in();
 	tail->sem_stamp = SEM_LABEL;
-	tail->name = ".L_" + tail->name + "_jmp_tail";
+	tail->name = ".L_" + tail->name;
 
-	/*
-	 * exit_current_scope();
-	 * new_virtual_scp_and_drop_in();
-	 *
-	 */
+//	 exit_current_scope();
+//	 new_virtual_scope_and_drop_in();
 
 //	if (tail->is_virtual == false)	// || tail->sem != SEM_JMP)
 //	{
@@ -98,7 +95,7 @@ static Scope* new_jmp_tail_for_cond_imp(Scope *cond)
 //	}
 	return tail;
 }
-static Scope* get_inner_tail_of_scope(Scope *scope)
+Scope* get_inner_tail_of_scope(Scope *scope)
 {
 	assert(scope->clds.size());
 	Scope *inner_tail = scope->clds.back();	// then_branch.cld.back()
@@ -154,7 +151,7 @@ void case_tk_if()
 //	}
 	// end work
 	Scope *tail = new_jmp_tail_for_cond_imp(cond);
-	tail->name += "_of_if";
+	tail->name += "_if" + to_string(if_scp->id) + "_jmp_tail";
 
 	if (else_branch)
 	{
@@ -202,31 +199,40 @@ void case_tk_while()
 	Scope *while_scp = new_scope_and_drop_in();
 	while_scp->sem_stamp = SEM_WHILE;
 	while_scp->name = ".L_" + while_scp->name + "_while";
-//	Ast *p = new_ast_node({"int", TK_INT});
-//	p->left = new_ast_node({"swap_vr", TK_VAR});
-//	p->type = INT;
-//	while_scp->asts.push_back(p);
 
 	// cond
 	// while only have one condition express
 	Scope *while_cond = cond_to_negative();
 	while_cond->sem_stamp = SEM_WHILE_COND;	// todo, SEM_WHILE_COND
-	while_cond->name += "_while_cond";
+	while_cond->name += "_while" + to_string(while_scp->id) + "_cond";
 
 	// body
 	Scope *while_body = body_of_if__while(SEM_WHILE_BODY);
-	while_body->name += "_while_body";
+	while_body->name += "_while" + to_string(while_scp->id) + "_body";
+
+	// body suffix
+	Scope *while_body_suffix = new_virtual_scope_and_drop_in();
+	while_body_suffix->sem_stamp = SEM_WHILE_BODY_suffix;
+	while_body_suffix->name = ".L_" + while_body_suffix->name +
+		"_while" + to_string(while_scp->id) + "_body_suffix";
+	exit_current_scope();
+
+
+
+//	Scope *while_body_inner_tail = get_inner_tail_of_scope(while_body);
+////	while_body_inner_tail->name += "____while" + to_string(while_scp->id) + "_body_suffix";
+//	while_body_inner_tail->jmp_out = while_cond;
+//	while_cond->jmp_in.push_back(while_body_inner_tail);
+
+	while_body_suffix->jmp_out = while_cond;
+	while_cond->jmp_in.push_back(while_body_suffix);
 
 	// end work
 	Scope *tail = new_jmp_tail_for_cond_imp(while_cond);
-	tail->name += "_of_while";
+	tail->name += "_while" + to_string(while_scp->id) + "_tail";
 
 	while_cond->jmp_out = tail;
 	tail->jmp_in.push_back(while_cond);
-
-	Scope *while_body_inner_tail = get_inner_tail_of_scope(while_body);
-	while_body_inner_tail->jmp_out = while_cond;
-	while_cond->jmp_in.push_back(while_body_inner_tail);
 
 	//
 	for (Scope *p : while_body->continue__break)

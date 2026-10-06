@@ -301,10 +301,11 @@ void clear_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 
-void spill_vr(vector<X64mc> &x64mc_alloced, int vr);
+void spill_vr(vector<X64mc> &x64mc_alloced, int vr,  const string &tag = "");
 void spill_all_pr(BasicBlock *bb);
 void x64_reg_alloc();
 
+void dump_vr2pr(const vector<VrToPr> &vp, const string &tag);
 void check_pr_vr_consistency();
 void check_and_clear_vr(Scope *scp, int vr);
 void init_wave(BasicBlock *bb);

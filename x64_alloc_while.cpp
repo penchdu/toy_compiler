@@ -160,134 +160,169 @@ void while__end_work(Scope *scp)
 }
 void dump_vr2pr(const vector<VrToPr> &vp, const string &tag)
 {
-	printf("\n========== %s ==========\n", tag.c_str());
+	printf("===== %s\n", tag.c_str());
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
 		int pr = vp[vr].pr;
 		if (pr != X64PR_MAX)
-			printf("%%%d %s \n", vr, pr_name[pr]);
+			printf("%s=%%%d %s    ", vr_declare_manager.declare_at[vr]->symb->unique_name.c_str()
+			    , vr, pr_name[pr]);
 	}
-	printf("==============================\n");
+	printf("\n");
 }
 
-static void while__recover_pr(Scope *scp, const vector<VrToPr> &before)
+static void while__recover_pr(Scope *scp,
+    vector<VrToPr> &before_vr2pr,
+    vector<PrToVr> &before_pr2vr,
+    vector<VrToPr> &now_vr2pr,
+    vector<PrToVr> &now_pr2vr)
 {
-	BasicBlock *body_bb = (BasicBlock*) scp->clds[1]->basic_block;
-	vector<X64mc> &x64mcs = body_bb->x64mc_alloc_wave;
+	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	vector<X64mc> &x64mcs = bb->x64mc_alloc_wave;
 	X64mc mc;
-
-	int swap_pr = X64PR_MAX;
+	(void) vr2pr;
+	(void) pr2vr;
 
 	int spilled = 0;
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
-		if (before[vr].pr == X64PR_MAX && vr2pr[vr].pr != X64PR_MAX)
+		if (before_vr2pr[vr].pr == X64PR_MAX && now_vr2pr[vr].pr != X64PR_MAX)
 		{
-			int pr = vr2pr[vr].pr;
+//			spill_vr(x64mcs, vr, "while ");
+			int &pr = now_vr2pr[vr].pr;
+			int &u = now_vr2pr[vr].u;
 			LOG("scp %s, spill %%%d-%s %d", scp->name.c_str(), vr, pr_name[pr], pr);
-			spill_vr(x64mcs, vr);
+
+			assert(pr != X64PR_MAX);
+			assert(u != VR_USEAGE_INVALID);
+			assert(now_pr2vr[pr].vr == vr);
+
+			if (u & VR_USAGE_WRITE)
+			{
+				X64mc mc(MC_ST, vr);
+				mc.pr1 = (int) pr;
+				mc.ori_sem = "while spill";
+				x64mcs.push_back(mc);
+			}
+
+			now_pr2vr[pr].vr = INVALID__VR;
+			pr = X64PR_MAX;
+			u = VR_USEAGE_INVALID;
 			spilled++;
-			//			break;
 		}
 	}
 
+	int swap_pr = X64PR_MAX;
+//	swap_pr = get_swap_pr(bb);
+	for (int i = R10D; i < X64PR_MAX; i++)
+	{
+		if (now_pr2vr[i].vr == INVALID__VR)
+		{
+			swap_pr = i;
+			break;;
+		}
+	}
 	if (swap_pr == X64PR_MAX)
-		swap_pr = get_swap_pr(body_bb);
+		ERR();
 
 	LOG("scp %s spilled: %d, swap_pr=%d %s", scp->name.c_str(), spilled, swap_pr, pr_name[swap_pr]);
+//	Scope *cond = scp->clds[0];
+//	auto & cond_read = cond->outer_symb_read;
+//	auto & cond_write = cond->outer_symb_write;
 
-	for (int vr = 0; vr < before.size(); vr++)
+	for (int vr = 0; vr < before_vr2pr.size(); vr++)
 	{
-		int A = before[vr].pr;
+		int A = before_vr2pr[vr].pr;
 
 		if (A == X64PR_MAX)
 			continue;
 
-		int B = vr2pr[vr].pr;
+		int B = now_vr2pr[vr].pr;
 		if (B == A)
 			continue;
 
 		if (B != X64PR_MAX)
 		{
-			int curr_vr_have_A = pr2vr[A].vr;
+			int curr_vr_have_A = now_pr2vr[A].vr;
 
 			if (curr_vr_have_A != INVALID__VR)
 			{
-				auto &curr_vr_have_A_struct = vr2pr[curr_vr_have_A];
+				auto &curr_vr_struct_have_A = now_vr2pr[curr_vr_have_A];
 
 				mc = X64mc(MC_ASSIGN);
 				mc.pr1 = swap_pr;
 				mc.pr2 = A;
-				mc.ori_sem = "assign while";
+				mc.ori_sem = "while 1, assign swap_pr, A";
 				x64mcs.push_back(mc);
 
 				mc = X64mc(MC_ASSIGN);
 				mc.pr1 = A;
 				mc.pr2 = B;
-				mc.ori_sem = "assign while";
+				mc.ori_sem = "while 1, assign A, B";
 				x64mcs.push_back(mc);
 
-				mc = X64mc(MC_ASSIGN);
-				mc.pr1 = B;
-				mc.pr2 = swap_pr;
-				mc.ori_sem = "assign while";
-				x64mcs.push_back(mc);
+//				mc = X64mc(MC_ASSIGN);
+//				mc.pr1 = B;
+//				mc.pr2 = swap_pr;
+//				mc.ori_sem = "while 1, assign B, swap_pr";
+//				x64mcs.push_back(mc);
 
-//				vr2pr[curr_vr_have_A] = curr_vr_have_A_struct;
-				vr2pr[curr_vr_have_A].pr = B;
-				pr2vr[B].vr = curr_vr_have_A;
+//				now[curr_vr_have_A] = curr_vr_have_A_struct;
+				now_vr2pr[curr_vr_have_A].pr = swap_pr;
+				now_pr2vr[swap_pr].vr = curr_vr_have_A;
+				swap_pr = B;
 			}
 			else	//  (curr_vr_have_A == INVALID__VR)
 			{
 				mc = X64mc(MC_ASSIGN);
 				mc.pr1 = A;
 				mc.pr2 = B;
-				mc.ori_sem = "assign while";
+				mc.ori_sem = "while 2, assign A, B";
 				x64mcs.push_back(mc);
 
 				//
-				pr2vr[B].vr = INVALID__VR;
+				now_pr2vr[B].vr = INVALID__VR;
 			}
 		}
 		else	// B == X64PR_MAX
 		{
-			int curr_vr_have_A = pr2vr[A].vr;
+			int curr_vr_have_A = now_pr2vr[A].vr;
 
 			if (curr_vr_have_A != INVALID__VR)
 			{
 				// must have another free pr
 				int free_pr = X64PR_MAX;
-				for (int i = R10D; i < X64PR_MAX; i++)
+				for (int pr = R10D; pr < X64PR_MAX; pr++)
 				{
-					if (pr2vr[i].vr == INVALID__VR)
+					if (now_pr2vr[pr].vr == INVALID__VR && pr != swap_pr)
 					{
-						free_pr = i;
+						free_pr = pr;
 						break;
 					}
 				}
 				if (free_pr == X64PR_MAX)
-					ERR("%d", before[curr_vr_have_A].pr);
+					ERR("%d", before_vr2pr[curr_vr_have_A].pr);
 
-				auto &curr_vr_A_struct = vr2pr[curr_vr_have_A];
+				auto &curr_vr_A_struct = now_vr2pr[curr_vr_have_A];
 
 				mc = X64mc(MC_ASSIGN);
 				mc.pr1 = free_pr;
 				mc.pr2 = A;
-				mc.ori_sem = "while free_pr";
+				mc.ori_sem = "while 3, assign free pr, A";
 				x64mcs.push_back(mc);
 
-				vr2pr[curr_vr_have_A].pr = free_pr;
-				pr2vr[free_pr].vr = curr_vr_have_A;
+				now_vr2pr[curr_vr_have_A].pr = free_pr;
+				now_pr2vr[free_pr].vr = curr_vr_have_A;
 			}
 			//  (curr_vr_A == INVALID__VR)
 			mc = X64mc(MC_LD, vr);
 			mc.pr1 = A;
-			mc.ori_sem = "ld while";
+			mc.ori_sem = "while 4, ld";
 			x64mcs.push_back(mc);
 		}
 
-		vr2pr[vr] = before[vr];
-		pr2vr[A].vr = vr;
+		now_vr2pr[vr] = before_vr2pr[vr];
+		now_pr2vr[A].vr = vr;
 	}
 }
 
@@ -313,27 +348,45 @@ void reg_alloc_wave__while(Scope *while_scp)
 	////////////////////////////////////////////////////////////
 	// while cond
 
-	//	vector<VrToPr> pre_cond = vr2pr;
+	vector<VrToPr> pre_cond_vr2pr = vr2pr;
+	vector<PrToVr> pre_cond_pr2vr = pr2vr;
+
 	reg_alloc_wave__scope(while_scp->clds[0]);
 
-	vector<VrToPr> after_cond = vr2pr;
+	vector<VrToPr> after_cond_vr2pr = vr2pr;
+	vector<PrToVr> after_cond_pr2vr = pr2vr;
 
 	////////////////////////////////////////////////////////////
 	// while body
 	reg_alloc_wave__scope(while_scp->clds[1]);
 
+	vector<VrToPr> after_body_vr2pr = vr2pr;
+	vector<PrToVr> after_body_pr2vr = pr2vr;
+
 	////////////////////////////////////////////////////////////
+	vr2pr = after_cond_vr2pr;
+	pr2vr = after_cond_pr2vr;
 
-	dump_vr2pr(after_cond, "after cond " + to_string(while_scp->id));
-	dump_vr2pr(vr2pr, "after body " + to_string(while_scp->id));
+	////////////////////////////////////////////////////////////
+	printf("\n============== swap %d ==============\n", while_scp->id);
+	dump_vr2pr(pre_cond_vr2pr, "pre cond " + to_string(while_scp->id));
+	dump_vr2pr(after_cond_vr2pr, "after cond " + to_string(while_scp->id));
+	dump_vr2pr(after_body_vr2pr, "after body " + to_string(while_scp->id));
 
-	while__recover_pr(while_scp, after_cond);
+	assert(while_scp->clds[2]->sem_stamp == SEM_WHILE_BODY_suffix);
+	Scope *body_suffix = while_scp->clds[2];
 
-	dump_vr2pr(vr2pr, "swaped " + to_string(while_scp->id));
+	while__recover_pr(body_suffix,
+	    pre_cond_vr2pr, pre_cond_pr2vr,
+	    after_body_vr2pr, after_body_pr2vr);
+
+	dump_vr2pr(after_body_vr2pr, "after body swaped " + to_string(while_scp->id));
+	dump_vr2pr(vr2pr, "vr2pr " + to_string(while_scp->id));
+	printf("\n");
 
 	while__end_work(while_scp);
 
-	BasicBlock *tail_bb = (BasicBlock*) while_scp->clds[2]->basic_block;
-	assert(tail_bb);
+//	BasicBlock *tail_bb = (BasicBlock*) tail->basic_block;
+//	assert(tail_bb);
 //	spill_all_pr(tail_bb);
 }
