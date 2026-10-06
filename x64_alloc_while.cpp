@@ -273,7 +273,7 @@ static void while__recover_pr(Scope *scp,
 				mc.ori_sem = "while 1, assign A, B";
 				x64mcs.push_back(mc);
 
-#if 1
+#if 0
 				//				now[curr_vr_have_A] = curr_vr_have_A_struct;
 				now_vr2pr[curr_vr_have_A].pr = swap_pr;
 				now_pr2vr[swap_pr].vr = curr_vr_have_A;
