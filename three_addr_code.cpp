@@ -99,7 +99,7 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 }
 static bool gen_tac(Scope *scp)
 {
-	LOG("scp %s", scp->name.c_str());
+//	LOG("scp %s", scp->name.c_str());
 	if (scp->sem_stamp == SEM_bb_terminate)
 	{
 		printf("%s have a SEM_bb_terminate scope %s\n", scp->parent->name.c_str(), scp->name.c_str());
@@ -186,7 +186,7 @@ void gen_three_address_code()
 //	gen_tac(&file_scp);
 
 	gen_tac(&file_scp);
-	dump_ast();
+//	dump_ast();
 
 	printf("\n========== tac ==========\n");
 	dump_tac(&file_scp);

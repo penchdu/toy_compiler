@@ -199,7 +199,7 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 }
 static void sem_analysis_named_var(Scope *scp)
 {
-	LOG("%s", scp->name.c_str());
+//	LOG("%s", scp->name.c_str());
 	for (Ast *p : scp->asts)
 		trace_ast_up_down__named_variable_declare(p);
 
@@ -345,7 +345,7 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 }
 static void sem_analysis_gen_vr(Scope *scp)
 {
-	LOG("scp %s", scp->name.c_str());
+//	LOG("scp %s", scp->name.c_str());
 
 	for (Ast *p : scp->asts)
 		trace_ast_down_up_gen_vr(p);

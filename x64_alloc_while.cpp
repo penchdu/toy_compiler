@@ -216,7 +216,8 @@ static void while__recover_pr(Scope *scp,
 //	swap_pr = get_swap_pr(bb);
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
-		if (now_pr2vr[i].vr == INVALID__VR)
+		int vr = now_pr2vr[i].vr;
+		if (vr == INVALID__VR)
 		{
 			swap_pr = i;
 			break;;
@@ -272,16 +273,23 @@ static void while__recover_pr(Scope *scp,
 				mc.ori_sem = "while 1, assign A, B";
 				x64mcs.push_back(mc);
 
-//				mc = X64mc(MC_ASSIGN);
-//				mc.pr1 = B;
-//				mc.pr2 = swap_pr;
-//				mc.ori_sem = "while 1, assign B, swap_pr";
-//				x64mcs.push_back(mc);
-
-//				now[curr_vr_have_A] = curr_vr_have_A_struct;
+#if 1
+				//				now[curr_vr_have_A] = curr_vr_have_A_struct;
 				now_vr2pr[curr_vr_have_A].pr = swap_pr;
 				now_pr2vr[swap_pr].vr = curr_vr_have_A;
+				
+				now_pr2vr[B].vr = INVALID__VR;
 				swap_pr = B;
+#else
+				mc = X64mc(MC_ASSIGN);
+				mc.pr1 = B;
+				mc.pr2 = swap_pr;
+				mc.ori_sem = "while 1, assign B, swap_pr";
+				x64mcs.push_back(mc);
+
+				now_vr2pr[curr_vr_have_A].pr = B;
+				now_pr2vr[B].vr = curr_vr_have_A;
+#endif
 			}
 			else	//  (curr_vr_have_A == INVALID__VR)
 			{
@@ -340,7 +348,8 @@ static void while__recover_pr(Scope *scp,
 			x64mcs.push_back(mc);
 		}
 
-		now_vr2pr[vr] = before_vr2pr[vr];
+		// now_vr2pr[vr] = before_vr2pr[vr];
+		now_vr2pr[vr].pr = A;
 		now_pr2vr[A].vr = vr;
 	}
 }
@@ -419,11 +428,22 @@ void reg_alloc_wave__while(Scope *while_scp)
 		int vr = cond_mc.s1;
 		int pr = cond_mc.pr1;
 
+	    printf("COND_LD: while=%d vr=%d pr=%s "
+	        "pre=%s after_body=%s u=%d body_write=%d\n",
+	        while_scp->id,
+	        vr, pr_name[cond_mc.pr1],
+	        pre_cond_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[pre_cond_vr2pr[vr].pr],
+	        after_body_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[after_body_vr2pr[vr].pr],
+	        after_body_vr2pr[vr].u,
+	        body_scp->outer_symb_write[vr]
+	    );
+
 		assert(pr != X64PR_MAX);
 
 		if (body_scp->outer_symb_write[vr] == 0)
 			continue;
 
+		//  | vr_usage ?
 		if (after_body_vr2pr[vr].pr == X64PR_MAX || !(after_body_vr2pr[vr].u & VR_USAGE_WRITE))
 			continue;
 
