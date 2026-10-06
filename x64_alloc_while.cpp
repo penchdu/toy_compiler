@@ -78,7 +78,7 @@ static int while_get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 	{
 		int pr = wave_get_pr(bb, mc_idx);
 		vr2pr[vr].pr = pr;
-		vr2pr[vr].u = u;
+		vr2pr[vr].u = u | vr_usage[vr];
 		pr2vr[pr].vr = vr;
 		need_load = (u & VR_USAGE_READ);
 	}
@@ -91,7 +91,7 @@ static int while_get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 // 	}
 	else
 	{
-		vr2pr[vr].u |= u;
+		vr2pr[vr].u |= u | vr_usage[vr];
 	}
 
 	if (need_load)
@@ -238,8 +238,19 @@ static void while__recover_pr(Scope *scp,
 			continue;
 
 		int B = now_vr2pr[vr].pr;
+		// bool dirty = (now_vr2pr[vr].u & VR_USAGE_WRITE);
+
 		if (B == A)
+		{
+			// if (dirty)
+			// {
+			// 	X64mc mc(MC_ST, vr);
+			// 	mc.pr1 = A;
+			// 	mc.ori_sem = "while same-pr dirty spill";
+			// 	x64mcs.push_back(mc);
+			// }
 			continue;
+		}
 
 		if (B != X64PR_MAX)
 		{
@@ -283,6 +294,14 @@ static void while__recover_pr(Scope *scp,
 				//
 				now_pr2vr[B].vr = INVALID__VR;
 			}
+
+			// if (dirty)
+			// {
+			// 	X64mc mc(MC_ST, vr);
+			// 	mc.pr1 = A;
+			// 	mc.ori_sem = "while step2 dirty spill";
+			// 	x64mcs.push_back(mc);
+			// }
 		}
 		else	// B == X64PR_MAX
 		{
@@ -332,21 +351,29 @@ void reg_alloc_wave__while(Scope *while_scp)
 
 	while__pre_work(while_scp);
 
+	Scope *cond_scp = while_scp->clds[0];
+	Scope *body_scp = while_scp->clds[1];
+
 // try alloc cond write
 //	for(int vr : scp->outer_symb_write)
 //	{
 //		for(int pr : )
 //	}
-
 // try alloc body write
 // try alloc cond read
 // try alloc body read
-
 // select cond pr
 //	spill_vr(bb->x64mc_alloc_wave, swap_vr);
 
 	////////////////////////////////////////////////////////////
 	// while cond
+	for(int i = 0; i <vr_declare_manager.size(); i++)
+	{
+		if(cond_scp->outer_symb_read[i] > 0
+			&& body_scp->outer_symb_write[i] > 0)
+			vr_usage[i] |= VR_USAGE_WRITE;
+	}
+
 
 	vector<VrToPr> pre_cond_vr2pr = vr2pr;
 	vector<PrToVr> pre_cond_pr2vr = pr2vr;
@@ -376,13 +403,61 @@ void reg_alloc_wave__while(Scope *while_scp)
 	assert(while_scp->clds[2]->sem_stamp == SEM_WHILE_BODY_suffix);
 	Scope *body_suffix = while_scp->clds[2];
 
+	// 扫描 cond BB 的 MC_LD 指令，找出所有 cond 从 stack load 的 vr
+	// 这些 vr 在 pre_cond 可能有 pr，但 cond 中间确实从 stack load 了（用的是旧值！）
+	// 如果 body 又写过这些 vr（dirty），recover 的 swap/load 把新值搬回了 pre_cond PR
+	// 这里追加 spill，保证 cond 下次执行时 load 能拿到新值
+
+	BasicBlock *cond_bb = (BasicBlock*) cond_scp->basic_block;
+	BasicBlock *bs_bb = (BasicBlock*) body_suffix->basic_block;
+	vector<X64mc> &cond_mcs = cond_bb->x64mc_alloc_wave;
+	for (auto &cond_mc : cond_mcs)
+	{
+		if (cond_mc.mc_stamp != MC_LD)
+			continue;
+
+		int vr = cond_mc.s1;
+		int pr = cond_mc.pr1;
+
+		assert(pr != X64PR_MAX);
+
+		if (body_scp->outer_symb_write[vr] == 0)
+			continue;
+
+		if (after_body_vr2pr[vr].pr == X64PR_MAX || !(after_body_vr2pr[vr].u & VR_USAGE_WRITE))
+			continue;
+
+		LOG("%d %s", vr, pr_name[pr]);
+
+		X64mc mc(MC_ST, vr);
+		mc.pr1 = after_body_vr2pr[vr].pr;
+		mc.ori_sem = "while cond-load spill";
+		bs_bb->x64mc_alloc_wave.push_back(mc);
+	}
+
+
 	while__recover_pr(body_suffix,
 	    pre_cond_vr2pr, pre_cond_pr2vr,
 	    after_body_vr2pr, after_body_pr2vr);
 
 	dump_vr2pr(after_body_vr2pr, "after body swaped " + to_string(while_scp->id));
+
 	dump_vr2pr(vr2pr, "vr2pr " + to_string(while_scp->id));
 	printf("\n");
+
+//	BasicBlock *tail_bb = (BasicBlock*) while_scp->clds[3]->basic_block;
+//	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+//	{
+//	    if (body_scp->outer_symb_write[vr] == 0)   continue;
+//	    if (cond_scp->outer_symb_write[vr] > 0)    continue;
+//	    if (after_body_vr2pr[vr].pr == X64PR_MAX)   continue;
+//	    if (!(after_body_vr2pr[vr].u & VR_USAGE_WRITE)) continue;
+//
+//	    X64mc mc(MC_ST, vr);
+//	    mc.pr1 = after_body_vr2pr[vr].pr;
+//	    mc.ori_sem = "while tail spill";
+//	    tail_bb->x64mc_alloc_wave.push_back(mc);
+//	}
 
 	while__end_work(while_scp);
 

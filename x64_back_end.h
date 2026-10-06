@@ -89,16 +89,18 @@ enum VrUsage
 	VR_USAGE_WRITE = 1 << 1,
 	VR_USAGE_READ_WRITE = VR_USAGE_READ | VR_USAGE_WRITE,
 
-	VR_USEAGE_INVALID = 1 << 31,
+	VR_USEAGE_INVALID = 0,
 };
 
 struct VrToPr
 {
 	int pr = X64PR_MAX;
 	int u = VR_USEAGE_INVALID;
+	int expected_usage = VR_USEAGE_INVALID;
 	int score = 0;
 };
 extern vector<VrToPr> vr2pr;
+extern vector<int> vr_usage;
 
 constexpr int INVALID__VR = -1;
 struct PrToVr

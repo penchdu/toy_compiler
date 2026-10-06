@@ -237,7 +237,10 @@ static void _check_while_used_outer_symb(int vr, int usage)
 			if (usage & VR_USAGE_READ)
 				r.while_scp->outer_symb_read[vr]++;
 			if (usage & VR_USAGE_WRITE)
+			{
 				r.while_scp->outer_symb_write[vr]++;
+				vr_usage[vr] |= VR_USAGE_WRITE;
+			}
 		}
 	}
 }
@@ -361,6 +364,8 @@ void dump_while_used_outer_symb(Scope *scp)
 void gen_liveness()
 {
 	_gen_liveness(&file_scp);
+
+	vr_usage.resize(vr_declare_manager.size());
 
 	find_while_used_outer_symb(&file_scp);
 

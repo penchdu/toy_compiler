@@ -11,6 +11,7 @@
 #include <cmath>
 
 vector<Wave> vrwave;
+vector<int> vr_usage;
 
 void init_wave(BasicBlock *bb)
 {
@@ -127,7 +128,7 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 	{
 		int pr = wave_get_pr(bb, mc_idx);
 		vr2pr[vr].pr = pr;
-		vr2pr[vr].u = u;
+		vr2pr[vr].u = u | vr_usage[vr];
 		pr2vr[pr].vr = vr;
 		need_load = (u & VR_USAGE_READ);
 	}
@@ -140,7 +141,7 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 // 	}
 	else
 	{
-		vr2pr[vr].u |= u;
+		vr2pr[vr].u |= u | vr_usage[vr];
 	}
 
 	if (need_load)

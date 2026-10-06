@@ -497,6 +497,122 @@
 //		}
 //	}
 //}
-
-
+//
+//void reg_alloc_wave__while(Scope *while_scp)
+//{
+//	//	LOG("scp %s", scp->name.c_str());
+//
+//	while__pre_work(while_scp);
+//
+//// try alloc cond write
+////	for(int vr : scp->outer_symb_write)
+////	{
+////		for(int pr : )
+////	}
+//
+//// try alloc body write
+//// try alloc cond read
+//// try alloc body read
+//
+//// select cond pr
+////	spill_vr(bb->x64mc_alloc_wave, swap_vr);
+//
+//	////////////////////////////////////////////////////////////
+//	// while cond
+//
+//	vector<VrToPr> pre_cond_vr2pr = vr2pr;
+//	vector<PrToVr> pre_cond_pr2vr = pr2vr;
+//
+//	reg_alloc_wave__scope(while_scp->clds[0]);
+//
+//	vector<VrToPr> after_cond_vr2pr = vr2pr;
+//	vector<PrToVr> after_cond_pr2vr = pr2vr;
+//
+//	// cond 写了 outer symb（比如 while ((i3 = i3 - 1 + ...) > 0)），
+//	// 但没 spill 回 stack！回边时 body load 会拿到旧值。
+//	// 修复：在 cond BB 的 jle/jmp 之前把 cond 写过的 outer symb spill 回 stack
+//	Scope *cond_scp = while_scp->clds[0];
+//	BasicBlock *cond_bb = (BasicBlock*) cond_scp->basic_block;
+//	vector<X64mc> &cond_mcs = cond_bb->x64mc_alloc_wave;
+//	int jmp_pos = cond_mcs.size();
+//	for (int i = cond_mcs.size() - 1; i >= 0; i--)
+//	{
+//		if (cond_mcs[i].mc_stamp == MC_JLE || cond_mcs[i].mc_stamp == MC_JMP)
+//		{
+//			jmp_pos = i;
+//			break;
+//		}
+//	}
+//	for (int vr = 0; vr < after_cond_vr2pr.size(); vr++)
+//	{
+//		if (after_cond_vr2pr[vr].pr == X64PR_MAX)
+//			continue;
+//		if (!(after_cond_vr2pr[vr].u & VR_USAGE_WRITE))
+//			continue;
+//		X64mc mc(MC_ST, vr);
+//		mc.pr1 = after_cond_vr2pr[vr].pr;
+//		mc.ori_sem = "cond force spill";
+//		cond_mcs.insert(cond_mcs.begin() + jmp_pos, mc);
+//		jmp_pos++;
+//	}
+//
+//	////////////////////////////////////////////////////////////
+//	// while body
+//	reg_alloc_wave__scope(while_scp->clds[1]);
+//
+//	vector<VrToPr> after_body_vr2pr = vr2pr;
+//	vector<PrToVr> after_body_pr2vr = pr2vr;
+//
+//	////////////////////////////////////////////////////////////
+//	printf("\n============== swap %d ==============\n", while_scp->id);
+//	dump_vr2pr(pre_cond_vr2pr, "pre cond " + to_string(while_scp->id));
+//	dump_vr2pr(after_cond_vr2pr, "after cond " + to_string(while_scp->id));
+//	dump_vr2pr(after_body_vr2pr, "after body " + to_string(while_scp->id));
+//
+//	assert(while_scp->clds[2]->sem_stamp == SEM_WHILE_BODY_suffix);
+//	Scope *body_suffix = while_scp->clds[2];
+//	BasicBlock *bs_bb = (BasicBlock*) body_suffix->basic_block;
+//
+//	// recover: 把 PR 状态恢复到 pre_cond 位置
+//	while__recover_pr(body_suffix,
+//	    pre_cond_vr2pr, pre_cond_pr2vr,
+//	    after_body_vr2pr, after_body_pr2vr);
+//
+//	dump_vr2pr(after_body_vr2pr, "after body swaped " + to_string(while_scp->id));
+//
+//	// body_suffix force spill: recover 之后 mov 已把值搬回 pre_cond PR
+//	// 强制写 stack → body 写的新值在回边和退出路径都能拿到
+//	for (int vr = 0; vr < pre_cond_vr2pr.size(); vr++)
+//	{
+//		int pr = pre_cond_vr2pr[vr].pr;
+//		if (pr == X64PR_MAX)
+//			continue;
+//		X64mc mc(MC_ST, vr);
+//		mc.pr1 = pr;
+//		mc.ori_sem = "while force spill";
+//		bs_bb->x64mc_alloc_wave.push_back(mc);
+//	}
+//
+//	// vr2pr = after_cond + 清内层临时变量:
+//	// after_cond 里被 cond evict 的变量 pr==MAX → 外层从 stack load
+//	// 清掉内层引入的临时变量（pre_cond 没有、after_cond 有 pr 的），防止泄漏 pr2vr
+//	vr2pr = after_cond_vr2pr;
+//	pr2vr = after_cond_pr2vr;
+//	for (int vr = 0; vr < vr2pr.size(); vr++)
+//	{
+//		if (vr2pr[vr].pr == X64PR_MAX)
+//			continue;
+//		if (pre_cond_vr2pr[vr].pr == X64PR_MAX)
+//		{
+//			pr2vr[vr2pr[vr].pr].vr = INVALID__VR;
+//			vr2pr[vr].pr = X64PR_MAX;
+//			vr2pr[vr].u = VR_USEAGE_INVALID;
+//		}
+//	}
+//
+//	dump_vr2pr(vr2pr, "vr2pr " + to_string(while_scp->id));
+//	printf("\n");
+//
+//	while__end_work(while_scp);
+//}
 

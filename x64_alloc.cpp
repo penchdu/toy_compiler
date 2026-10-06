@@ -73,7 +73,7 @@ static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 	{
 		int pr = get_pr();
 		vr2pr[vr].pr = pr;
-		vr2pr[vr].u = u;
+		vr2pr[vr].u = u | vr_usage[vr];
 		pr2vr[pr].vr = vr;
 		need_load = (u & VR_USAGE_READ);
 	}
@@ -82,7 +82,7 @@ static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 		need_load = 1;
 	}
 
-	vr2pr[vr].u |= u;
+	vr2pr[vr].u |= u | vr_usage[vr];
 
 	if (need_load)
 	{
@@ -98,7 +98,7 @@ static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 {
 	int pr = vr2pr[vr].pr;
-	int u = vr2pr[vr].u;
+	int u = vr2pr[vr].u | vr_usage[vr];
 
 	assert(pr != X64PR_MAX);
 	assert(u != VR_USEAGE_INVALID);
