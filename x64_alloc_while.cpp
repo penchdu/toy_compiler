@@ -9,32 +9,30 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-//static int get_swap_pr(BasicBlock *bb)
-//{
-//	for (int i = R10D; i < X64PR_MAX; i++)
-//	{
-//		if (pr2vr[i].vr == INVALID__VR)
-//			return i;
-//	}
-//
-//	ERR();
-//
-//	int swap_pr = X64PR_MAX;
-//	for (int pr = R10D; pr < X64PR_MAX; pr++)
-//	{
-//		int vr = pr2vr[pr].vr;
-//		if (vr2pr[vr].u == VR_USAGE_READ)
-//		{
-//			swap_pr = pr;
-//			break;
-//		}
-//	}
-//	if (swap_pr == X64PR_MAX)
-//		swap_pr = X64PR_MAX - 1;
-//
-//	spill_vr(bb->x64mc_alloc_wave, swap_pr);
-//	return swap_pr;
-//}
+static int get_swap_pr(BasicBlock *bb)
+{
+	for (int i = R10D; i < X64PR_MAX; i++)
+	{
+		if (pr2vr[i].vr == INVALID__VR)
+			return i;
+	}
+
+	int swap_pr = X64PR_MAX;
+	for (int pr = R10D; pr < X64PR_MAX; pr++)
+	{
+		int vr = pr2vr[pr].vr;
+		if (vr2pr[vr].u == VR_USAGE_READ)
+		{
+			swap_pr = pr;
+			break;
+		}
+	}
+	if (swap_pr == X64PR_MAX)
+		swap_pr = X64PR_MAX - 1;
+
+	spill_vr(bb->x64mc_alloc_wave, swap_pr);
+	return swap_pr;
+}
 //static int while__get_pr(BasicBlock *bb, int score)
 //{
 //	for (int i = R10D; i < X64PR_MAX; i++)
@@ -175,7 +173,8 @@ static void while__recover_pr(Scope *scp,
     vector<VrToPr> &before_vr2pr,
     vector<PrToVr> &before_pr2vr,
     vector<VrToPr> &now_vr2pr,
-    vector<PrToVr> &now_pr2vr)
+    vector<PrToVr> &now_pr2vr,
+    int swap_pr)
 {
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 	vector<X64mc> &x64mcs = bb->x64mc_alloc_wave;
@@ -184,6 +183,8 @@ static void while__recover_pr(Scope *scp,
 	(void) pr2vr;
 
 	int spilled = 0;
+	int free_pr = X64PR_MAX;
+
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
 		if (before_vr2pr[vr].pr == X64PR_MAX && now_vr2pr[vr].pr != X64PR_MAX)
@@ -192,19 +193,24 @@ static void while__recover_pr(Scope *scp,
 			int &pr = now_vr2pr[vr].pr;
 			int &u = now_vr2pr[vr].u;
 			int need_st = (u | vr_usage[vr]) & VR_USAGE_WRITE;
-			LOG("scp %s, recover spill %%%d-%s %d", scp->name.c_str(), vr, pr_name[pr], need_st);
 
 			assert(pr != X64PR_MAX);
 			assert(u != VR_USEAGE_INVALID);
 			assert(now_pr2vr[pr].vr == vr);
 
+			LOG("scp %s, recover spill %s=%%%d-%s %d", scp->name.c_str(),
+			    vr_declare_manager.declare_at[vr]->symb->unique_name.c_str(),
+			    vr, pr_name[pr], need_st);
+
 			if (need_st)
 			{
 				X64mc mc(MC_ST, vr);
 				mc.pr1 = (int) pr;
-				mc.ori_sem = "while spill";
+				mc.ori_sem = "while recover spill";
 				x64mcs.push_back(mc);
 			}
+
+			free_pr = pr;
 
 			now_pr2vr[pr].vr = INVALID__VR;
 			pr = X64PR_MAX;
@@ -213,17 +219,40 @@ static void while__recover_pr(Scope *scp,
 		}
 	}
 
-	int swap_pr = X64PR_MAX;
-//	swap_pr = get_swap_pr(bb);
-	for (int i = R10D; i < X64PR_MAX; i++)
+	if (now_pr2vr[swap_pr].vr != INVALID__VR)
 	{
-		int vr = now_pr2vr[i].vr;
-		if (vr == INVALID__VR)
-		{
-			swap_pr = i;
-			break;;
-		}
+		assert(free_pr != X64PR_MAX /* && free_pr != swap_pr */);
+
+		int vr = now_pr2vr[swap_pr].vr;
+		string &name = vr_declare_manager.declare_at[vr]->symb->unique_name;
+
+		mc = X64mc(MC_ASSIGN);
+		mc.pr1 = free_pr;
+		mc.pr2 = swap_pr;
+		mc.ori_sem = "while swap_pr, assign " + name + "=%" + to_string(vr);
+		x64mcs.push_back(mc);
+
+		now_vr2pr[vr].pr = free_pr;
+		now_pr2vr[free_pr].vr = vr;
+
+		now_pr2vr[swap_pr].vr = INVALID__VR;
 	}
+//	int swap_pr = X64PR_MAX;
+//	swap_pr = get_swap_pr(bb);
+//	for (int pr = R10D; pr < X64PR_MAX; pr++)
+//	{
+//		if (now_pr2vr[pr].vr == INVALID__VR
+//		    && before_pr2vr[pr].vr == INVALID__VR)
+//		{
+//			for (int i = 0; i < vr_declare_manager.size(); i++)
+//			{
+//				if (now_vr2pr[i].pr == pr || before_vr2pr[i].pr == pr)
+//					ERR();
+//			}
+//			swap_pr = pr;
+//			break;;
+//		}
+//	}
 	if (swap_pr == X64PR_MAX)
 		ERR();
 
@@ -262,6 +291,7 @@ static void while__recover_pr(Scope *scp,
 			// (curr A is busy && B == PR)
 			if (curr_vr_have_A != INVALID__VR)
 			{
+				assert(now_pr2vr[swap_pr].vr == INVALID__VR);
 				auto &curr_vr_struct_have_A = now_vr2pr[curr_vr_have_A];
 
 				mc = X64mc(MC_ASSIGN);
@@ -299,7 +329,7 @@ static void while__recover_pr(Scope *scp,
 				mc = X64mc(MC_ASSIGN);
 				mc.pr1 = A;
 				mc.pr2 = B;
-				mc.ori_sem = "while 2, assign " + name + "=%"  + to_string(vr);
+				mc.ori_sem = "while 2, assign " + name + "=%" + to_string(vr);
 				x64mcs.push_back(mc);
 
 				//
@@ -338,8 +368,8 @@ static void while__recover_pr(Scope *scp,
 				mc = X64mc(MC_ASSIGN);
 				mc.pr1 = free_pr;
 				mc.pr2 = A;
-				mc.ori_sem = "while 3, assign " + name + "=%"  + to_string(vr)
-					+ ", move %s" + to_string(curr_vr_have_A);
+				mc.ori_sem = "while 3, assign " + name + "=%" + to_string(vr)
+				    + ", move %s" + to_string(curr_vr_have_A);
 				x64mcs.push_back(mc);
 
 				now_vr2pr[curr_vr_have_A].pr = free_pr;
@@ -367,6 +397,28 @@ void ra_wave__while(Scope *while_scp)
 	Scope *cond_scp = while_scp->clds[0];
 	Scope *body_scp = while_scp->clds[1];
 
+	/*
+	 * Invariant:
+	 *
+	 * before state has at least one free PR.
+	 *
+	 * Before recovery, spill every VR that:
+	 *     before.pr == MAX
+	 *     now.pr    != MAX
+	 *
+	 * Therefore after the spill phase, at least one PR is free
+	 * in the current state, and it can be used as recovery scratch.
+	 *
+	 */
+
+	int swap_pr = X64PR_MAX;
+	swap_pr = get_swap_pr((BasicBlock*) while_scp->basic_block);
+	if (swap_pr == X64PR_MAX)
+		ERR();
+
+//	pr2vr[swap_pr].vr = INVALID__VR;
+//	vr2pr[swap_pr].
+
 // try alloc cond write
 //	for(int vr : scp->outer_symb_write)
 //	{
@@ -380,13 +432,12 @@ void ra_wave__while(Scope *while_scp)
 
 	////////////////////////////////////////////////////////////
 	// while cond
-	for(int i = 0; i <vr_declare_manager.size(); i++)
+	for (int i = 0; i < vr_declare_manager.size(); i++)
 	{
-		if(cond_scp->outer_symb_read[i] > 0
-			&& body_scp->outer_symb_write[i] > 0)
+		if (cond_scp->outer_symb_read[i] > 0
+		    && body_scp->outer_symb_write[i] > 0)
 			vr_usage[i] |= VR_USAGE_WRITE;
 	}
-
 
 	vector<VrToPr> pre_cond_vr2pr = vr2pr;
 	vector<PrToVr> pre_cond_pr2vr = pr2vr;
@@ -416,11 +467,6 @@ void ra_wave__while(Scope *while_scp)
 	assert(while_scp->clds[2]->sem_stamp == SEM_WHILE_BODY_suffix);
 	Scope *body_suffix = while_scp->clds[2];
 
-	// 扫描 cond BB 的 MC_LD 指令，找出所有 cond 从 stack load 的 vr
-	// 这些 vr 在 pre_cond 可能有 pr，但 cond 中间确实从 stack load 了（用的是旧值！）
-	// 如果 body 又写过这些 vr（dirty），recover 的 swap/load 把新值搬回了 pre_cond PR
-	// 这里追加 spill，保证 cond 下次执行时 load 能拿到新值
-
 	BasicBlock *cond_bb = (BasicBlock*) cond_scp->basic_block;
 	BasicBlock *bs_bb = (BasicBlock*) body_suffix->basic_block;
 	vector<X64mc> &cond_mcs = cond_bb->x64mc_alloc_wave;
@@ -441,27 +487,27 @@ void ra_wave__while(Scope *while_scp)
 		if (after_body_vr2pr[vr].pr == X64PR_MAX)
 			continue;
 
-		if(!(after_body_vr2pr[vr].u & VR_USAGE_WRITE))
+		if (!(after_body_vr2pr[vr].u & VR_USAGE_WRITE))
 			continue;
 
-	    LOG("COND_LD: while=%d vr=%d pr=%s pre=%s after_body=%s u=%d body_write=%d",
-	        while_scp->id, vr, pr_name[cond_mc.pr1],
-	        pre_cond_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[pre_cond_vr2pr[vr].pr],
-	        after_body_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[after_body_vr2pr[vr].pr],
-	        after_body_vr2pr[vr].u,
-	        body_scp->outer_symb_write[vr]);
+		LOG("COND_LD: while=%d vr=%d pr=%s pre=%s after_body=%s u=%d body_write=%d",
+		    while_scp->id, vr, pr_name[cond_mc.pr1],
+		    pre_cond_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[pre_cond_vr2pr[vr].pr],
+		    after_body_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[after_body_vr2pr[vr].pr],
+		    after_body_vr2pr[vr].u,
+		    body_scp->outer_symb_write[vr]);
 
+//	    assert(after_body_vr2pr[vr].pr == );
 		// todo, do st only if first op of vr in cond is ld
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = after_body_vr2pr[vr].pr;
-		mc.ori_sem = "while cond-ld st";
+		mc.ori_sem = "while spill, cond-ld st";
 		bs_bb->x64mc_alloc_wave.push_back(mc);
 	}
 
-
 	while__recover_pr(body_suffix,
 	    pre_cond_vr2pr, pre_cond_pr2vr,
-	    after_body_vr2pr, after_body_pr2vr);
+	    after_body_vr2pr, after_body_pr2vr, swap_pr);
 
 	dump_vr2pr(after_body_vr2pr, "after body swaped " + to_string(while_scp->id));
 
