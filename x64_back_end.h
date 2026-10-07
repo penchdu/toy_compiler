@@ -277,7 +277,7 @@ struct Wave {
 	vector<float> score;
 	vector<int> insts;		// >=0, <= 3
 };
-extern vector<Wave> vrwave;
+extern vector<Wave> vr_wave;
 
 void dump_mc(Scope *scp, string mc_list_name);
 void gen_wave(BasicBlock *bb);
@@ -314,11 +314,11 @@ void init_wave(BasicBlock *bb);
 int wave_get_pr(BasicBlock *bb, int mc_idx);
 void reg_alloc_wave__mc(BasicBlock *bb, const X64mc &schedued, int i);
 void x64_reg_alloc_wave();
-void reg_alloc_wave__scope(Scope *scp);
+void ra_wave__scope(Scope *scp);
 
 void while__pre_work(Scope *scp);
 void while__end_work(Scope *scp);
-void reg_alloc_wave__while(Scope *scp);
+void ra_wave__while(Scope *scp);
 
 
 #endif /* X64_BACK_END_H_ */

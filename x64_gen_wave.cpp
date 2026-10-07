@@ -27,7 +27,7 @@ void dump_wave(BasicBlock *bb)
 
 	for (int vr : bb->vrids)
 	{
-		const vector<float> &score = vrwave[vr].score;
+		const vector<float> &score = vr_wave[vr].score;
 		if (score.empty())
 			continue;
 
@@ -60,7 +60,7 @@ void dump_wave(BasicBlock *bb)
 
 	if (!bb->vrids.empty())
 	{
-		int n = vrwave[bb->vrids[0]].score.size();
+		int n = vr_wave[bb->vrids[0]].score.size();
 		printf("   ");
 		for (int i = 0; i < n; ++i)
 		{
@@ -113,12 +113,12 @@ static void dump_all_wave_gnuplot(BasicBlock *bb)
 	{
 		printf("dump VR %d size=%ld\n",
 		    vr,
-		    vrwave[vr].score.size());
+		    vr_wave[vr].score.size());
 
-		for (int pc = 0; pc < vrwave[vr].score.size(); pc++)
+		for (int pc = 0; pc < vr_wave[vr].score.size(); pc++)
 		{
 			fprintf(fp, "%d %d %.6f\n",
-			    pc, vr, vrwave[vr].score[pc]);
+			    pc, vr, vr_wave[vr].score[pc]);
 
 			count++;
 		}
@@ -237,7 +237,7 @@ void gen_wave(BasicBlock *bb)
 	{
 //    	compute_wave_triangle(wave[vr]);
 //		compute_wave_decay(vrwave[vr]);
-		gen_wave_decay_gemini_improved(vrwave[vr]);
+		gen_wave_decay_gemini_improved(vr_wave[vr]);
 //		dump_wave_gnuplot(vrwave[13], 13);
 	}
 }

@@ -82,7 +82,7 @@ static Scope* new_jmp_tail_for_cond_imp(Scope *cond)
 
 	Scope *tail = new_virtual_scope_and_drop_in();
 	tail->sem_stamp = SEM_LABEL;
-	tail->name = ".L_" + tail->name;
+//	tail->name = ".L_" + tail->name;
 
 //	 exit_current_scope();
 //	 new_virtual_scope_and_drop_in();
@@ -213,10 +213,8 @@ void case_tk_while()
 	// body suffix
 	Scope *while_body_suffix = new_virtual_scope_and_drop_in();
 	while_body_suffix->sem_stamp = SEM_WHILE_BODY_suffix;
-	while_body_suffix->name = ".L_" + while_body_suffix->name +
-		"_while" + to_string(while_scp->id) + "_body_suffix";
+	while_body_suffix->name += "_while" + to_string(while_scp->id) + "_body_suffix";
 	exit_current_scope();
-
 
 
 //	Scope *while_body_inner_tail = get_inner_tail_of_scope(while_body);

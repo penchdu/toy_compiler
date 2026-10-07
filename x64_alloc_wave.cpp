@@ -10,12 +10,12 @@
 #include "basic_block.h"
 #include <cmath>
 
-vector<Wave> vrwave;
+vector<Wave> vr_wave;
 vector<int> vr_usage;
 
 void init_wave(BasicBlock *bb)
 {
-	for (auto &r : vrwave)
+	for (auto &r : vr_wave)
 	{
 		r.score.clear();
 		r.insts.clear();
@@ -28,8 +28,8 @@ void init_wave(BasicBlock *bb)
 	int mc_size = bb->x64mc_schedu.size();
 	for (int vr : bb->vrids)
 	{
-		vrwave[vr].score.resize(mc_size, 0);
-		vrwave[vr].insts.resize(mc_size, 0);
+		vr_wave[vr].score.resize(mc_size, 0);
+		vr_wave[vr].insts.resize(mc_size, 0);
 	}
 
 	for (int inst_idx = 0; inst_idx < mc_size; inst_idx++)
@@ -40,7 +40,7 @@ void init_wave(BasicBlock *bb)
 			int vr = mc.vr_list[i];
 			if (vr >= 0)
 			{
-				vrwave[vr].insts[inst_idx]++;
+				vr_wave[vr].insts[inst_idx]++;
 			}
 		}
 	}
@@ -55,7 +55,7 @@ void spill_vr(vector<X64mc> &x64mc_alloced, int vr, const string &tag)
 	assert(u != VR_USEAGE_INVALID);
 	assert(pr2vr[pr].vr == vr);
 
-	if (u & VR_USAGE_WRITE)
+	if ((u | vr_usage[vr]) & VR_USAGE_WRITE)
 	{
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;
@@ -101,7 +101,7 @@ int wave_get_pr(BasicBlock *bb, int mc_idx)
 		    || vr == mc.s2)
 			continue;
 
-		float score = vrwave[vr].score[mc_idx];
+		float score = vr_wave[vr].score[mc_idx];
 		if (score < min_score)
 		{
 			min_score = score;
@@ -141,7 +141,7 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 // 	}
 	else
 	{
-		vr2pr[vr].u |= u | vr_usage[vr];
+		vr2pr[vr].u |= (u | vr_usage[vr]);
 	}
 
 	if (need_load)
@@ -154,7 +154,7 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 
 	return vr2pr[vr].pr;
 }
-void check_and_clear_vr(Scope *scp, int vr)
+void check_and_clear_vr(Scope *scp, /* vector<X64mc> &mcs, */int vr)
 {
 	if (vr < 0)
 		return;
@@ -176,16 +176,10 @@ void check_and_clear_vr(Scope *scp, int vr)
 	    && symb->consume_cnt >= symb->use_cnt)
 	//	    && symb->cld_consume_cnt >= symb->cld_use_cnt
 	{
-		if (scp->consume_cnt_in_bb.size() <= vr
-		    || scp->use_cnt_in_bb.size() <= vr
-		    || scp->consume_cnt_in_bb[vr] != scp->use_cnt_in_bb[vr])
-		{
-			ERR("%s, %lu %lu %%%d",
-				scp->name.c_str(),
-				scp->consume_cnt_in_bb.size(),
-				scp->use_cnt_in_bb.size(),
-				vr);
-		}
+		if (scp->consume_cnt_in_bb[vr] != scp->use_cnt_in_bb[vr])
+			ERR("%s, %%%d  %lu %lu", scp->name.c_str(), vr,
+			    scp->consume_cnt_in_bb.size(),
+			    scp->use_cnt_in_bb.size());
 
 		// last use in global
 		int pr = vr2pr[vr].pr;
@@ -230,11 +224,8 @@ static void check_bb_use_cnt(Scope *scp, int target_symb_stamp = SYMB_ALL)
 		}
 	}
 }
-
 void check_pr_vr_consistency()
 {
-//	int e_vr = -1;
-//	int e_pr = -1;
 	for (int pr = R10D; pr < X64PR_MAX; pr++)
 	{
 		int vr = pr2vr[pr].vr;
@@ -319,28 +310,10 @@ void reg_alloc_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 	}
 }
 
-#define enable_while_opt 1
-void reg_alloc_wave__scope(Scope *scp)
+void ra_wave__regular_scope(Scope *scp)
 {
 	//	LOG("scp %s", scp->name.c_str());
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
-	init_wave(bb);
-	gen_wave(bb);
-//	dump_wave(*bb);
-	scp->consume_cnt_in_bb.clear();
-	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
-
-	if (scp->sem_stamp == SEM_WHILE)
-	{
-#if enable_while_opt
-		reg_alloc_wave__while(scp);
-		return;
-#else
-		while__pre_work(scp);
-#endif
-	}
-
-	////////////////////////////////////////////////////////////
 
 	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
 	{
@@ -356,19 +329,23 @@ void reg_alloc_wave__scope(Scope *scp)
 		check_pr_vr_consistency();
 	}
 
-#if !enable_while_opt
-	spill_all_pr(bb);
-#endif
-
 	for (Scope *p : scp->clds)
-		reg_alloc_wave__scope(p);
+		ra_wave__scope(p);
+}
+void ra_wave__scope(Scope *scp)
+{
+	//	LOG("scp %s", scp->name.c_str());
+	scp->consume_cnt_in_bb.clear();
+	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
+	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	init_wave(bb);
+	gen_wave(bb);
+//	dump_wave(bb);
 
-	////////////////////////////////////////////////////////////
-#if !enable_while_opt
 	if (scp->sem_stamp == SEM_WHILE)
-		while__end_work(scp);
-#endif
-
+		ra_wave__while(scp);
+	else
+		ra_wave__regular_scope(scp);
 }
 
 void x64_reg_alloc_wave()
@@ -376,14 +353,14 @@ void x64_reg_alloc_wave()
 	LOG("\n======================== wave ========================\n");
 
 	clear_vr_consume_cnt(&file_scp);
-	vrwave.resize(vr_declare_manager.size());
+	vr_wave.resize(vr_declare_manager.size());
 
 	vr2pr.clear();
 	vr2pr.resize(vr_declare_manager.size(), {X64PR_MAX, VR_USEAGE_INVALID});
 	pr2vr.clear();
 	pr2vr.resize(X64PR_MAX, {INVALID__VR});
 
-	reg_alloc_wave__scope(&file_scp);
+	ra_wave__scope(&file_scp);
 
 	check_vr_consume_cnt(&file_scp);
 }

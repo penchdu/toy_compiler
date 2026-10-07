@@ -82,7 +82,7 @@ static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 		need_load = 1;
 	}
 
-	vr2pr[vr].u |= u | vr_usage[vr];
+	vr2pr[vr].u |= (u | vr_usage[vr]);
 
 	if (need_load)
 	{
