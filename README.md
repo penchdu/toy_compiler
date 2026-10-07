@@ -897,3 +897,16 @@ It can run on Linux‑x86‑64 and print the return int-value of the program.
 
 ---
 
+
+
+
+## Auto Test
+
+```c
+$make
+$cd test
+$./run_test.sh
+```
+
+
+
