@@ -616,3 +616,184 @@
 //	while__end_work(while_scp);
 //}
 
+/*
+ * // d:\workspace\vsc\x64_alloc_while.cpp
+
+static void while__recover_pr(Scope *scp,
+    vector<VrToPr> &before_vr2pr,
+    vector<PrToVr> &before_pr2vr,
+    vector<VrToPr> &now_vr2pr,
+    vector<PrToVr> &now_pr2vr)
+{
+	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	vector<X64mc> &x64mcs = bb->x64mc_alloc_wave;
+	X64mc mc;
+	(void) vr2pr;
+	(void) pr2vr;
+
+	int spilled = 0;
+
+	////////////////////////////////////////////////
+	// 阶段 1：Spill body 独有的临时变量
+	// before.pr==MAX 但 now.pr!=MAX → body 里新分配的临时
+	// 把它们 spill 到栈，释放 pr
+	// 之后 now 里至少有 1 个真空闲 pr
+	////////////////////////////////////////////////
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	{
+		if (before_vr2pr[vr].pr == X64PR_MAX && now_vr2pr[vr].pr != X64PR_MAX)
+		{
+			int &pr = now_vr2pr[vr].pr;
+			int &u = now_vr2pr[vr].u;
+			int need_st = (u | vr_usage[vr]) & VR_USAGE_WRITE;
+
+			assert(pr != X64PR_MAX);
+			assert(u != VR_USEAGE_INVALID);
+			assert(now_pr2vr[pr].vr == vr);
+
+			LOG("scp %s, recover spill %s=%%%d-%s %d", scp->name.c_str(),
+			    vr_declare_manager.declare_at[vr]->symb->unique_name.c_str(),
+			    vr, pr_name[pr], need_st);
+
+			if (need_st)
+			{
+				X64mc mc(MC_ST, vr);
+				mc.pr1 = (int) pr;
+				mc.ori_sem = "while recover spill";
+				x64mcs.push_back(mc);
+			}
+
+			now_pr2vr[pr].vr = INVALID__VR;
+			pr = X64PR_MAX;
+			u = VR_USEAGE_INVALID;
+			spilled++;
+		}
+	}
+
+	LOG("scp %s spilled: %d", scp->name.c_str(), spilled);
+
+	////////////////////////////////////////////////
+	// 阶段 2：主恢复循环
+	// 把每个 vr 从 now.pr 恢复到 before.pr
+	// 每次需要临时寄存器时，动态查真空闲的
+	// （不预分配固定 swap_pr —— 因为固定 pr 可能就是某个 vr 的目标位置 A）
+	////////////////////////////////////////////////
+	for (int vr = 0; vr < before_vr2pr.size(); vr++)
+	{
+		int A = before_vr2pr[vr].pr;   // 目标位置
+		int B = now_vr2pr[vr].pr;      // 当前位置
+
+		if (A == X64PR_MAX)
+			continue;                    // before 里没分配，不需要恢复
+
+		if (B == A)
+			continue;                    // 已在正确位置
+
+		string &name = vr_declare_manager.declare_at[vr]->symb->unique_name;
+
+		if (B != X64PR_MAX)
+		{
+			// ---- 分岔 1：vr 在 now 里有 pr ----
+
+			int curr_vr_have_A = now_pr2vr[A].vr;
+
+			if (curr_vr_have_A != INVALID__VR)
+			{
+				// 情况 2a：A 被别人占了，B 也有 vr 的值
+				// 需要 3 寄存器交换：
+				//   tmp ← A上的值(curr_vr)
+				//   A   ← B上的值(vr)
+				//   B   ← tmp
+				// 每次动态找一个真空闲的临时寄存器（排除 A 和 B 避免冲突）
+				int use_swap = X64PR_MAX;
+				for (int pr = R10D; pr < X64PR_MAX; pr++)
+				{
+					if (now_pr2vr[pr].vr == INVALID__VR && pr != A && pr != B)
+					{
+						use_swap = pr;
+						break;
+					}
+				}
+				if (use_swap == X64PR_MAX)
+					ERR("no free swap pr for vr=%d A=%d B=%d", vr, A, B);
+
+				mc = X64mc(MC_ASSIGN);
+				mc.pr1 = use_swap;
+				mc.pr2 = A;
+				mc.ori_sem = "while 1, assign " + name + "=%" + to_string(vr);
+				x64mcs.push_back(mc);
+
+				mc = X64mc(MC_ASSIGN);
+				mc.pr1 = A;
+				mc.pr2 = B;
+				mc.ori_sem = "while 1, assign " + name + "=%" + to_string(vr);
+				x64mcs.push_back(mc);
+
+				mc = X64mc(MC_ASSIGN);
+				mc.pr1 = B;
+				mc.pr2 = use_swap;
+				mc.ori_sem = "while 1, assign " + name + "=%" + to_string(vr);
+				x64mcs.push_back(mc);
+
+				now_vr2pr[curr_vr_have_A].pr = B;
+				now_pr2vr[B].vr = curr_vr_have_A;
+			}
+			else
+			{
+				// 情况 2b：A 空着，B 有 vr 的值
+				// 直接把 vr 从 B 搬到 A
+				mc = X64mc(MC_ASSIGN);
+				mc.pr1 = A;
+				mc.pr2 = B;
+				mc.ori_sem = "while 2, assign " + name + "=%" + to_string(vr);
+				x64mcs.push_back(mc);
+
+				now_pr2vr[B].vr = INVALID__VR;
+			}
+		}
+		else
+		{
+			// ---- 分岔 2：vr 在 now 里被 spill 到栈了 ----
+
+			int curr_vr_have_A = now_pr2vr[A].vr;
+
+			if (curr_vr_have_A != INVALID__VR)
+			{
+				// 情况 3：A 被别人占了
+				// 先把占用者挪到一个真空闲 pr（排除 A 避免冲突）
+				int free_pr = X64PR_MAX;
+				for (int pr = R10D; pr < X64PR_MAX; pr++)
+				{
+					if (now_pr2vr[pr].vr == INVALID__VR && pr != A)
+					{
+						free_pr = pr;
+						break;
+					}
+				}
+				if (free_pr == X64PR_MAX)
+					ERR("no free pr for case 3 vr=%d A=%d", vr, A);
+
+				mc = X64mc(MC_ASSIGN);
+				mc.pr1 = free_pr;
+				mc.pr2 = A;
+				mc.ori_sem = "while 3, assign " + name + "=%" + to_string(vr)
+				    + ", move %s" + to_string(curr_vr_have_A);
+				x64mcs.push_back(mc);
+
+				now_vr2pr[curr_vr_have_A].pr = free_pr;
+				now_pr2vr[free_pr].vr = curr_vr_have_A;
+			}
+
+			// 情况 4：A 现在空了，从栈加载 vr
+			mc = X64mc(MC_LD, vr);
+			mc.pr1 = A;
+			mc.ori_sem = "while 4, ld ";
+			x64mcs.push_back(mc);
+		}
+
+		// 收尾：把 vr 绑定到 A
+		now_vr2pr[vr].pr = A;
+		now_pr2vr[A].vr = vr;
+	}
+}
+ */

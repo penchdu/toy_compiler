@@ -30,7 +30,7 @@ static int get_swap_pr(BasicBlock *bb)
 	if (swap_pr == X64PR_MAX)
 		swap_pr = X64PR_MAX - 1;
 
-	spill_vr(bb->x64mc_alloc_wave, swap_pr);
+	spill_vr(bb->x64mc_alloc_wave, pr2vr[swap_pr].vr);
 	return swap_pr;
 }
 //static int while__get_pr(BasicBlock *bb, int score)
@@ -183,8 +183,6 @@ static void while__recover_pr(Scope *scp,
 	(void) pr2vr;
 
 	int spilled = 0;
-	int free_pr = X64PR_MAX;
-
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
 		if (before_vr2pr[vr].pr == X64PR_MAX && now_vr2pr[vr].pr != X64PR_MAX)
@@ -210,8 +208,6 @@ static void while__recover_pr(Scope *scp,
 				x64mcs.push_back(mc);
 			}
 
-			free_pr = pr;
-
 			now_pr2vr[pr].vr = INVALID__VR;
 			pr = X64PR_MAX;
 			u = VR_USEAGE_INVALID;
@@ -221,6 +217,15 @@ static void while__recover_pr(Scope *scp,
 
 	if (now_pr2vr[swap_pr].vr != INVALID__VR)
 	{
+		int free_pr = X64PR_MAX;
+		for (int i = R10D; i < X64PR_MAX; i++)
+		{
+			if (now_pr2vr[i].vr == INVALID__VR)
+			{
+				free_pr = i;
+				break;
+			}
+		}
 		assert(free_pr != X64PR_MAX /* && free_pr != swap_pr */);
 
 		int vr = now_pr2vr[swap_pr].vr;
@@ -237,22 +242,6 @@ static void while__recover_pr(Scope *scp,
 
 		now_pr2vr[swap_pr].vr = INVALID__VR;
 	}
-//	int swap_pr = X64PR_MAX;
-//	swap_pr = get_swap_pr(bb);
-//	for (int pr = R10D; pr < X64PR_MAX; pr++)
-//	{
-//		if (now_pr2vr[pr].vr == INVALID__VR
-//		    && before_pr2vr[pr].vr == INVALID__VR)
-//		{
-//			for (int i = 0; i < vr_declare_manager.size(); i++)
-//			{
-//				if (now_vr2pr[i].pr == pr || before_vr2pr[i].pr == pr)
-//					ERR();
-//			}
-//			swap_pr = pr;
-//			break;;
-//		}
-//	}
 	if (swap_pr == X64PR_MAX)
 		ERR();
 

@@ -275,10 +275,10 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			break;
 
 		case MC_DIV:
-			PRINT_ASM("mov eax, %s", pr_name[mc.pr1]);
+			PRINT_ASM("mov eax, %s \n", pr_name[mc.pr1]);
 
-			PRINT_ASM("cdq");
-			PRINT_ASM("idiv %s", pr_name[mc.pr2]);
+			PRINT_ASM("cdq \n");
+			PRINT_ASM("idiv %s \n", pr_name[mc.pr2]);
 			PRINT_ASM("mov %s, eax", pr_name[mc.pr1]);
 			PRINT_ASM_sem
 			break;

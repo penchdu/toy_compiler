@@ -1,74 +1,44 @@
 
+
+
+
+
+
+
 int test()
 {
-    int s0 = 31;
-    int s1 = 47;
+    int a = 1;
+    int b = 2;
+    int c = 3;
+    int d = 4;
+    int e = 5;
 
-    int a0 = 1;
-    int a1 = 2;
-    int a2 = 3;
-    int a3 = 4;
-    int a4 = 5;
-    int a5 = 6;
+    int outer = 4;
 
-    int b0 = 7;
-    int b1 = 8;
-    int b2 = 9;
-    int b3 = 10;
-    int b4 = 11;
-    int b5 = 12;
-
-    int c0 = 13;
-    int c1 = 14;
-    int c2 = 15;
-    int c3 = 16;
-
-    int i = 3;
-
-    while (i > 0)
+    while (outer > 0)
     {
-        a0 = a0 + b0;
-        a1 = a1 + c0;
-        a2 = a2 + b1;
-        a3 = a3 + c1;
+        int inner = outer - (outer / 3) * 3;
 
-        b0 = b0 + a2;
-        b1 = b1 + c2;
-        b2 = b2 + a3;
-        b3 = b3 + c3;
-
-        int j = 0;
-
-        while (j > 0)
+        while (inner > 0)
         {
-            a4 = a4 + b2;
-            a5 = a5 + c2;
-            b4 = b4 + a0;
-            b5 = b5 + c0;
+            int t = a + b + c + d + e;
 
-            c0 = c0 + a4;
-            c1 = c1 + b4;
-            c2 = c2 + a5;
-            c3 = c3 + b5;
+            a = t + outer;
+            b = a + 1;
+            c = b + 2;
+            d = c + 3;
+            e = d + 4;
 
-            j = j - 1;
+            inner = inner - 1;
         }
 
-        a4 = a4 + b2;
-        a5 = a5 + c2;
-        b4 = b4 + a0;
-        b5 = b5 + c0;
+        int q = a + e;
 
-        c0 = c0 + a4;
-        c1 = c1 + b4;
-        c2 = c2 + a5;
-        c3 = c3 + b5;
+        a = q + 1;
+        c = q + 2;
 
-        i = i - 1;
+        outer = outer - 1;
     }
 
-    return s0 + s1
-         + a0 + a1 + a2 + a3 + a4 + a5
-         + b0 + b1 + b2 + b3 + b4 + b5
-         + c0 + c1 + c2 + c3;
+    return a + b + c + d + e;
 }

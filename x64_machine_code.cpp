@@ -147,6 +147,7 @@ static void gen_mc(Scope *scp)
 
 	if (scp->sem_stamp == SEM_FUNC_DEFINE
 	    || scp->sem_stamp == SEM_COND_JMP	// if, while
+	    || scp->sem_stamp == SEM_WHILE
 	    || scp->sem_stamp == SEM_WHILE_COND
 	    || scp->sem_stamp == SEM_WHILE_BODY
 	    || scp->sem_stamp == SEM_WHILE_BODY_suffix
