@@ -902,6 +902,9 @@ It can run on Linux‑x86‑64 and print the return int-value of the program.
 
 ## Auto Test
 
+main.cpp:
+	`#define auto_test 1`
+
 ```c
 $make
 $cd test
