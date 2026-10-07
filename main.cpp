@@ -14,7 +14,10 @@ VirtualRegDeclareManager vr_declare_manager;
 
 int main(int argc, char **argv)
 {
-	FILE *fp = fopen("./test/test.cpp", "r");
+	if(argc != 2)
+		ERR("argc != 2");
+
+	FILE *fp = fopen(argv[1], "r");
 	assert(fp);
 
 	lexer(fp);
@@ -26,8 +29,11 @@ int main(int argc, char **argv)
 	mc_schedule();
 	x64_reg_alloc();		// create a.s in current location
 
-
-	print__test();
+//	system("gcc a0.s -o a0");
+//	system("./a0");
+//	system("gcc a1.s -o a1");
+//	system("./a1");
+//	print__test();
 	fclose(fp);
 	return 0;
 }

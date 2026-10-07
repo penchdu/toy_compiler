@@ -373,12 +373,8 @@ void x64_reg_alloc()
 
 	x64_reg_alloc_o0(&file_scp);
 	dump_asm("a0.s");
-	system("gcc a0.s -o a0");
-	system("./a0");
 
 	usleep(1000);
 	x64_reg_alloc_wave();
 	dump_asm("a1.s");
-	system("gcc a1.s -o a1");
-	system("./a1");
 }

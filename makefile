@@ -23,7 +23,7 @@ CXXFLAGS = -std=c++20 -O0 -g -MMD -MP \
 #LDFLAGS += -fsanitize=address
 
 BUILD_DIR = build
-TARGET = $(BUILD_DIR)/a
+TARGET = $(BUILD_DIR)/vsc
 
 _DUMMY := $(shell chmod +x ./gen_string.sh && ./gen_string.sh)
 

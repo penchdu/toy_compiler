@@ -1,0 +1,73 @@
+int test() {
+    int a = 1;
+	int b = a + 2;
+	int c = a + 3;
+	int d = a + 4;
+	int e = a + 5;
+	int f = 6;
+	int sum = 7;
+	int i = 0;
+
+	while (i < 120)
+	{
+		if (a < b)
+		{
+			a = a + 3;
+			e = e + 1;
+
+			if (c < d)
+			{
+				c = c + 5;
+				f = f + 1;
+			}
+			else
+			{
+				d = d - 2;
+				f = f + 2;
+			}
+		}
+		else
+		{
+			b = b - 2;
+			e = e + 2;
+			if (c > d)
+			{
+				c = c - 3;
+				f = f + 3;
+			}
+			else
+			{
+				d = d + 4;
+				f = f + 4;
+			}
+		}
+
+		{
+			sum = sum + a + b + c + d + e + f;
+		}
+		
+		while (i < 12)
+		{
+			int e = 12;
+			a = a + e;
+			b = b + f;
+			i = i + 1;
+			
+			while (i < 12)
+			{	
+				int a = 1;
+				a = a + e;
+				b = b + a;
+				i = i + b;
+		
+			}
+		
+		}
+		
+		i = i + 1;
+	}
+
+//	i = a + b + c + d + e + f;
+	sum = sum + 1;
+	return sum;
+}
