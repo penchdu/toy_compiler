@@ -184,7 +184,7 @@ Schedule priority:
 
 ```c
 $make
-$./build/a
+$./build/vsc
 ```
 
 Input (the file "t1.txt"):
@@ -257,7 +257,7 @@ int test()
 
 
 
-the **vsc** reads the test-file "**t1.txt**" in current location and generate assembly-file: **a0.s** and **a1.s**
+the **vsc** reads the test-file "**test/test.cpp**" in current location and generate assembly-file: **a0.s** and **a1.s**
 
 
 
