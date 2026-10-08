@@ -4,7 +4,7 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-TEST_DIR="$PROJECT_DIR/test_case"
+TEST_DIR="$PROJECT_DIR/test_case2"
 VSC="$PROJECT_DIR/build/vsc"
 RESULT_DIR="$SCRIPT_DIR/test_result" 
 

@@ -105,6 +105,8 @@ Next steps: global-Inst-select and global-reg-alloc
 
 #### Scope Management & Lexical Scoping
 
+```c
+
 **VSC** implements a hierarchical lexical scoping mechanism to support nested code blocks (`{ ... }`), control-flow branching (`if`/`else`), and correct variable name resolution.
 
 * **Scope Tree Architecture**: Each `Scope` maintains a parent pointer and child references, forming a hierarchical scope tree. Variables are declared within the symbol table of their enclosing scope.
@@ -112,11 +114,14 @@ Next steps: global-Inst-select and global-reg-alloc
 * **Control-Flow Scoping & Basic Blocks**: `if`/`else` constructs create dedicated scopes for conditions, branches, and control-flow join points. These scopes are later used to organize basic blocks, jump targets, and control-flow edges.
 * **Name Disambiguation**: During semantic analysis, variables are assigned unique internal names (for example, `global_a` and `block2_a`) so that shadowed identifiers can be distinguished in the flat intermediate representation.
 
+```
 
 ### DAG Construction
 ...
 
 ### Scope and Semantic Analysis
+
+```c
 
 Semantic analysis performs:
 
@@ -124,6 +129,8 @@ Semantic analysis performs:
 - symbol table construction
 - scope resolution
 - variable renaming
+
+```
 
 Example:
 
@@ -156,20 +163,28 @@ block2_a
 
 ### Instruction Schedule
 
+```c
+
 Schedule priority:
 
 - Score‑Driven Instruction Scheduler: Refined scheduling based on critical‑path latency, functional‑unit availability(ALU/IMUL/DIV), and remaining‑usage hints from scope‑level transient‑variable consumption; no explicit register‑pressure modelling.
 
+```
+
 ### Register Allocation
 
+```c
 -O0:
 - simple allocation, load/store based strategy
 
 -O1:
 - BasicBlock-level Wavefront
 
+```
 
 ### Optimization Goal
+
+```c
 
 -O0:
 - no optimize
@@ -179,6 +194,7 @@ Schedule priority:
 - constant fold
 - dead code eliminate
 
+```
 
 
 
@@ -187,8 +203,10 @@ Schedule priority:
 
 
 ```c
+
 $make
 $./test/run_test.sh
+
 ```
 
 
