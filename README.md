@@ -210,19 +210,22 @@ $./test/run_test.sh
 
 
 
-## Single Example
+## Single Test
 
 ```c
+
 $make
 $./build/vsc test.cpp	#generate a0.s a1.s
 $gcc a0.s -o a0
 $gcc a1.s -o a1
 $./a0
 $./a1
+
 ```
 
 
 example `test.cpp`:
+
 ```c
 
 
@@ -335,12 +338,7 @@ int test()
 ```
 
 
-
-
-
-the **vsc** reads the test-file "**test/test.cpp**" in current location and generate assembly-file: **a0.s** and **a1.s**
-
-
+the `vsc` compile the input into two assembly: `a0.s` and `a1.s`
 
 
 ###  -O0  a0.s  
@@ -350,6 +348,7 @@ the **vsc** reads the test-file "**test/test.cpp**" in current location and gene
 ```c
 
 spill every register use
+...
 
 ```
 
