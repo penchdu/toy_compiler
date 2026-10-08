@@ -233,6 +233,18 @@ static void gen_wave_decay_gemini_improved(Wave &_wave)
 }
 void gen_wave(BasicBlock *bb)
 {
+	/*
+	 *                  ┌─ local wave
+VR uses ─────────┼─ density
+                 ├─ consecutive-run
+                 ├─ short/medium/long horizon
+                 └─ loop / future pressure
+                          ↓
+                    final score
+                          ↓
+                    victim select
+	 *
+	 */
 	for (int vr : bb->vrids)
 	{
 //    	compute_wave_triangle(wave[vr]);

@@ -1,14 +1,13 @@
 #!/bin/bash
 
 
-TEST_DIR_REL="../test_case"
-VSC_REL="../build/vsc"
-RESULT_DIR_REL="result"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
+TEST_DIR="$PROJECT_DIR/test_case"
+VSC="$PROJECT_DIR/build/vsc"
+RESULT_DIR="$SCRIPT_DIR/test_result" 
 
-TEST_DIR="$(cd "$TEST_DIR_REL" 2>/dev/null && pwd)"
-VSC="$(cd "$(dirname "$VSC_REL")" 2>/dev/null && pwd)/$(basename "$VSC_REL")"
-RESULT_DIR="$(pwd)/$RESULT_DIR_REL"
 
 if [ -z "$TEST_DIR" ] || [ ! -d "$TEST_DIR" ]; then
    echo "Error: Test directory does not exist!"

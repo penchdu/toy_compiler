@@ -27,4 +27,5 @@ t2
 3.txt
 result.txt
 tmp/
-test/result/
+test/test_result/
+test_case2/

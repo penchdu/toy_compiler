@@ -258,19 +258,10 @@ static void while__recover_pr(Scope *scp,
 			continue;
 
 		int B = now_vr2pr[vr].pr;
-		// bool dirty = (now_vr2pr[vr].u & VR_USAGE_WRITE);
 
 		if (B == A)
-		{
-			// if (dirty)
-			// {
-			// 	X64mc mc(MC_ST, vr);
-			// 	mc.pr1 = A;
-			// 	mc.ori_sem = "while same-pr dirty spill";
-			// 	x64mcs.push_back(mc);
-			// }
 			continue;
-		}
+
 		string &name = vr_declare_manager.declare_at[vr]->symb->unique_name;
 
 		if (B != X64PR_MAX)
@@ -295,14 +286,6 @@ static void while__recover_pr(Scope *scp,
 				mc.ori_sem = "while 1, assign " + name + "=%" + to_string(vr);
 				x64mcs.push_back(mc);
 
-#if 0
-				// now[curr_vr_have_A] = curr_vr_have_A_struct;
-				now_vr2pr[curr_vr_have_A].pr = swap_pr;
-				now_pr2vr[swap_pr].vr = curr_vr_have_A;
-
-				now_pr2vr[B].vr = INVALID__VR;
-				swap_pr = B;
-#else
 				mc = X64mc(MC_ASSIGN);
 				mc.pr1 = B;
 				mc.pr2 = swap_pr;
@@ -311,7 +294,6 @@ static void while__recover_pr(Scope *scp,
 
 				now_vr2pr[curr_vr_have_A].pr = B;
 				now_pr2vr[B].vr = curr_vr_have_A;
-#endif
 			}
 			else	//  (curr A is free && B == PR)
 			{
@@ -324,14 +306,6 @@ static void while__recover_pr(Scope *scp,
 				//
 				now_pr2vr[B].vr = INVALID__VR;
 			}
-
-			// if (dirty)
-			// {
-			// 	X64mc mc(MC_ST, vr);
-			// 	mc.pr1 = A;
-			// 	mc.ori_sem = "while step2 dirty spill";
-			// 	x64mcs.push_back(mc);
-			// }
 		}
 		else	// B == X64PR_MAX
 		{
