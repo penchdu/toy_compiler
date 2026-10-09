@@ -74,7 +74,7 @@ static Scope* body_of_if__while(enum Semantic sem_stamp = SEM_LABEL)
 	branch->name = ".L_" + branch->name;
 	return branch;
 }
-static Scope* new_jmp_tail_for_cond_imp(Scope *cond)
+static Scope* new_jmp_tail_for_cond_imp()
 {
 //	Scope *tail = current_scope_pointer;
 //	assert((!tail->is_virtual && tail == cond->parent)
@@ -82,7 +82,6 @@ static Scope* new_jmp_tail_for_cond_imp(Scope *cond)
 
 	Scope *tail = new_virtual_scope_and_drop_in();
 	tail->sem_stamp = SEM_LABEL;
-//	tail->name = ".L_" + tail->name;
 
 //	 exit_current_scope();
 //	 new_virtual_scope_and_drop_in();
@@ -100,8 +99,9 @@ Scope* get_inner_tail_of_scope(Scope *scope)
 	assert(scope->clds.size());
 	Scope *inner_tail = scope->clds.back();	// then_branch.cld.back()
 	assert(inner_tail->is_virtual);
-	assert(inner_tail->sem_stamp == SEM_JMP);
+	assert(inner_tail->sem_stamp == SEM_LABEL);
 	assert(inner_tail->asts.size() == 0);
+	assert(inner_tail->clds.size() == 0);
 	return inner_tail;
 }
 static void rm_duplicant_jmp_in(Scope *tail)
@@ -117,19 +117,20 @@ void case_tk_if()
 	if (!in_func_define)
 		ERR("%s not in func", tk.src.c_str());
 
+	// if
 	Scope *if_scp = new_scope_and_drop_in();
 	if_scp->sem_stamp = SEM_IF;
-	if_scp->name = ".L_" + if_scp->name + "_if";
+	if_scp->name = ".L_" + if_scp->name + "_if" + to_string(if_scp->id);
 
 	// cond
 	Scope *cond = cond_to_negative();
-	cond->sem_stamp = SEM_COND_JMP;
-	cond->name += "_if_cond";
+	cond->sem_stamp = SEM_IF_cond;
+	cond->name += "_if"  + to_string(if_scp->id) + "_cond";
 
 	// then branch
 	Scope *then_branch = body_of_if__while();
-	then_branch->sem_stamp = SEM_THEN;
-	then_branch->name += "_if_then";	// + to_string(cond->id);
+	then_branch->sem_stamp = SEM_IF_then;
+	then_branch->name += "_if"  + to_string(if_scp->id) + "_then";	// + to_string(cond->id);
 
 	// else branch
 	Scope *else_branch = 0;
@@ -139,34 +140,33 @@ void case_tk_if()
 	{
 		tokens.get();
 		else_branch = body_of_if__while();
-		else_branch->sem_stamp = SEM_ELSE;
-		else_branch->name += "_if_else";
-	}
-//	else
-//	{
-//		else_branch = new_scope_and_drop_in();
-//		else_branch->sem_stamp = SEM_ELSE;
-//		else_branch->name += "_if_else_empty";
-//		exit_current_scope();
-//	}
-	// end work
-	Scope *tail = new_jmp_tail_for_cond_imp(cond);
-	tail->name += "_if" + to_string(if_scp->id) + "_jmp_tail";
-
-	if (else_branch)
-	{
-		cond->jmp_out = else_branch;
-		else_branch->jmp_in.push_back(cond);
 	}
 	else
 	{
-		cond->jmp_out = tail;
-		tail->jmp_in.push_back(cond);
+		else_branch = new_scope_and_drop_in();
+		Scope *else_branch_tail = new_virtual_scope_and_drop_in();
+		exit_current_scope();
+		exit_current_scope();
 	}
+	else_branch->sem_stamp = SEM_IF_else;
+	else_branch->name += "_if" + to_string(if_scp->id) + "_else";
+	cond->jmp_out = else_branch;
+	else_branch->jmp_in.push_back(cond);
+
+	// end work
+	Scope *tail = new_jmp_tail_for_cond_imp();
+	tail->name += "_if" + to_string(if_scp->id) + "_tail";
+
+//	cond->jmp_out = tail;
+//	tail->jmp_in.push_back(cond);
 
 	Scope *then_branch_inner_tail = get_inner_tail_of_scope(then_branch);
 	then_branch_inner_tail->jmp_out = tail;
 	tail->jmp_in.push_back(then_branch_inner_tail);
+
+	Scope *else_branch_inner_tail = get_inner_tail_of_scope(else_branch);
+	else_branch_inner_tail->jmp_out = tail;
+	tail->jmp_in.push_back(else_branch_inner_tail);
 
 	rm_duplicant_jmp_in(tail);
 
@@ -211,22 +211,20 @@ void case_tk_while()
 	while_body->name += "_while" + to_string(while_scp->id) + "_body";
 
 	// body suffix
-	Scope *while_body_suffix = new_virtual_scope_and_drop_in();
-	while_body_suffix->sem_stamp = SEM_WHILE_BODY_suffix;
-	while_body_suffix->name += "_while" + to_string(while_scp->id) + "_body_suffix";
-	exit_current_scope();
+//	Scope *while_body_suffix = new_virtual_scope_and_drop_in();
+//	while_body_suffix->sem_stamp = SEM_WHILE_BODY_suffix;
+//	while_body_suffix->name += "_while" + to_string(while_scp->id) + "_body_suffix";
+//	exit_current_scope();
+//	while_body_suffix->jmp_out = while_cond;
+//	while_cond->jmp_in.push_back(while_body_suffix);
 
-
-//	Scope *while_body_inner_tail = get_inner_tail_of_scope(while_body);
-////	while_body_inner_tail->name += "____while" + to_string(while_scp->id) + "_body_suffix";
-//	while_body_inner_tail->jmp_out = while_cond;
-//	while_cond->jmp_in.push_back(while_body_inner_tail);
-
-	while_body_suffix->jmp_out = while_cond;
-	while_cond->jmp_in.push_back(while_body_suffix);
+	Scope *while_body_inner_tail = get_inner_tail_of_scope(while_body);
+	while_body_inner_tail->name += "_while" + to_string(while_scp->id) + "_tail";
+	while_body_inner_tail->jmp_out = while_cond;
+	while_cond->jmp_in.push_back(while_body_inner_tail);
 
 	// end work
-	Scope *tail = new_jmp_tail_for_cond_imp(while_cond);
+	Scope *tail = new_jmp_tail_for_cond_imp();
 	tail->name += "_while" + to_string(while_scp->id) + "_tail";
 
 	while_cond->jmp_out = tail;
@@ -241,7 +239,7 @@ void case_tk_while()
 			p->jmp_out = tail;
 		else
 			ERR();
-		p->sem_stamp = SEM_JMP;
+		p->sem_stamp = SEM_LABEL;
 	}
 
 	rm_duplicant_jmp_in(tail);

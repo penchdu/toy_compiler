@@ -20,6 +20,7 @@
 #include <string>
 #include <map>
 #include <list>
+#include <set>
 #include <stack>
 #include <algorithm>
 #include <cmath>
@@ -224,7 +225,7 @@ public:
 			break;
 
 		case TK_IF:
-			sem_stamp = SEM_COND_JMP;
+			sem_stamp = SEM_IF_cond;
 			break;
 		case TK_ELSE:
 			//			sem_stamp = SEM_ELSE;

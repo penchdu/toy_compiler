@@ -70,16 +70,14 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 	[SEM_CONST_NUM] = "SEM_CONST_NUM",
 
 	[SEM_IF] = "SEM_IF",
-	[SEM_THEN] = "SEM_THEN",
-	[SEM_ELSE] = "SEM_ELSE",
-	[SEM_COND_JMP] = "SEM_COND_JMP",
-	[SEM_JMP] = "SEM_JMP",
+	[SEM_IF_cond] = "SEM_IF_COND",
+	[SEM_IF_then] = "SEM_IF_then",
+	[SEM_IF_else] = "SEM_IF_else",
 	[SEM_LABEL] = "SEM_LABEL",
 
 	[SEM_WHILE] = "SEM_WHILE",
 	[SEM_WHILE_COND] = "SEM_WHILE_COND",
 	[SEM_WHILE_BODY] = "SEM_WHILE_BODY",
-	[SEM_WHILE_BODY_suffix] = "SEM_WHILE_BODY_suffix",
 
 	[SEM_FUNC_DECLARE] = "SEM_FUNC_DECLARE",
 	[SEM_FUNC_DEFINE] = "SEM_FUNC_DEFINE",

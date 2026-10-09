@@ -13,17 +13,15 @@ for file in "${FILES[@]}"; do
     base="${file%.*}"
     OUTPUT="${base}_string.cpp"
 
-    # 【新增判断】：如果目标文件存在，且目标文件不比源文件旧（即目标文件比源文件新或时间一致），则跳过
-    if [ -f "$OUTPUT" ] && [ ! "$OUTPUT" -ot "$file" ]; then
+    if [ -f "$OUTPUT" ] && [ "$OUTPUT" -nt "$file" ]; then
         echo "skip $OUTPUT (up to date)"
         continue
     fi
 
-    # 清空并重新生成目标文件
-    > "$OUTPUT"
-    echo "#include \"$file\"" >> "$OUTPUT"
-    echo "// from $file" >> "$OUTPUT"
-    echo "" >> "$OUTPUT"
+    TMPFILE=$(mktemp "${base}_string.XXXXXX.cpp")
+    echo "#include \"$file\"" > "$TMPFILE"
+    echo "// from $file" >> "$TMPFILE"
+    echo "" >> "$TMPFILE"
 
     awk '
     { gsub(/\/\*[^*]*\*+([^/*][^*]*\*+)*\//, " ") }
@@ -88,7 +86,13 @@ for file in "${FILES[@]}"; do
             if (p != "") items[count++] = p
         }
     }
-    ' "$file" >> "$OUTPUT"
+    ' "$file" >> "$TMPFILE"
 
-    echo "generated $OUTPUT"
+    if [ -f "$OUTPUT" ] && cmp -s "$TMPFILE" "$OUTPUT"; then
+        rm "$TMPFILE"
+        echo "skip $OUTPUT (content unchanged)"
+    else
+        mv "$TMPFILE" "$OUTPUT"
+        echo "generated $OUTPUT"
+    fi
 done

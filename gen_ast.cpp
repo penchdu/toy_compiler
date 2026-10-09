@@ -186,7 +186,7 @@ void gen_three_address_code()
 //	gen_tac(&file_scp);
 
 	gen_tac(&file_scp);
-//	dump_ast();
+	dump_ast();
 
 	printf("\n========== tac ==========\n");
 	dump_tac(&file_scp);

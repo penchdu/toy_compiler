@@ -1,96 +1,77 @@
 #!/bin/bash
 
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-TEST_DIR="$PROJECT_DIR/test_case"
+# ===== test case dirs (relative to PROJECT_DIR) =====
+TEST_DIRS=(
+    case
+)
+
 VSC="$PROJECT_DIR/build/vsc"
-RESULT_DIR="$SCRIPT_DIR/test_result" 
+OUT="$SCRIPT_DIR/test_result"
 
+[ -x "$VSC" ] || { echo "Error: compiler not found at $VSC"; exit 1; }
 
-if [ -z "$TEST_DIR" ] || [ ! -d "$TEST_DIR" ]; then
-   echo "Error: Test directory does not exist!"
-    exit 1
-fi
-if [ ! -x "$VSC" ]; then
-    echo "Error: compiler does not exist!"
-    exit 1
-fi
+rm -rf "$OUT" && mkdir -p "$OUT"
 
-rm -rf "$RESULT_DIR"
-mkdir -p "$RESULT_DIR"
+total=0; pass=0; fail=0
 
-total=0
-pass=0
-fail=0
+for DIR_NAME in "${TEST_DIRS[@]}"; do
+    # search order: SCRIPT_DIR (test/), then PROJECT_DIR (vsc/)
+    TEST_DIR=""
+    for base in "$SCRIPT_DIR" "$PROJECT_DIR"; do
+        [ -d "$base/$DIR_NAME" ] && { TEST_DIR="$base/$DIR_NAME"; break; }
+    done
+    [ -z "$TEST_DIR" ] && { echo "skip: $DIR_NAME (not found)"; continue; }
+    echo "===== $DIR_NAME ====="
 
-for CPP in "$TEST_DIR"/*.cpp; do
-    [ -e "$CPP" ] || continue
-    total=$((total + 1))
-    
-    NAME="$(basename "$CPP")"
-    BASE="${NAME%.cpp}"
-    CASE_DIR="$RESULT_DIR/$BASE"
-    mkdir -p "$CASE_DIR"
+    for CPP in "$TEST_DIR"/*.cpp; do
+        [ -e "$CPP" ] || continue
+        total=$((total + 1))
 
-    # VSC compile
-    (cd "$CASE_DIR" && "$VSC" "$CPP") > /dev/null 2>&1
-    if [ ! -f "$CASE_DIR/a0.s" ] || [ ! -f "$CASE_DIR/a1.s" ]; then
-        echo "fail: $NAME (vsc compile fail)"
-        fail=$((fail + 1))
-        continue
-    fi
+        NAME="$(basename "$CPP")"
+        CD="$OUT/$DIR_NAME/${NAME%.cpp}"
+        mkdir -p "$CD"
 
-    # GCC assembly
-    (cd "$CASE_DIR" && gcc a0.s -o a0 && gcc a1.s -o a1) > /dev/null 2>&1
-    if [ $? -ne 0 ]; then
-        echo "fail: $NAME (gcc assembly failed)"
-        fail=$((fail + 1))
-        continue
-    fi
+        # VSC compile
+        (cd "$CD" && "$VSC" "$CPP") > /dev/null 2>&1
+        if [ ! -f "$CD/a0.s" ] || [ ! -f "$CD/a1.s" ]; then
+            echo "fail: $NAME (vsc compile)"; fail=$((fail + 1)); continue
+        fi
 
-    # a0 (limit 3s)
-    (cd "$CASE_DIR" && timeout 3s ./a0) > "$CASE_DIR/a0.out" 2>&1
-    A0_ERR=$?
-    if [ $A0_ERR -eq 124 ]; then
-        A0_RES="TIMEOUT"
-    else
-        A0_RES=$(sed -n 's/.*Result:[[:space:]]*\([-0-9][0-9]*\).*/\1/p' "$CASE_DIR/a0.out" | tail -n 1)
-    fi
+        # GCC assemble
+        (cd "$CD" && gcc a0.s -o a0 && gcc a1.s -o a1) > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+            echo "fail: $NAME (gcc assemble)"; fail=$((fail + 1)); continue
+        fi
 
-    # a1 (limit 3s)
-    (cd "$CASE_DIR" && timeout 3s ./a1) > "$CASE_DIR/a1.out" 2>&1
-    A1_ERR=$?
-    if [ $A1_ERR -eq 124 ]; then
-        A1_RES="TIMEOUT"
-    else
-        A1_RES=$(sed -n 's/.*Result:[[:space:]]*\([-0-9][0-9]*\).*/\1/p' "$CASE_DIR/a1.out" | tail -n 1)
-    fi
+        # Run a0 / a1 (separate cwd via subshell)
+        (cd "$CD" && timeout 3s ./a0) > "$CD/a0.out" 2>&1
+        A0_ERR=$?
+        (cd "$CD" && timeout 3s ./a1) > "$CD/a1.out" 2>&1
+        A1_ERR=$?
 
-    # GCC output
-    cat > "$CASE_DIR/runner.cpp" <<EOF
-#include <stdio.h>
-#include "$CPP"
-int main() { printf("Result: %d\n", test()); return 0; }
-EOF
-    (cd "$CASE_DIR" && gcc runner.cpp -o gcc_ref && timeout 3s ./gcc_ref) > "$CASE_DIR/gcc.out" 2>&1
-    GCC_ERR=$?
-    if [ $GCC_ERR -eq 124 ]; then
-        GCC_RES="TIMEOUT"
-    else
-        GCC_RES=$(sed -n 's/.*Result:[[:space:]]*\([-0-9][0-9]*\).*/\1/p' "$CASE_DIR/gcc.out" | tail -n 1)
-    fi
+        [ $A0_ERR -eq 124 ] && A0=TIMEOUT || A0=$(sed -n 's/.*Result:[[:space:]]*\([-0-9][0-9]*\).*/\1/p' "$CD/a0.out" | tail -n 1)
+        [ $A1_ERR -eq 124 ] && A1=TIMEOUT || A1=$(sed -n 's/.*Result:[[:space:]]*\([-0-9][0-9]*\).*/\1/p' "$CD/a1.out" | tail -n 1)
 
-    # compare
-    if [ -n "$A0_RES" ] && [ "$A0_RES" != "TIMEOUT" ] && [ "$A0_RES" = "$A1_RES" ] && [ "$A1_RES" = "$GCC_RES" ]; then
-        pass=$((pass + 1))
-        echo "pass: $NAME"
-    else
-        fail=$((fail + 1))
-        echo "fail: $NAME (a0:${A0_RES:-no result} | a1:${A1_RES:-no result} | gcc:${GCC_RES:-no result})"
-    fi
+        # GCC reference
+        echo '#include <stdio.h>
+#include "'"$CPP"'"
+int main() { printf("Result: %d\n", test()); return 0; }' > "$CD/runner.cpp"
+        (cd "$CD" && gcc runner.cpp -o gcc_ref && timeout 3s ./gcc_ref) > "$CD/gcc.out" 2>&1
+        GCC_ERR=$?
+        [ $GCC_ERR -eq 124 ] && GCC=TIMEOUT || GCC=$(sed -n 's/.*Result:[[:space:]]*\([-0-9][0-9]*\).*/\1/p' "$CD/gcc.out" | tail -n 1)
+
+        # Compare
+        if [ -n "$A0" ] && [ "$A0" != "TIMEOUT" ] && [ "$A0" = "$A1" ] && [ "$A1" = "$GCC" ]; then
+            echo "pass: $NAME"; pass=$((pass + 1))
+        else
+            echo "fail: $NAME (a0:$A0 | a1:$A1 | gcc:$GCC)"; fail=$((fail + 1))
+        fi
+    done
 done
 
-echo "----------------------------------------"
-echo "tests finished: all=$total | pass=$pass | fail=$fail"
+#echo "----------------------------------------"
+#echo "result: all=$total | pass=$pass | fail=$fail"
+

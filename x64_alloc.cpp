@@ -10,19 +10,25 @@
 #include "basic_block.h"
 
 const char *pr_name[] = {
+//    [R8D] = "r8d",
+//    [R9D] = "r9d",
     [R10D] = "r10d",
     [R11D] = "r11d",
     [R12D] = "r12d",
     [R13D] = "r13d",
     [R14D] = "r14d",
     [R15D] = "r15d",
-//	[eax] = "eax",
+//    [EBX] = "ebx",
     };
 
 const char* pr_name_byte(int pr)
 {
 	switch (pr)
 	{
+//	case R8D:
+//		return "r8b";
+//	case R9D:
+//		return "r9b";
 	case R10D:
 		return "r10b";
 	case R11D:
@@ -35,6 +41,8 @@ const char* pr_name_byte(int pr)
 		return "r14b";
 	case R15D:
 		return "r15b";
+//	case EBX:
+//		return "bl";
 	}
 
 	ERR("no byte register");
@@ -101,7 +109,7 @@ static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 	int u = vr2pr[vr].u | vr_usage[vr];
 
 	assert(pr != X64PR_MAX);
-	assert(u != VR_USEAGE_INVALID);
+	assert(u != VR_USAGE_INVALID);
 
 	if (u & VR_USAGE_WRITE)
 	{
@@ -112,7 +120,7 @@ static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 	}
 
 	vr2pr[vr].pr = X64PR_MAX;
-	vr2pr[vr].u = VR_USEAGE_INVALID;
+	vr2pr[vr].u = VR_USAGE_INVALID;
 
 	assert(pr2vr[pr].vr == vr);
 	pr2vr[pr].vr = INVALID__VR;

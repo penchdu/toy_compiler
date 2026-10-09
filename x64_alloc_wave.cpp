@@ -46,34 +46,38 @@ void init_wave(BasicBlock *bb)
 	}
 }
 
-void spill_vr(vector<X64mc> &x64mc_alloced, int vr, const string &tag)
+void spill_vr(vector<VrToPr> &vr_to_pr, vector<PrToVr> &pr_to_vr, int vr,
+	vector<X64mc> &x64mc_alloc, const string &tag)
 {
-	int &pr = vr2pr[vr].pr;
-	int &u = vr2pr[vr].u;
+	int &pr = vr_to_pr[vr].pr;
+	int &u = vr_to_pr[vr].u;
 
 	assert(pr != X64PR_MAX);
-	assert(u != VR_USEAGE_INVALID);
-	assert(pr2vr[pr].vr == vr);
+	assert(u != VR_USAGE_INVALID);
+	assert(pr_to_vr[pr].vr == vr);
 
-	if ((u | vr_usage[vr]) & VR_USAGE_WRITE)
+	Ast *p = vr_declare_manager.declare_at[vr];
+
+	if (((u | vr_usage[vr]) & VR_USAGE_WRITE) && p->sem_stamp != SEM_CONST_NUM)
 	{
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;
-		mc.ori_sem = tag + "spill";
-		x64mc_alloced.push_back(mc);
+		mc.ori_sem = tag + " spill";
+		x64mc_alloc.push_back(mc);
 	}
 
-	pr2vr[pr].vr = INVALID__VR;
+	pr_to_vr[pr].vr = INVALID__VR;
 	pr = X64PR_MAX;
-	u = VR_USEAGE_INVALID;
+	u = VR_USAGE_INVALID;
 }
 void spill_all_pr(BasicBlock *bb)
 {
 	for (int pr = R10D; pr < X64PR_MAX; pr++)
 	{
-		if (pr2vr[pr].vr != INVALID__VR)
+		int vr = pr2vr[pr].vr;
+		if (vr != INVALID__VR)
 		{
-			spill_vr(bb->x64mc_alloc_wave, pr2vr[pr].vr);
+			spill_vr(vr2pr, pr2vr, vr, bb->x64mc_alloc_wave);
 //			ERR();
 		}
 	}
@@ -111,7 +115,7 @@ int wave_get_pr(BasicBlock *bb, int mc_idx)
 	assert(min_score_vr != INVALID__VR);
 
 	int pr = vr2pr[min_score_vr].pr;
-	spill_vr(bb->x64mc_alloc_wave, min_score_vr);
+	spill_vr(vr2pr, pr2vr, min_score_vr, bb->x64mc_alloc_wave);
 	return pr;
 }
 static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
@@ -121,7 +125,7 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 	 * mc_assign %1, %1
 	 * s1 == s2
 	 */
-	assert(u != VR_USEAGE_INVALID);
+	assert(u != VR_USAGE_INVALID);
 	bool need_load = 0;
 
 	if (vr2pr[vr].pr == X64PR_MAX)
@@ -146,10 +150,22 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 
 	if (need_load)
 	{
-		X64mc mc(MC_LD, vr);
-		mc.pr1 = vr2pr[vr].pr;
-		mc.ori_sem = "alloc";
-		bb->x64mc_alloc_wave.push_back(mc);
+		Ast *p = vr_declare_manager.declare_at[vr];
+		if (p->sem_stamp == SEM_CONST_NUM)
+		{
+			X64mc mc(MC_LI, vr);
+			mc.pr1 = vr2pr[vr].pr;
+			mc.const_num = p->const_value;
+			mc.ori_sem = "li";
+			bb->x64mc_alloc_wave.push_back(mc);
+		}
+		else
+		{
+			X64mc mc(MC_LD, vr);
+			mc.pr1 = vr2pr[vr].pr;
+			mc.ori_sem = "ld";
+			bb->x64mc_alloc_wave.push_back(mc);
+		}
 	}
 
 	return vr2pr[vr].pr;
@@ -186,7 +202,7 @@ void check_and_clear_vr(Scope *scp, /* vector<X64mc> &mcs, */int vr)
 //		LOG("%s clear %s %s", scp->name.c_str(), symb->src.c_str(), pr_name[pr]);
 
 		vr2pr[vr].pr = X64PR_MAX;
-		vr2pr[vr].u = VR_USEAGE_INVALID;
+		vr2pr[vr].u = VR_USAGE_INVALID;
 
 		if (pr2vr[pr].vr == INVALID__VR)
 		{
@@ -254,7 +270,7 @@ void check_pr_vr_consistency()
 	}
 }
 
-void reg_alloc_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
+void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 {
 	vector<X64mc> &x64mc_alloc = bb->x64mc_alloc_wave;
 	X64mc mc = schedued;
@@ -318,7 +334,7 @@ void ra_wave__regular_scope(Scope *scp)
 	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
 	{
 		const X64mc &mc = bb->x64mc_schedu[i];
-		reg_alloc_wave__mc(bb, mc, i);
+		ra_wave__mc(bb, mc, i);
 
 		update_mc_consume_cnt(scp, mc, SYMB_ALL);
 
@@ -344,6 +360,8 @@ void ra_wave__scope(Scope *scp)
 
 	if (scp->sem_stamp == SEM_WHILE)
 		ra_wave__while(scp);
+	else if (scp->sem_stamp == SEM_IF)
+		ra_wave__if(scp);
 	else
 		ra_wave__regular_scope(scp);
 }
@@ -356,7 +374,7 @@ void x64_reg_alloc_wave()
 	vr_wave.resize(vr_declare_manager.size());
 
 	vr2pr.clear();
-	vr2pr.resize(vr_declare_manager.size(), {X64PR_MAX, VR_USEAGE_INVALID});
+	vr2pr.resize(vr_declare_manager.size(), {X64PR_MAX, VR_USAGE_INVALID});
 	pr2vr.clear();
 	pr2vr.resize(X64PR_MAX, {INVALID__VR});
 

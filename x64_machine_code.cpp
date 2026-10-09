@@ -146,13 +146,15 @@ static void gen_mc(Scope *scp)
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
 
 	if (scp->sem_stamp == SEM_FUNC_DEFINE
-	    || scp->sem_stamp == SEM_COND_JMP	// if, while
+//	    || scp->sem_stamp == SEM_IF_cond
+//	    || scp->sem_stamp == SEM_IF_then
+	    || scp->sem_stamp == SEM_IF_else
 	    || scp->sem_stamp == SEM_WHILE
-	    || scp->sem_stamp == SEM_WHILE_COND
-	    || scp->sem_stamp == SEM_WHILE_BODY
-	    || scp->sem_stamp == SEM_WHILE_BODY_suffix
-	    || scp->sem_stamp == SEM_LABEL
-	    || scp->jmp_in.size() > 0)
+//	    || scp->sem_stamp == SEM_WHILE_COND
+//	    || scp->sem_stamp == SEM_WHILE_BODY
+//	    || scp->sem_stamp == SEM_LABEL
+	    || scp->jmp_in.size() > 0
+	    || scp->asts.size() > 0)
 	{
 		bb->entry_label = scp;
 	}
@@ -198,7 +200,7 @@ static void gen_mc(Scope *scp)
 	if (scp->jmp_out)
 	{
 		Semantic stamp = scp->sem_stamp;
-		if (stamp == SEM_COND_JMP || stamp == SEM_WHILE_COND)
+		if (stamp == SEM_IF_cond || stamp == SEM_WHILE_COND)
 		{
 			printf("bb.exit_jmp=%s \n", scp->name.c_str());
 			assert(scp->asts.size());
@@ -206,7 +208,7 @@ static void gen_mc(Scope *scp)
 			Ast *cond = scp->asts[0];
 			bb->jmp_mc_stamp = op2jmp_mc[cond->op];
 		}
-		else if (stamp == SEM_JMP || stamp == SEM_WHILE_BODY_suffix)
+		else if (stamp == SEM_LABEL)
 		{
 			bb->jmp_mc_stamp = MC_JMP;
 		}

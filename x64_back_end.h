@@ -70,13 +70,17 @@
 #endif
 
 enum X64pr {
+//	R8D,
+//	R9D,
 	R10D,
 	R11D,
 	R12D,
 	R13D,
 	R14D,
 	R15D,
-	//	eax,
+
+//	EAX,
+//	EBX,
 	X64PR_MAX,
 };
 
@@ -89,14 +93,14 @@ enum VrUsage
 	VR_USAGE_WRITE = 1 << 1,
 	VR_USAGE_READ_WRITE = VR_USAGE_READ | VR_USAGE_WRITE,
 
-	VR_USEAGE_INVALID = 0,
+	VR_USAGE_INVALID = 0,
 };
 
 struct VrToPr
 {
 	int pr = X64PR_MAX;
-	int u = VR_USEAGE_INVALID;
-	int expected_usage = VR_USEAGE_INVALID;
+	int u = VR_USAGE_INVALID;
+	int expected_usage = VR_USAGE_INVALID;
 	int score = 0;
 };
 extern vector<VrToPr> vr2pr;
@@ -303,7 +307,8 @@ void clear_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 
-void spill_vr(vector<X64mc> &x64mc_alloced, int vr,  const string &tag = "");
+void spill_vr(vector<VrToPr> &vr_to_pr, vector<PrToVr> &pr_to_vr,
+	int vr, vector<X64mc> &x64mc_alloc, const string &tag = "");
 void spill_all_pr(BasicBlock *bb);
 void x64_reg_alloc();
 
@@ -312,13 +317,20 @@ void check_pr_vr_consistency();
 void check_and_clear_vr(Scope *scp, int vr);
 void init_wave(BasicBlock *bb);
 int wave_get_pr(BasicBlock *bb, int mc_idx);
-void reg_alloc_wave__mc(BasicBlock *bb, const X64mc &schedued, int i);
+void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i);
 void x64_reg_alloc_wave();
 void ra_wave__scope(Scope *scp);
 
 void while__pre_work(Scope *scp);
 void while__end_work(Scope *scp);
-void ra_wave__while(Scope *scp);
+void while__recover_pr(Scope *scp,
+    vector<VrToPr> &before_vr2pr,
+    vector<PrToVr> &before_pr2vr,
+    vector<VrToPr> &now_vr2pr,
+    vector<PrToVr> &now_pr2vr,
+    int swap_pr);
 
+void ra_wave__while(Scope *scp);
+void ra_wave__if(Scope *if_scp);
 
 #endif /* X64_BACK_END_H_ */
