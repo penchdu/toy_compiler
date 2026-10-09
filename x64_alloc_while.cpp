@@ -31,6 +31,7 @@ static int get_swap_pr(BasicBlock *bb)
 		swap_pr = X64PR_MAX - 1;
 
 	spill_vr(vr2pr, pr2vr, pr2vr[swap_pr].vr, bb->x64mc_alloc_wave);
+	pr2vr[swap_pr].vr == INVALID__VR;
 	return swap_pr;
 }
 //static int while__get_pr(BasicBlock *bb, int score)
@@ -148,35 +149,43 @@ void while__end_work(Scope *scp)
 	for (int vr = 0; vr < scp->outer_symb_read.size(); vr++)
 	{
 		if (scp->outer_symb_read[vr] > 0)
-			check_and_clear_vr(scp, vr);
+			check_dead_vr(scp, vr);
 	}
 	for (int vr = 0; vr < scp->outer_symb_write.size(); vr++)
 	{
 		if (scp->outer_symb_write[vr] > 0)
-			check_and_clear_vr(scp, vr);
+			check_dead_vr(scp, vr);
 	}
 }
-void dump_vr2pr(const vector<VrToPr> &vp, const string &tag)
+void dump_vr2pr(const vector<VrToPr> &vr_state, const string &tag)
 {
 	printf("===== %s\n", tag.c_str());
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
-		int pr = vp[vr].pr;
+		int pr = vr_state[vr].pr;
 		if (pr != X64PR_MAX)
-			printf("%s=%%%d %s    ", vr_declare_manager.declare_at[vr]->symb->unique_name.c_str()
+			printf("%s=%%%d %s  ", vr_declare_manager.declare_at[vr]->symb->unique_name.c_str()
 			    , vr, pr_name[pr]);
+	}
+	printf("\n	dirty: ");
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	{
+		int pr = vr_state[vr].pr;
+		if (pr != X64PR_MAX)
+			printf("	%%%d %d", vr, vr_state[vr].dirty);
 	}
 	printf("\n");
 }
 
-void while__recover_pr(Scope *scp,
-    vector<VrToPr> &before_vr2pr,
-    vector<PrToVr> &before_pr2vr,
+void while__recover_pr(Scope *while_scp,
+    const vector<VrToPr> &before_vr2pr,
+    const vector<PrToVr> &before_pr2vr,
     vector<VrToPr> &now_vr2pr,
     vector<PrToVr> &now_pr2vr,
     int swap_pr)
 {
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
+	BasicBlock *bb = (BasicBlock*) body_inner_tail->basic_block;
 	vector<X64mc> &x64mcs = bb->x64mc_alloc_wave;
 	X64mc mc;
 	(void) vr2pr;
@@ -190,7 +199,7 @@ void while__recover_pr(Scope *scp,
 //			LOG("scp %s, recover spill %s=%%%d-%s", scp->name.c_str(),
 //			    vr_declare_manager.declare_at[vr]->symb->unique_name.c_str(),
 //			    vr, pr_name[pr]);
-			spill_vr(now_vr2pr, now_pr2vr, vr, x64mcs, "while recover");
+			spill_vr(now_vr2pr, now_pr2vr, vr, x64mcs, " while recover");
 			spilled++;
 		}
 	}
@@ -225,7 +234,7 @@ void while__recover_pr(Scope *scp,
 	if (swap_pr == X64PR_MAX)
 		ERR();
 
-	LOG("scp %s spilled: %d, swap_pr=%d %s", scp->name.c_str(), spilled, swap_pr, pr_name[swap_pr]);
+	LOG("scp %s spilled: %d, swap_pr=%d %s", body_inner_tail->name.c_str(), spilled, swap_pr, pr_name[swap_pr]);
 //	Scope *cond = scp->clds[0];
 //	auto & cond_read = cond->outer_symb_read;
 //	auto & cond_write = cond->outer_symb_write;
@@ -359,9 +368,6 @@ void ra_wave__while(Scope *while_scp)
 	if (swap_pr == X64PR_MAX)
 		ERR();
 
-//	pr2vr[swap_pr].vr = INVALID__VR;
-//	vr2pr[swap_pr].
-
 // try alloc cond write
 //	for(int vr : scp->outer_symb_write)
 //	{
@@ -375,24 +381,27 @@ void ra_wave__while(Scope *while_scp)
 
 	////////////////////////////////////////////////////////////
 	// while cond
+//	Scope *cond = while_scp->clds[0];
+//	Scope *body = while_scp->clds[1];
+//	cond->addtional_symb_usage.resize(vr_declare_manager.size(), VR_USAGE_INVALID);
 //	for (int i = 0; i < vr_declare_manager.size(); i++)
 //	{
-//		if (cond->outer_symb_read[i] > 0
-//		    && body->outer_symb_write[i] > 0)
-//			vr_usage[i] |= VR_USAGE_WRITE;
+//		if (cond->outer_symb_read[i] > 0 && body->outer_symb_write[i] > 0)
+//			cond->addtional_symb_usage[i] |= VR_USAGE_WRITE;
 //	}
-
 	vector<VrToPr> pre_cond_vr2pr = vr2pr;
 	vector<PrToVr> pre_cond_pr2vr = pr2vr;
 
-	ra_wave__scope(while_scp->clds[0]);
+	ra_wave__scope(cond);
+//	if(pr2vr[swap_pr].vr != INVALID__VR)
+//		ERR();
 
 	vector<VrToPr> after_cond_vr2pr = vr2pr;
 	vector<PrToVr> after_cond_pr2vr = pr2vr;
 
 	////////////////////////////////////////////////////////////
 	// while body
-	ra_wave__scope(while_scp->clds[1]);
+	ra_wave__scope(body);
 
 	vector<VrToPr> after_body_vr2pr = vr2pr;
 	vector<PrToVr> after_body_pr2vr = pr2vr;
@@ -407,76 +416,91 @@ void ra_wave__while(Scope *while_scp)
 	dump_vr2pr(after_cond_vr2pr, "after cond " + to_string(while_scp->id));
 	dump_vr2pr(after_body_vr2pr, "after body " + to_string(while_scp->id));
 
-	Scope *body_tial = get_inner_tail_of_scope(while_scp->clds[1]);
-
-	BasicBlock *cond_bb = (BasicBlock*) cond->basic_block;
-	BasicBlock *bs_bb = (BasicBlock*) body_tial->basic_block;
-	vector<X64mc> &cond_mcs = cond_bb->x64mc_alloc_wave;
-	for (auto &cond_mc : cond_mcs)
-	{
-		if (cond_mc.mc_stamp != MC_LD)
-			continue;
-
-		int vr = cond_mc.s1;
-		int pr = cond_mc.pr1;
-
-		assert(pr != X64PR_MAX);
-
-//		if (body->outer_symb_write[vr] == 0)
+//	Scope *body_inner_tail = get_inner_tail_of_scope(body);
+//	BasicBlock *cond_bb = (BasicBlock*) cond->basic_block;
+//	BasicBlock *body_inner_tail_bb = (BasicBlock*) body_inner_tail->basic_block;
+//	vector<X64mc> &cond_mcs = cond_bb->x64mc_alloc_wave;
+//	for (auto &cond_mc : cond_mcs)
+//	{
+//		if (cond_mc.mc_stamp != MC_LD)
 //			continue;
+//
+//		int vr = cond_mc.s1;
+//		int pr = cond_mc.pr1;
+//
+//		assert(pr != X64PR_MAX);
+//
+////		if (body->outer_symb_write[vr] == 0)
+////			continue;
+//
+//		//  | vr_usage ?
+//		if (after_body_vr2pr[vr].pr == X64PR_MAX || !after_body_vr2pr[vr].dirty)
+//			continue;
+//
+//		LOG("COND_LD: while=%d vr=%d pr=%s pre=%s after_body=%s u=%d ",
+//		    //			"body_write=%d",
+//		    while_scp->id, vr, pr_name[cond_mc.pr1],
+//		    pre_cond_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[pre_cond_vr2pr[vr].pr],
+//		    after_body_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[after_body_vr2pr[vr].pr],
+//		    after_body_vr2pr[vr].u
+//		    //		    ,body->outer_symb_write[vr]
+//		    );
+//
+////	    assert(after_body_vr2pr[vr].pr == );
+//		// TODO, do st only if first op of vr in cond is ld
+//		X64mc mc(MC_ST, vr);
+//		mc.pr1 = after_body_vr2pr[vr].pr;
+//		mc.ori_sem = "while spill, cond-ld st";
+//		body_inner_tail_bb->x64mc_alloc_wave.push_back(mc);
+//	}
 
-		//  | vr_usage ?
-		if (after_body_vr2pr[vr].pr == X64PR_MAX)
-			continue;
-
-		if (!(after_body_vr2pr[vr].u & VR_USAGE_WRITE))
-			continue;
-
-		LOG("COND_LD: while=%d vr=%d pr=%s pre=%s after_body=%s u=%d ",
-//			"body_write=%d",
-		    while_scp->id, vr, pr_name[cond_mc.pr1],
-		    pre_cond_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[pre_cond_vr2pr[vr].pr],
-		    after_body_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[after_body_vr2pr[vr].pr],
-		    after_body_vr2pr[vr].u
-//		    ,body->outer_symb_write[vr]
-		                           );
-
-//	    assert(after_body_vr2pr[vr].pr == );
-		// TODO, do st only if first op of vr in cond is ld
-		X64mc mc(MC_ST, vr);
-		mc.pr1 = after_body_vr2pr[vr].pr;
-		mc.ori_sem = "while spill, cond-ld st";
-		bs_bb->x64mc_alloc_wave.push_back(mc);
-	}
-
-	while__recover_pr(body_tial,
+	while__recover_pr(while_scp,
 	    pre_cond_vr2pr, pre_cond_pr2vr,
 	    after_body_vr2pr, after_body_pr2vr, swap_pr);
 
 	dump_vr2pr(after_body_vr2pr, "after body swaped " + to_string(while_scp->id));
-
 	dump_vr2pr(vr2pr, "vr2pr " + to_string(while_scp->id));
 	printf("\n");
 
-//	BasicBlock *tail_bb = (BasicBlock*) while_scp->clds[3]->basic_block;
-//	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
-//	{
-//	    if (body_scp->outer_symb_write[vr] == 0)   continue;
-//	    if (cond_scp->outer_symb_write[vr] > 0)    continue;
-//	    if (after_body_vr2pr[vr].pr == X64PR_MAX)   continue;
-//	    if (!(after_body_vr2pr[vr].u & VR_USAGE_WRITE)) continue;
-//
-//	    X64mc mc(MC_ST, vr);
-//	    mc.pr1 = after_body_vr2pr[vr].pr;
-//	    mc.ori_sem = "while tail spill";
-//	    tail_bb->x64mc_alloc_wave.push_back(mc);
-//	}
+	int re_alloc = 0;
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	{
+		if (after_body_vr2pr[vr].pr != pre_cond_vr2pr[vr].pr)
+			ERR();
 
+		if (after_body_vr2pr[vr].pr != X64PR_MAX
+		    && after_body_vr2pr[vr].dirty == 1
+		    && pre_cond_vr2pr[vr].dirty == 0)
+		{
+			pre_cond_vr2pr[vr].dirty = 1;
+			re_alloc++;
+		}
+	}
+	if (re_alloc)
+	{
+		vr2pr = pre_cond_vr2pr;
+		pr2vr = pre_cond_pr2vr;
+		reset_scope_symb_consume_cnt(while_scp, -1);
+
+		printf("scp=%d, re_alloc=%d \n", while_scp->id, re_alloc);
+		dump_vr2pr(vr2pr, "before re_alloc " + to_string(while_scp->id));
+
+		ra_wave__scope(cond);
+
+		reset_scope_symb_consume_cnt(body, 1);
+		dump_vr2pr(vr2pr, "after re_alloc " + to_string(while_scp->id));
+	}
+
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	{
+		if (after_cond_vr2pr[vr].pr != vr2pr[vr].pr
+		    //	|| after_cond_vr2pr[vr].dirty != vr2pr[vr].dirty
+		    )
+			ERR("scp=%d, re_alloc=%d, %s=%%%d, %d %d \n", while_scp->id, re_alloc,
+				vr_declare_manager.declare_at[vr]->symb->unique_name.c_str(), vr,
+			    after_cond_vr2pr[vr].pr, vr2pr[vr].pr);
+	}
 	while__end_work(while_scp);
-
-//	BasicBlock *tail_bb = (BasicBlock*) tail->basic_block;
-//	assert(tail_bb);
-//	spill_all_pr(tail_bb);
 }
 
 static void get_future_use_vr(Scope *scp, std::set<int> &vrs)
@@ -528,11 +552,11 @@ void ra_wave__if(Scope *if_scp)
 	Scope *tail = if_scp->clds[3];
 	Scope *pa = if_scp->parent;
 	Scope *next = 0;
-	for(int i = 0; i < pa->clds.size(); i++)
+	for (int i = 0; i < pa->clds.size(); i++)
 	{
-		if(pa->clds[i] == if_scp)
+		if (pa->clds[i] == if_scp)
 		{
-			if(i + 1 < pa->clds.size())
+			if (i + 1 < pa->clds.size())
 				next = pa->clds[i + 1];
 			else
 				next = nullptr;
@@ -542,7 +566,7 @@ void ra_wave__if(Scope *if_scp)
 	// not really good, while and if have branch
 	get_future_use_vr(next, future_vr);
 	printf("if_scp %d future_vr: ", if_scp->id);
-	for(auto vr : future_vr)
+	for (auto vr : future_vr)
 		printf(" %%%d", vr);
 	printf("\n");
 
@@ -594,8 +618,6 @@ void ra_wave__if(Scope *if_scp)
 //	{
 //
 //	}
-
-
 
 	Scope *then_tail = get_inner_tail_of_scope(then_branch);
 	Scope *else_tail = get_inner_tail_of_scope(else_branch);

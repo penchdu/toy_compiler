@@ -219,7 +219,7 @@ void case_tk_while()
 //	while_cond->jmp_in.push_back(while_body_suffix);
 
 	Scope *while_body_inner_tail = get_inner_tail_of_scope(while_body);
-	while_body_inner_tail->name += "_while" + to_string(while_scp->id) + "_tail";
+	while_body_inner_tail->name += "_while" + to_string(while_scp->id) + "_body_tail";
 	while_body_inner_tail->jmp_out = while_cond;
 	while_cond->jmp_in.push_back(while_body_inner_tail);
 

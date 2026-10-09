@@ -152,7 +152,7 @@ static void gen_mc(Scope *scp)
 	    || scp->sem_stamp == SEM_WHILE
 //	    || scp->sem_stamp == SEM_WHILE_COND
 //	    || scp->sem_stamp == SEM_WHILE_BODY
-//	    || scp->sem_stamp == SEM_LABEL
+	    || scp->sem_stamp == SEM_LABEL
 	    || scp->jmp_in.size() > 0
 	    || scp->asts.size() > 0)
 	{

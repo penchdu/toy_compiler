@@ -467,7 +467,7 @@ void case_tk_right_brace(bool eat)
 	Scope *scp = current_scope_pointer;
 	Scope *tail = new_virtual_scope_and_drop_in();
 	tail->sem_stamp = SEM_LABEL;
-	tail->name += "_b" + to_string(scp->id) + "_tail";
+//	tail->name += "_b" + to_string(scp->id) + "_tail";
 	exit_current_scope();
 
 //	if (current_scope_pointer->is_virtual)

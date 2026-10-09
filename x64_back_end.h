@@ -87,24 +87,15 @@ enum X64pr {
 extern const char *pr_name[];
 const char* pr_name_byte(int pr);
 
-enum VrUsage
-{
-	VR_USAGE_READ = 1 << 0,
-	VR_USAGE_WRITE = 1 << 1,
-	VR_USAGE_READ_WRITE = VR_USAGE_READ | VR_USAGE_WRITE,
-
-	VR_USAGE_INVALID = 0,
-};
-
 struct VrToPr
 {
 	int pr = X64PR_MAX;
 	int u = VR_USAGE_INVALID;
+	bool dirty = 0;
 	int expected_usage = VR_USAGE_INVALID;
 	int score = 0;
 };
 extern vector<VrToPr> vr2pr;
-extern vector<int> vr_usage;
 
 constexpr int INVALID__VR = -1;
 struct PrToVr
@@ -301,9 +292,10 @@ void dump_chain(vector<X64mc> &x64mc);
 void gen_schdu_chain_latency(vector<X64mc> &x64mc);
 
 bool is_private_symb(Scope *scp, int vr);
-void update_vr_consume_cnt(Scope *scp, int vr, int target_symb_stamp, int usage = VR_USAGE_READ);
-void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int target_symb_stamp = SYMB_ALL);
-void clear_vr_consume_cnt(Scope *scp);
+void update_vr_consume_cnt(Scope *scp, int vr, int update_value, int usage = VR_USAGE_READ);
+void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value = 1);
+void reset_scope_symb_consume_cnt(Scope *scp, int value);
+void clear_all_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 
@@ -314,18 +306,19 @@ void x64_reg_alloc();
 
 void dump_vr2pr(const vector<VrToPr> &vp, const string &tag);
 void check_pr_vr_consistency();
-void check_and_clear_vr(Scope *scp, int vr);
+void check_dead_vr(Scope *scp, int vr);
 void init_wave(BasicBlock *bb);
 int wave_get_pr(BasicBlock *bb, int mc_idx);
 void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i);
 void x64_reg_alloc_wave();
+void ra_wave__regular_scope(Scope *scp);
 void ra_wave__scope(Scope *scp);
 
 void while__pre_work(Scope *scp);
 void while__end_work(Scope *scp);
 void while__recover_pr(Scope *scp,
-    vector<VrToPr> &before_vr2pr,
-    vector<PrToVr> &before_pr2vr,
+	const vector<VrToPr> &before_vr2pr,
+	const vector<PrToVr> &before_pr2vr,
     vector<VrToPr> &now_vr2pr,
     vector<PrToVr> &now_pr2vr,
     int swap_pr);

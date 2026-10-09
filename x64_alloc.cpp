@@ -81,7 +81,7 @@ static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 	{
 		int pr = get_pr();
 		vr2pr[vr].pr = pr;
-		vr2pr[vr].u = u | vr_usage[vr];
+		vr2pr[vr].u = u;
 		pr2vr[pr].vr = vr;
 		need_load = (u & VR_USAGE_READ);
 	}
@@ -90,7 +90,7 @@ static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 		need_load = 1;
 	}
 
-	vr2pr[vr].u |= (u | vr_usage[vr]);
+	vr2pr[vr].u |= u;
 
 	if (need_load)
 	{
@@ -106,7 +106,7 @@ static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 {
 	int pr = vr2pr[vr].pr;
-	int u = vr2pr[vr].u | vr_usage[vr];
+	int u = vr2pr[vr].u;
 
 	assert(pr != X64PR_MAX);
 	assert(u != VR_USAGE_INVALID);
@@ -239,7 +239,8 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 {
 //	LOG("scp: %s", scp->name.c_str());
 	BasicBlock *bb = (BasicBlock*) scp->basic_block;
-	if (bb->entry_label != 0 && bb->entry_label->name != "test")
+	if ((bb->entry_label != 0 /*&& (bb->x64mc_alloc_o0.size() || bb->x64mc_alloc_wave.size())*/)
+		&& bb->entry_label->name != "test")
 		PRINT_ASM_HEAD("\n\n%s:", bb->entry_label->name.c_str());
 
 	vector<X64mc> *mc_list;

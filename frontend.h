@@ -280,6 +280,15 @@ struct Tac {
 	int const_num_value = 0;
 };
 
+enum VrUsage
+{
+	VR_USAGE_READ = 1 << 0,
+	VR_USAGE_WRITE = 1 << 1,
+	VR_USAGE_READ_WRITE = VR_USAGE_READ | VR_USAGE_WRITE,
+
+	VR_USAGE_INVALID = 0,
+};
+
 struct Scope
 {
 public:
@@ -307,6 +316,7 @@ public:
 
 	vector<int> outer_symb_read;
 	vector<int> outer_symb_write;
+	vector<int> addtional_symb_usage;
 
 	vector<int> use_cnt_in_bb;
 	vector<int> appear_cnt_in_bb;

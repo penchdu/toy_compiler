@@ -1,0 +1,1237 @@
+lexer: 
+int test ( ) { int a0 = 1 ; int a1 = 2 ; int a2 = 3 ; int a3 = 4 ; int b0 = 11 ; int b1 = 12 ; int b2 = 13 ; int b3 = 14 ; int c0 = 21 ; int c1 = 22 ; int c2 = 23 ; int c3 = 24 ; int d0 = 31 ; int d1 = 32 ; int d2 = 33 ; int d3 = 34 ; int i0 = 2 ; int i1 = 2 ; int i2 = 2 ; while ( ( i0 = i0 - 1 ) > 0 ) { a0 = a0 + b0 ; a1 = a1 + b1 ; a2 = a2 + b2 ; a3 = a3 + b3 ; b0 = b0 + c0 ; b1 = b1 + c1 ; b2 = b2 + c2 ; b3 = b3 + c3 ; c0 = c0 + d0 ; c1 = c1 + d1 ; c2 = c2 + d2 ; c3 = c3 + d3 ; d0 = d0 + a0 ; d1 = d1 + a1 ; d2 = d2 + a2 ; d3 = d3 + a3 ; while ( ( i1 = i1 - 1 ) > 0 ) { a0 = a0 + d3 ; a3 = a3 + d0 ; b0 = b0 + d2 ; b3 = b3 + d1 ; c0 = c0 + a3 ; c3 = c3 + a0 ; d0 = d0 + b3 ; d3 = d3 + b0 ; while ( ( i2 = i2 - 1 ) > 0 ) { a1 = a1 + c3 ; a2 = a2 + c0 ; b1 = b1 + d3 ; b2 = b2 + d0 ; c1 = c1 + a2 ; c2 = c2 + a1 ; d1 = d1 + b2 ; d2 = d2 + b1 ; } } } return a0 + a1 + a2 + a3 + b0 + b1 + b2 + b3 + c0 + c1 + c2 + c3 + d0 + d1 + d2 + d3 + i0 + i1 + i2 ; } EOF 
+sweep_dead_virtual_scope: id=13 name=.L_b13
+sweep_dead_virtual_scope: id=16 name=.L_b16
+sweep_dead_virtual_scope: id=18 name=.L_b18
+sweep_dead_virtual_scope: id=22 name=.L_b22
+case_save_return_down_up 277, return
+========== ast ==========
+======b0=0  parent=0====== SEM_FILE_SCOPE
+
+    ======test=1  parent=0====== SEM_FUNC_DEFINE
+    symbol: a0 1
+    symbol: a1 3
+    symbol: a2 5
+    symbol: a3 7
+    symbol: b0 9
+    symbol: b1 11
+    symbol: b2 13
+    symbol: b3 15
+    symbol: c0 17
+    symbol: c1 19
+    symbol: c2 21
+    symbol: c3 23
+    symbol: d0 25
+    symbol: d1 27
+    symbol: d2 29
+    symbol: d3 31
+    symbol: i0 33
+    symbol: i1 35
+    symbol: i2 37
+    symbol: %0 0
+    symbol: %2 2
+    symbol: %4 4
+    symbol: %6 6
+    symbol: %8 8
+    symbol: %10 10
+    symbol: %12 12
+    symbol: %14 14
+    symbol: %16 16
+    symbol: %18 18
+    symbol: %20 20
+    symbol: %22 22
+    symbol: %24 24
+    symbol: %26 26
+    symbol: %28 28
+    symbol: %30 30
+    symbol: %32 32
+    symbol: %34 34
+    symbol: %36 36
+    symbol: %82 82
+    symbol: %83 83
+    symbol: %84 84
+    symbol: %85 85
+    symbol: %86 86
+    symbol: %87 87
+    symbol: %88 88
+    symbol: %89 89
+    symbol: %90 90
+    symbol: %91 91
+    symbol: %92 92
+    symbol: %93 93
+    symbol: %94 94
+    symbol: %95 95
+    symbol: %96 96
+    symbol: %97 97
+    symbol: %98 98
+    symbol: %99 99
+    ast:
+    └── [del INT]
+        └── [var a0 %1]
+    ast:
+    └── [OP_ASSIGN %1]
+        ├── [var a0 %1]
+        └── [num 1 %0]
+    ast:
+    └── [del INT]
+        └── [var a1 %3]
+    ast:
+    └── [OP_ASSIGN %3]
+        ├── [var a1 %3]
+        └── [num 2 %2]
+    ast:
+    └── [del INT]
+        └── [var a2 %5]
+    ast:
+    └── [OP_ASSIGN %5]
+        ├── [var a2 %5]
+        └── [num 3 %4]
+    ast:
+    └── [del INT]
+        └── [var a3 %7]
+    ast:
+    └── [OP_ASSIGN %7]
+        ├── [var a3 %7]
+        └── [num 4 %6]
+    ast:
+    └── [del INT]
+        └── [var b0 %9]
+    ast:
+    └── [OP_ASSIGN %9]
+        ├── [var b0 %9]
+        └── [num 11 %8]
+    ast:
+    └── [del INT]
+        └── [var b1 %11]
+    ast:
+    └── [OP_ASSIGN %11]
+        ├── [var b1 %11]
+        └── [num 12 %10]
+    ast:
+    └── [del INT]
+        └── [var b2 %13]
+    ast:
+    └── [OP_ASSIGN %13]
+        ├── [var b2 %13]
+        └── [num 13 %12]
+    ast:
+    └── [del INT]
+        └── [var b3 %15]
+    ast:
+    └── [OP_ASSIGN %15]
+        ├── [var b3 %15]
+        └── [num 14 %14]
+    ast:
+    └── [del INT]
+        └── [var c0 %17]
+    ast:
+    └── [OP_ASSIGN %17]
+        ├── [var c0 %17]
+        └── [num 21 %16]
+    ast:
+    └── [del INT]
+        └── [var c1 %19]
+    ast:
+    └── [OP_ASSIGN %19]
+        ├── [var c1 %19]
+        └── [num 22 %18]
+    ast:
+    └── [del INT]
+        └── [var c2 %21]
+    ast:
+    └── [OP_ASSIGN %21]
+        ├── [var c2 %21]
+        └── [num 23 %20]
+    ast:
+    └── [del INT]
+        └── [var c3 %23]
+    ast:
+    └── [OP_ASSIGN %23]
+        ├── [var c3 %23]
+        └── [num 24 %22]
+    ast:
+    └── [del INT]
+        └── [var d0 %25]
+    ast:
+    └── [OP_ASSIGN %25]
+        ├── [var d0 %25]
+        └── [num 31 %24]
+    ast:
+    └── [del INT]
+        └── [var d1 %27]
+    ast:
+    └── [OP_ASSIGN %27]
+        ├── [var d1 %27]
+        └── [num 32 %26]
+    ast:
+    └── [del INT]
+        └── [var d2 %29]
+    ast:
+    └── [OP_ASSIGN %29]
+        ├── [var d2 %29]
+        └── [num 33 %28]
+    ast:
+    └── [del INT]
+        └── [var d3 %31]
+    ast:
+    └── [OP_ASSIGN %31]
+        ├── [var d3 %31]
+        └── [num 34 %30]
+    ast:
+    └── [del INT]
+        └── [var i0 %33]
+    ast:
+    └── [OP_ASSIGN %33]
+        ├── [var i0 %33]
+        └── [num 2 %32]
+    ast:
+    └── [del INT]
+        └── [var i1 %35]
+    ast:
+    └── [OP_ASSIGN %35]
+        ├── [var i1 %35]
+        └── [num 2 %34]
+    ast:
+    └── [del INT]
+        └── [var i2 %37]
+    ast:
+    └── [OP_ASSIGN %37]
+        ├── [var i2 %37]
+        └── [num 2 %36]
+
+        ======.L_b2_while=2  parent=1====== SEM_WHILE
+
+            ======.L_b3_while2_cond=3  parent=2====== SEM_WHILE_COND out=19  in=17 
+            symbol: %38 38
+            symbol: %39 39
+            symbol: %40 40
+            symbol: %41 41
+            ast:
+            └── [OP_CMP_LE %41]
+                ├── [OP_ASSIGN %33]
+                │   ├── [var i0 %33]
+                │   └── [OP_SUB %40]
+                │       ├── [var i0 %33]
+                │       └── [num 1 %39]
+                └── [num 0 %38]
+
+            ======.L_b4_while2_body=4  parent=2====== SEM_WHILE_BODY
+            symbol: %42 42
+            symbol: %43 43
+            symbol: %44 44
+            symbol: %45 45
+            symbol: %46 46
+            symbol: %47 47
+            symbol: %48 48
+            symbol: %49 49
+            symbol: %50 50
+            symbol: %51 51
+            symbol: %52 52
+            symbol: %53 53
+            symbol: %54 54
+            symbol: %55 55
+            symbol: %56 56
+            symbol: %57 57
+            ast:
+            └── [OP_ASSIGN %1]
+                ├── [var a0 %1]
+                └── [OP_ADD %42]
+                    ├── [var a0 %1]
+                    └── [var b0 %9]
+            ast:
+            └── [OP_ASSIGN %3]
+                ├── [var a1 %3]
+                └── [OP_ADD %43]
+                    ├── [var a1 %3]
+                    └── [var b1 %11]
+            ast:
+            └── [OP_ASSIGN %5]
+                ├── [var a2 %5]
+                └── [OP_ADD %44]
+                    ├── [var a2 %5]
+                    └── [var b2 %13]
+            ast:
+            └── [OP_ASSIGN %7]
+                ├── [var a3 %7]
+                └── [OP_ADD %45]
+                    ├── [var a3 %7]
+                    └── [var b3 %15]
+            ast:
+            └── [OP_ASSIGN %9]
+                ├── [var b0 %9]
+                └── [OP_ADD %46]
+                    ├── [var b0 %9]
+                    └── [var c0 %17]
+            ast:
+            └── [OP_ASSIGN %11]
+                ├── [var b1 %11]
+                └── [OP_ADD %47]
+                    ├── [var b1 %11]
+                    └── [var c1 %19]
+            ast:
+            └── [OP_ASSIGN %13]
+                ├── [var b2 %13]
+                └── [OP_ADD %48]
+                    ├── [var b2 %13]
+                    └── [var c2 %21]
+            ast:
+            └── [OP_ASSIGN %15]
+                ├── [var b3 %15]
+                └── [OP_ADD %49]
+                    ├── [var b3 %15]
+                    └── [var c3 %23]
+            ast:
+            └── [OP_ASSIGN %17]
+                ├── [var c0 %17]
+                └── [OP_ADD %50]
+                    ├── [var c0 %17]
+                    └── [var d0 %25]
+            ast:
+            └── [OP_ASSIGN %19]
+                ├── [var c1 %19]
+                └── [OP_ADD %51]
+                    ├── [var c1 %19]
+                    └── [var d1 %27]
+            ast:
+            └── [OP_ASSIGN %21]
+                ├── [var c2 %21]
+                └── [OP_ADD %52]
+                    ├── [var c2 %21]
+                    └── [var d2 %29]
+            ast:
+            └── [OP_ASSIGN %23]
+                ├── [var c3 %23]
+                └── [OP_ADD %53]
+                    ├── [var c3 %23]
+                    └── [var d3 %31]
+            ast:
+            └── [OP_ASSIGN %25]
+                ├── [var d0 %25]
+                └── [OP_ADD %54]
+                    ├── [var d0 %25]
+                    └── [var a0 %1]
+            ast:
+            └── [OP_ASSIGN %27]
+                ├── [var d1 %27]
+                └── [OP_ADD %55]
+                    ├── [var d1 %27]
+                    └── [var a1 %3]
+            ast:
+            └── [OP_ASSIGN %29]
+                ├── [var d2 %29]
+                └── [OP_ADD %56]
+                    ├── [var d2 %29]
+                    └── [var a2 %5]
+            ast:
+            └── [OP_ASSIGN %31]
+                ├── [var d3 %31]
+                └── [OP_ADD %57]
+                    ├── [var d3 %31]
+                    └── [var a3 %7]
+
+                ======.L_b5_while=5  parent=4====== SEM_WHILE
+
+                    ======.L_b6_while5_cond=6  parent=5====== SEM_WHILE_COND out=15  in=14 
+                    symbol: %58 58
+                    symbol: %59 59
+                    symbol: %60 60
+                    symbol: %61 61
+                    ast:
+                    └── [OP_CMP_LE %61]
+                        ├── [OP_ASSIGN %35]
+                        │   ├── [var i1 %35]
+                        │   └── [OP_SUB %60]
+                        │       ├── [var i1 %35]
+                        │       └── [num 1 %59]
+                        └── [num 0 %58]
+
+                    ======.L_b7_while5_body=7  parent=5====== SEM_WHILE_BODY
+                    symbol: %62 62
+                    symbol: %63 63
+                    symbol: %64 64
+                    symbol: %65 65
+                    symbol: %66 66
+                    symbol: %67 67
+                    symbol: %68 68
+                    symbol: %69 69
+                    ast:
+                    └── [OP_ASSIGN %1]
+                        ├── [var a0 %1]
+                        └── [OP_ADD %62]
+                            ├── [var a0 %1]
+                            └── [var d3 %31]
+                    ast:
+                    └── [OP_ASSIGN %7]
+                        ├── [var a3 %7]
+                        └── [OP_ADD %63]
+                            ├── [var a3 %7]
+                            └── [var d0 %25]
+                    ast:
+                    └── [OP_ASSIGN %9]
+                        ├── [var b0 %9]
+                        └── [OP_ADD %64]
+                            ├── [var b0 %9]
+                            └── [var d2 %29]
+                    ast:
+                    └── [OP_ASSIGN %15]
+                        ├── [var b3 %15]
+                        └── [OP_ADD %65]
+                            ├── [var b3 %15]
+                            └── [var d1 %27]
+                    ast:
+                    └── [OP_ASSIGN %17]
+                        ├── [var c0 %17]
+                        └── [OP_ADD %66]
+                            ├── [var c0 %17]
+                            └── [var a3 %7]
+                    ast:
+                    └── [OP_ASSIGN %23]
+                        ├── [var c3 %23]
+                        └── [OP_ADD %67]
+                            ├── [var c3 %23]
+                            └── [var a0 %1]
+                    ast:
+                    └── [OP_ASSIGN %25]
+                        ├── [var d0 %25]
+                        └── [OP_ADD %68]
+                            ├── [var d0 %25]
+                            └── [var b3 %15]
+                    ast:
+                    └── [OP_ASSIGN %31]
+                        ├── [var d3 %31]
+                        └── [OP_ADD %69]
+                            ├── [var d3 %31]
+                            └── [var b0 %9]
+
+                        ======.L_b8_while=8  parent=7====== SEM_WHILE
+
+                            ======.L_b9_while8_cond=9  parent=8====== SEM_WHILE_COND out=12  in=11 
+                            symbol: %70 70
+                            symbol: %71 71
+                            symbol: %72 72
+                            symbol: %73 73
+                            ast:
+                            └── [OP_CMP_LE %73]
+                                ├── [OP_ASSIGN %37]
+                                │   ├── [var i2 %37]
+                                │   └── [OP_SUB %72]
+                                │       ├── [var i2 %37]
+                                │       └── [num 1 %71]
+                                └── [num 0 %70]
+
+                            ======.L_b10_while8_body=10  parent=8====== SEM_WHILE_BODY
+                            symbol: %74 74
+                            symbol: %75 75
+                            symbol: %76 76
+                            symbol: %77 77
+                            symbol: %78 78
+                            symbol: %79 79
+                            symbol: %80 80
+                            symbol: %81 81
+                            ast:
+                            └── [OP_ASSIGN %3]
+                                ├── [var a1 %3]
+                                └── [OP_ADD %74]
+                                    ├── [var a1 %3]
+                                    └── [var c3 %23]
+                            ast:
+                            └── [OP_ASSIGN %5]
+                                ├── [var a2 %5]
+                                └── [OP_ADD %75]
+                                    ├── [var a2 %5]
+                                    └── [var c0 %17]
+                            ast:
+                            └── [OP_ASSIGN %11]
+                                ├── [var b1 %11]
+                                └── [OP_ADD %76]
+                                    ├── [var b1 %11]
+                                    └── [var d3 %31]
+                            ast:
+                            └── [OP_ASSIGN %13]
+                                ├── [var b2 %13]
+                                └── [OP_ADD %77]
+                                    ├── [var b2 %13]
+                                    └── [var d0 %25]
+                            ast:
+                            └── [OP_ASSIGN %19]
+                                ├── [var c1 %19]
+                                └── [OP_ADD %78]
+                                    ├── [var c1 %19]
+                                    └── [var a2 %5]
+                            ast:
+                            └── [OP_ASSIGN %21]
+                                ├── [var c2 %21]
+                                └── [OP_ADD %79]
+                                    ├── [var c2 %21]
+                                    └── [var a1 %3]
+                            ast:
+                            └── [OP_ASSIGN %27]
+                                ├── [var d1 %27]
+                                └── [OP_ADD %80]
+                                    ├── [var d1 %27]
+                                    └── [var b2 %13]
+                            ast:
+                            └── [OP_ASSIGN %29]
+                                ├── [var d2 %29]
+                                └── [OP_ADD %81]
+                                    ├── [var d2 %29]
+                                    └── [var b1 %11]
+
+                                ======.L_b11_while8_body_tail=11  parent=10====== SEM_LABEL out=9 virtual
+
+                            ======.L_b12_while8_tail=12  parent=8====== SEM_LABEL  in=9  virtual
+
+                        ======.L_b14_while5_body_tail=14  parent=7====== SEM_LABEL out=6 virtual
+
+                    ======.L_b15_while5_tail=15  parent=5====== SEM_LABEL  in=6  virtual
+
+                ======.L_b17_while2_body_tail=17  parent=4====== SEM_LABEL out=3 virtual
+
+            ======.L_b19_while2_tail=19  parent=2====== SEM_LABEL  in=3  virtual
+
+        ======.L_b20=20  parent=1====== SEM_LABEL virtual
+        ast:
+        └── [save-ret(return) %99]
+            └── [OP_ADD %99]
+                ├── [OP_ADD %98]
+                │   ├── [OP_ADD %97]
+                │   │   ├── [OP_ADD %96]
+                │   │   │   ├── [OP_ADD %95]
+                │   │   │   │   ├── [OP_ADD %94]
+                │   │   │   │   │   ├── [OP_ADD %93]
+                │   │   │   │   │   │   ├── [OP_ADD %92]
+                │   │   │   │   │   │   │   ├── [OP_ADD %91]
+                │   │   │   │   │   │   │   │   ├── [OP_ADD %90]
+                │   │   │   │   │   │   │   │   │   ├── [OP_ADD %89]
+                │   │   │   │   │   │   │   │   │   │   ├── [OP_ADD %88]
+                │   │   │   │   │   │   │   │   │   │   │   ├── [OP_ADD %87]
+                │   │   │   │   │   │   │   │   │   │   │   │   ├── [OP_ADD %86]
+                │   │   │   │   │   │   │   │   │   │   │   │   │   ├── [OP_ADD %85]
+                │   │   │   │   │   │   │   │   │   │   │   │   │   │   ├── [OP_ADD %84]
+                │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   ├── [OP_ADD %83]
+                │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   ├── [OP_ADD %82]
+                │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   ├── [var a0 %1]
+                │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   └── [var a1 %3]
+                │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   └── [var a2 %5]
+                │   │   │   │   │   │   │   │   │   │   │   │   │   │   │   └── [var a3 %7]
+                │   │   │   │   │   │   │   │   │   │   │   │   │   │   └── [var b0 %9]
+                │   │   │   │   │   │   │   │   │   │   │   │   │   └── [var b1 %11]
+                │   │   │   │   │   │   │   │   │   │   │   │   └── [var b2 %13]
+                │   │   │   │   │   │   │   │   │   │   │   └── [var b3 %15]
+                │   │   │   │   │   │   │   │   │   │   └── [var c0 %17]
+                │   │   │   │   │   │   │   │   │   └── [var c1 %19]
+                │   │   │   │   │   │   │   │   └── [var c2 %21]
+                │   │   │   │   │   │   │   └── [var c3 %23]
+                │   │   │   │   │   │   └── [var d0 %25]
+                │   │   │   │   │   └── [var d1 %27]
+                │   │   │   │   └── [var d2 %29]
+                │   │   │   └── [var d3 %31]
+                │   │   └── [var i0 %33]
+                │   └── [var i1 %35]
+                └── [var i2 %37]
+
+        ======jmp_to_ret=21  parent=1====== SEM_LABEL out=23
+
+=========================
+
+========== tac ==========
+const:	 %0 num 1
+assign:	 %1 = %0
+const:	 %2 num 2
+assign:	 %3 = %2
+const:	 %4 num 3
+assign:	 %5 = %4
+const:	 %6 num 4
+assign:	 %7 = %6
+const:	 %8 num 11
+assign:	 %9 = %8
+const:	 %10 num 12
+assign:	 %11 = %10
+const:	 %12 num 13
+assign:	 %13 = %12
+const:	 %14 num 14
+assign:	 %15 = %14
+const:	 %16 num 21
+assign:	 %17 = %16
+const:	 %18 num 22
+assign:	 %19 = %18
+const:	 %20 num 23
+assign:	 %21 = %20
+const:	 %22 num 24
+assign:	 %23 = %22
+const:	 %24 num 31
+assign:	 %25 = %24
+const:	 %26 num 32
+assign:	 %27 = %26
+const:	 %28 num 33
+assign:	 %29 = %28
+const:	 %30 num 34
+assign:	 %31 = %30
+const:	 %32 num 2
+assign:	 %33 = %32
+const:	 %34 num 2
+assign:	 %35 = %34
+const:	 %36 num 2
+assign:	 %37 = %36
+
+label 3:
+const:	 %38 num 0
+const:	 %39 num 1
+op:	 %40 = %33 - %39
+assign:	 %33 = %40
+op:	 %41 = %33 > %38
+3->19:
+
+op:	 %42 = %1 + %9
+assign:	 %1 = %42
+op:	 %43 = %3 + %11
+assign:	 %3 = %43
+op:	 %44 = %5 + %13
+assign:	 %5 = %44
+op:	 %45 = %7 + %15
+assign:	 %7 = %45
+op:	 %46 = %9 + %17
+assign:	 %9 = %46
+op:	 %47 = %11 + %19
+assign:	 %11 = %47
+op:	 %48 = %13 + %21
+assign:	 %13 = %48
+op:	 %49 = %15 + %23
+assign:	 %15 = %49
+op:	 %50 = %17 + %25
+assign:	 %17 = %50
+op:	 %51 = %19 + %27
+assign:	 %19 = %51
+op:	 %52 = %21 + %29
+assign:	 %21 = %52
+op:	 %53 = %23 + %31
+assign:	 %23 = %53
+op:	 %54 = %25 + %1
+assign:	 %25 = %54
+op:	 %55 = %27 + %3
+assign:	 %27 = %55
+op:	 %56 = %29 + %5
+assign:	 %29 = %56
+op:	 %57 = %31 + %7
+assign:	 %31 = %57
+
+label 6:
+const:	 %58 num 0
+const:	 %59 num 1
+op:	 %60 = %35 - %59
+assign:	 %35 = %60
+op:	 %61 = %35 > %58
+6->15:
+
+op:	 %62 = %1 + %31
+assign:	 %1 = %62
+op:	 %63 = %7 + %25
+assign:	 %7 = %63
+op:	 %64 = %9 + %29
+assign:	 %9 = %64
+op:	 %65 = %15 + %27
+assign:	 %15 = %65
+op:	 %66 = %17 + %7
+assign:	 %17 = %66
+op:	 %67 = %23 + %1
+assign:	 %23 = %67
+op:	 %68 = %25 + %15
+assign:	 %25 = %68
+op:	 %69 = %31 + %9
+assign:	 %31 = %69
+
+label 9:
+const:	 %70 num 0
+const:	 %71 num 1
+op:	 %72 = %37 - %71
+assign:	 %37 = %72
+op:	 %73 = %37 > %70
+9->12:
+
+op:	 %74 = %3 + %23
+assign:	 %3 = %74
+op:	 %75 = %5 + %17
+assign:	 %5 = %75
+op:	 %76 = %11 + %31
+assign:	 %11 = %76
+op:	 %77 = %13 + %25
+assign:	 %13 = %77
+op:	 %78 = %19 + %5
+assign:	 %19 = %78
+op:	 %79 = %21 + %3
+assign:	 %21 = %79
+op:	 %80 = %27 + %13
+assign:	 %27 = %80
+op:	 %81 = %29 + %11
+assign:	 %29 = %81
+11->9:
+
+
+label 12:
+14->6:
+
+
+label 15:
+17->3:
+
+
+label 19:
+op:	 %82 = %1 + %3
+op:	 %83 = %82 + %5
+op:	 %84 = %83 + %7
+op:	 %85 = %84 + %9
+op:	 %86 = %85 + %11
+op:	 %87 = %86 + %13
+op:	 %88 = %87 + %15
+op:	 %89 = %88 + %17
+op:	 %90 = %89 + %19
+op:	 %91 = %90 + %21
+op:	 %92 = %91 + %23
+op:	 %93 = %92 + %25
+op:	 %94 = %93 + %27
+op:	 %95 = %94 + %29
+op:	 %96 = %95 + %31
+op:	 %97 = %96 + %33
+op:	 %98 = %97 + %35
+op:	 %99 = %98 + %37
+save_ret:	 return %99
+21->23:
+
+bb.exit_jmp=.L_b3_while2_cond 
+gen_mc 228, 5 6
+gen_mc 228, 32 48
+bb.exit_jmp=.L_b6_while5_cond 
+gen_mc 228, 5 6
+gen_mc 228, 16 24
+bb.exit_jmp=.L_b9_while8_cond 
+gen_mc 228, 5 6
+gen_mc 228, 16 24
+gen_mc 228, 19 37
+========== mc ==========
+
+test:
+	mov %0, num 1		#li, cyc -1
+	mov %1, %0		#assign, cyc -1
+	mov %2, num 2		#li, cyc -1
+	mov %3, %2		#assign, cyc -1
+	mov %4, num 3		#li, cyc -1
+	mov %5, %4		#assign, cyc -1
+	mov %6, num 4		#li, cyc -1
+	mov %7, %6		#assign, cyc -1
+	mov %8, num 11		#li, cyc -1
+	mov %9, %8		#assign, cyc -1
+	mov %10, num 12		#li, cyc -1
+	mov %11, %10		#assign, cyc -1
+	mov %12, num 13		#li, cyc -1
+	mov %13, %12		#assign, cyc -1
+	mov %14, num 14		#li, cyc -1
+	mov %15, %14		#assign, cyc -1
+	mov %16, num 21		#li, cyc -1
+	mov %17, %16		#assign, cyc -1
+	mov %18, num 22		#li, cyc -1
+	mov %19, %18		#assign, cyc -1
+	mov %20, num 23		#li, cyc -1
+	mov %21, %20		#assign, cyc -1
+	mov %22, num 24		#li, cyc -1
+	mov %23, %22		#assign, cyc -1
+	mov %24, num 31		#li, cyc -1
+	mov %25, %24		#assign, cyc -1
+	mov %26, num 32		#li, cyc -1
+	mov %27, %26		#assign, cyc -1
+	mov %28, num 33		#li, cyc -1
+	mov %29, %28		#assign, cyc -1
+	mov %30, num 34		#li, cyc -1
+	mov %31, %30		#assign, cyc -1
+	mov %32, num 2		#li, cyc -1
+	mov %33, %32		#assign, cyc -1
+	mov %34, num 2		#li, cyc -1
+	mov %35, %34		#assign, cyc -1
+	mov %36, num 2		#li, cyc -1
+	mov %37, %36		#assign, cyc -1
+
+.L_b2_while:
+
+.L_b3_while2_cond:
+	mov %38, num 0		#li, cyc -1
+	mov %39, num 1		#li, cyc -1
+	mov %40, %33		#sub, cyc -1
+	sub %40, %39		#sub, cyc -1
+	mov %33, %40		#assign, cyc -1
+	%41 = cmple %33, %38		#cmple, cyc -1
+	jle .L_b19_while2_tail 
+
+.L_b4_while2_body:
+	mov %42, %1		#add, cyc -1
+	add %42, %9		#add, cyc -1
+	mov %1, %42		#assign, cyc -1
+	mov %43, %3		#add, cyc -1
+	add %43, %11		#add, cyc -1
+	mov %3, %43		#assign, cyc -1
+	mov %44, %5		#add, cyc -1
+	add %44, %13		#add, cyc -1
+	mov %5, %44		#assign, cyc -1
+	mov %45, %7		#add, cyc -1
+	add %45, %15		#add, cyc -1
+	mov %7, %45		#assign, cyc -1
+	mov %46, %9		#add, cyc -1
+	add %46, %17		#add, cyc -1
+	mov %9, %46		#assign, cyc -1
+	mov %47, %11		#add, cyc -1
+	add %47, %19		#add, cyc -1
+	mov %11, %47		#assign, cyc -1
+	mov %48, %13		#add, cyc -1
+	add %48, %21		#add, cyc -1
+	mov %13, %48		#assign, cyc -1
+	mov %49, %15		#add, cyc -1
+	add %49, %23		#add, cyc -1
+	mov %15, %49		#assign, cyc -1
+	mov %50, %17		#add, cyc -1
+	add %50, %25		#add, cyc -1
+	mov %17, %50		#assign, cyc -1
+	mov %51, %19		#add, cyc -1
+	add %51, %27		#add, cyc -1
+	mov %19, %51		#assign, cyc -1
+	mov %52, %21		#add, cyc -1
+	add %52, %29		#add, cyc -1
+	mov %21, %52		#assign, cyc -1
+	mov %53, %23		#add, cyc -1
+	add %53, %31		#add, cyc -1
+	mov %23, %53		#assign, cyc -1
+	mov %54, %25		#add, cyc -1
+	add %54, %1		#add, cyc -1
+	mov %25, %54		#assign, cyc -1
+	mov %55, %27		#add, cyc -1
+	add %55, %3		#add, cyc -1
+	mov %27, %55		#assign, cyc -1
+	mov %56, %29		#add, cyc -1
+	add %56, %5		#add, cyc -1
+	mov %29, %56		#assign, cyc -1
+	mov %57, %31		#add, cyc -1
+	add %57, %7		#add, cyc -1
+	mov %31, %57		#assign, cyc -1
+
+.L_b5_while:
+
+.L_b6_while5_cond:
+	mov %58, num 0		#li, cyc -1
+	mov %59, num 1		#li, cyc -1
+	mov %60, %35		#sub, cyc -1
+	sub %60, %59		#sub, cyc -1
+	mov %35, %60		#assign, cyc -1
+	%61 = cmple %35, %58		#cmple, cyc -1
+	jle .L_b15_while5_tail 
+
+.L_b7_while5_body:
+	mov %62, %1		#add, cyc -1
+	add %62, %31		#add, cyc -1
+	mov %1, %62		#assign, cyc -1
+	mov %63, %7		#add, cyc -1
+	add %63, %25		#add, cyc -1
+	mov %7, %63		#assign, cyc -1
+	mov %64, %9		#add, cyc -1
+	add %64, %29		#add, cyc -1
+	mov %9, %64		#assign, cyc -1
+	mov %65, %15		#add, cyc -1
+	add %65, %27		#add, cyc -1
+	mov %15, %65		#assign, cyc -1
+	mov %66, %17		#add, cyc -1
+	add %66, %7		#add, cyc -1
+	mov %17, %66		#assign, cyc -1
+	mov %67, %23		#add, cyc -1
+	add %67, %1		#add, cyc -1
+	mov %23, %67		#assign, cyc -1
+	mov %68, %25		#add, cyc -1
+	add %68, %15		#add, cyc -1
+	mov %25, %68		#assign, cyc -1
+	mov %69, %31		#add, cyc -1
+	add %69, %9		#add, cyc -1
+	mov %31, %69		#assign, cyc -1
+
+.L_b8_while:
+
+.L_b9_while8_cond:
+	mov %70, num 0		#li, cyc -1
+	mov %71, num 1		#li, cyc -1
+	mov %72, %37		#sub, cyc -1
+	sub %72, %71		#sub, cyc -1
+	mov %37, %72		#assign, cyc -1
+	%73 = cmple %37, %70		#cmple, cyc -1
+	jle .L_b12_while8_tail 
+
+.L_b10_while8_body:
+	mov %74, %3		#add, cyc -1
+	add %74, %23		#add, cyc -1
+	mov %3, %74		#assign, cyc -1
+	mov %75, %5		#add, cyc -1
+	add %75, %17		#add, cyc -1
+	mov %5, %75		#assign, cyc -1
+	mov %76, %11		#add, cyc -1
+	add %76, %31		#add, cyc -1
+	mov %11, %76		#assign, cyc -1
+	mov %77, %13		#add, cyc -1
+	add %77, %25		#add, cyc -1
+	mov %13, %77		#assign, cyc -1
+	mov %78, %19		#add, cyc -1
+	add %78, %5		#add, cyc -1
+	mov %19, %78		#assign, cyc -1
+	mov %79, %21		#add, cyc -1
+	add %79, %3		#add, cyc -1
+	mov %21, %79		#assign, cyc -1
+	mov %80, %27		#add, cyc -1
+	add %80, %13		#add, cyc -1
+	mov %27, %80		#assign, cyc -1
+	mov %81, %29		#add, cyc -1
+	add %81, %11		#add, cyc -1
+	mov %29, %81		#assign, cyc -1
+
+.L_b11_while8_body_tail:
+	jmp .L_b9_while8_cond 
+
+.L_b12_while8_tail:
+
+.L_b14_while5_body_tail:
+	jmp .L_b6_while5_cond 
+
+.L_b15_while5_tail:
+
+.L_b17_while2_body_tail:
+	jmp .L_b3_while2_cond 
+
+.L_b19_while2_tail:
+
+.L_b20:
+	mov %82, %1		#add, cyc -1
+	add %82, %3		#add, cyc -1
+	mov %83, %82		#add, cyc -1
+	add %83, %5		#add, cyc -1
+	mov %84, %83		#add, cyc -1
+	add %84, %7		#add, cyc -1
+	mov %85, %84		#add, cyc -1
+	add %85, %9		#add, cyc -1
+	mov %86, %85		#add, cyc -1
+	add %86, %11		#add, cyc -1
+	mov %87, %86		#add, cyc -1
+	add %87, %13		#add, cyc -1
+	mov %88, %87		#add, cyc -1
+	add %88, %15		#add, cyc -1
+	mov %89, %88		#add, cyc -1
+	add %89, %17		#add, cyc -1
+	mov %90, %89		#add, cyc -1
+	add %90, %19		#add, cyc -1
+	mov %91, %90		#add, cyc -1
+	add %91, %21		#add, cyc -1
+	mov %92, %91		#add, cyc -1
+	add %92, %23		#add, cyc -1
+	mov %93, %92		#add, cyc -1
+	add %93, %25		#add, cyc -1
+	mov %94, %93		#add, cyc -1
+	add %94, %27		#add, cyc -1
+	mov %95, %94		#add, cyc -1
+	add %95, %29		#add, cyc -1
+	mov %96, %95		#add, cyc -1
+	add %96, %31		#add, cyc -1
+	mov %97, %96		#add, cyc -1
+	add %97, %33		#add, cyc -1
+	mov %98, %97		#add, cyc -1
+	add %98, %35		#add, cyc -1
+	mov %99, %98		#add, cyc -1
+	add %99, %37		#add, cyc -1
+	mov eax, %99		#save_ret, cyc -1
+
+jmp_to_ret:
+	jmp .L_return 
+========== while_outer_use_cnt ==========
+2 .L_b2_while 
+	outer_symb_read:  a0=%1(4) a1=%3(4) a2=%5(4) a3=%7(4) b0=%9(4) b1=%11(4) b2=%13(4) b3=%15(4) c0=%17(4) c1=%19(3) c2=%21(3) c3=%23(4) d0=%25(5) d1=%27(4) d2=%29(4) d3=%31(5) i0=%33(2) i1=%35(2) i2=%37(2)
+	outer_symb_write:  a0=%1(2) a1=%3(2) a2=%5(2) a3=%7(2) b0=%9(2) b1=%11(2) b2=%13(2) b3=%15(2) c0=%17(2) c1=%19(2) c2=%21(2) c3=%23(2) d0=%25(2) d1=%27(2) d2=%29(2) d3=%31(2) i0=%33(1) i1=%35(1) i2=%37(1)
+3 .L_b3_while2_cond 
+	outer_symb_read:  i0=%33(2)
+	outer_symb_write:  i0=%33(1)
+4 .L_b4_while2_body 
+	outer_symb_read:  a0=%1(4) a1=%3(4) a2=%5(4) a3=%7(4) b0=%9(4) b1=%11(4) b2=%13(4) b3=%15(4) c0=%17(4) c1=%19(3) c2=%21(3) c3=%23(4) d0=%25(5) d1=%27(4) d2=%29(4) d3=%31(5) i1=%35(2) i2=%37(2)
+	outer_symb_write:  a0=%1(2) a1=%3(2) a2=%5(2) a3=%7(2) b0=%9(2) b1=%11(2) b2=%13(2) b3=%15(2) c0=%17(2) c1=%19(2) c2=%21(2) c3=%23(2) d0=%25(2) d1=%27(2) d2=%29(2) d3=%31(2) i1=%35(1) i2=%37(1)
+5 .L_b5_while 
+	outer_symb_read:  a0=%1(2) a1=%3(2) a2=%5(2) a3=%7(2) b0=%9(2) b1=%11(2) b2=%13(2) b3=%15(2) c0=%17(2) c1=%19(1) c2=%21(1) c3=%23(2) d0=%25(3) d1=%27(2) d2=%29(2) d3=%31(3) i1=%35(2) i2=%37(2)
+	outer_symb_write:  a0=%1(1) a1=%3(1) a2=%5(1) a3=%7(1) b0=%9(1) b1=%11(1) b2=%13(1) b3=%15(1) c0=%17(1) c1=%19(1) c2=%21(1) c3=%23(1) d0=%25(1) d1=%27(1) d2=%29(1) d3=%31(1) i1=%35(1) i2=%37(1)
+6 .L_b6_while5_cond 
+	outer_symb_read:  i1=%35(2)
+	outer_symb_write:  i1=%35(1)
+7 .L_b7_while5_body 
+	outer_symb_read:  a0=%1(2) a1=%3(2) a2=%5(2) a3=%7(2) b0=%9(2) b1=%11(2) b2=%13(2) b3=%15(2) c0=%17(2) c1=%19(1) c2=%21(1) c3=%23(2) d0=%25(3) d1=%27(2) d2=%29(2) d3=%31(3) i2=%37(2)
+	outer_symb_write:  a0=%1(1) a1=%3(1) a2=%5(1) a3=%7(1) b0=%9(1) b1=%11(1) b2=%13(1) b3=%15(1) c0=%17(1) c1=%19(1) c2=%21(1) c3=%23(1) d0=%25(1) d1=%27(1) d2=%29(1) d3=%31(1) i2=%37(1)
+8 .L_b8_while 
+	outer_symb_read:  a1=%3(2) a2=%5(2) b1=%11(2) b2=%13(2) c0=%17(1) c1=%19(1) c2=%21(1) c3=%23(1) d0=%25(1) d1=%27(1) d2=%29(1) d3=%31(1) i2=%37(2)
+	outer_symb_write:  a1=%3(1) a2=%5(1) b1=%11(1) b2=%13(1) c1=%19(1) c2=%21(1) d1=%27(1) d2=%29(1) i2=%37(1)
+9 .L_b9_while8_cond 
+	outer_symb_read:  i2=%37(2)
+	outer_symb_write:  i2=%37(1)
+10 .L_b10_while8_body 
+	outer_symb_read:  a1=%3(2) a2=%5(2) b1=%11(2) b2=%13(2) c0=%17(1) c1=%19(1) c2=%21(1) c3=%23(1) d0=%25(1) d1=%27(1) d2=%29(1) d3=%31(1)
+	outer_symb_write:  a1=%3(1) a2=%5(1) b1=%11(1) b2=%13(1) c1=%19(1) c2=%21(1) d1=%27(1) d2=%29(1)
+====================
+MC_SAVE_RET_VALUE 99 -1, 100
+
+========== mc schedu ==========
+
+test:
+	mov %0, num 1		#li, cyc 0
+	mov %2, num 2		#li, cyc 0
+	mov %1, %0		#assign, cyc 1
+	mov %3, %2		#assign, cyc 1
+	mov %4, num 3		#li, cyc 2
+	mov %6, num 4		#li, cyc 2
+	mov %5, %4		#assign, cyc 3
+	mov %7, %6		#assign, cyc 3
+	mov %8, num 11		#li, cyc 4
+	mov %10, num 12		#li, cyc 4
+	mov %9, %8		#assign, cyc 5
+	mov %11, %10		#assign, cyc 5
+	mov %12, num 13		#li, cyc 6
+	mov %14, num 14		#li, cyc 6
+	mov %13, %12		#assign, cyc 7
+	mov %15, %14		#assign, cyc 7
+	mov %16, num 21		#li, cyc 8
+	mov %18, num 22		#li, cyc 8
+	mov %17, %16		#assign, cyc 9
+	mov %19, %18		#assign, cyc 9
+	mov %20, num 23		#li, cyc 10
+	mov %22, num 24		#li, cyc 10
+	mov %21, %20		#assign, cyc 11
+	mov %23, %22		#assign, cyc 11
+	mov %24, num 31		#li, cyc 12
+	mov %26, num 32		#li, cyc 12
+	mov %25, %24		#assign, cyc 13
+	mov %27, %26		#assign, cyc 13
+	mov %28, num 33		#li, cyc 14
+	mov %30, num 34		#li, cyc 14
+	mov %29, %28		#assign, cyc 15
+	mov %31, %30		#assign, cyc 15
+	mov %32, num 2		#li, cyc 16
+	mov %34, num 2		#li, cyc 16
+	mov %33, %32		#assign, cyc 17
+	mov %35, %34		#assign, cyc 17
+	mov %36, num 2		#li, cyc 18
+	mov %37, %36		#assign, cyc 19
+
+.L_b2_while:
+
+.L_b3_while2_cond:
+	mov %39, num 1		#li, cyc 0
+	mov %38, num 0		#li, cyc 0
+	mov %40, %33		#sub, cyc 1
+	sub %40, %39		#sub, cyc 2
+	mov %33, %40		#assign, cyc 3
+	%41 = cmple %33, %38		#cmple, cyc 4
+	jle .L_b19_while2_tail 
+
+.L_b4_while2_body:
+	mov %42, %1		#add, cyc 0
+	mov %43, %3		#add, cyc 0
+	add %42, %9		#add, cyc 1
+	add %43, %11		#add, cyc 1
+	mov %1, %42		#assign, cyc 2
+	mov %3, %43		#assign, cyc 2
+	mov %46, %9		#add, cyc 3
+	mov %47, %11		#add, cyc 3
+	add %46, %17		#add, cyc 4
+	add %47, %19		#add, cyc 4
+	mov %9, %46		#assign, cyc 5
+	mov %11, %47		#assign, cyc 5
+	mov %50, %17		#add, cyc 6
+	mov %51, %19		#add, cyc 6
+	add %50, %25		#add, cyc 7
+	add %51, %27		#add, cyc 7
+	mov %17, %50		#assign, cyc 8
+	mov %19, %51		#assign, cyc 8
+	mov %54, %25		#add, cyc 9
+	mov %55, %27		#add, cyc 9
+	add %54, %1		#add, cyc 10
+	add %55, %3		#add, cyc 10
+	mov %25, %54		#assign, cyc 11
+	mov %27, %55		#assign, cyc 11
+	mov %44, %5		#add, cyc 12
+	mov %45, %7		#add, cyc 12
+	add %44, %13		#add, cyc 13
+	add %45, %15		#add, cyc 13
+	mov %5, %44		#assign, cyc 14
+	mov %7, %45		#assign, cyc 14
+	mov %48, %13		#add, cyc 15
+	mov %49, %15		#add, cyc 15
+	add %48, %21		#add, cyc 16
+	add %49, %23		#add, cyc 16
+	mov %13, %48		#assign, cyc 17
+	mov %15, %49		#assign, cyc 17
+	mov %52, %21		#add, cyc 18
+	mov %53, %23		#add, cyc 18
+	add %52, %29		#add, cyc 19
+	add %53, %31		#add, cyc 19
+	mov %21, %52		#assign, cyc 20
+	mov %23, %53		#assign, cyc 20
+	mov %56, %29		#add, cyc 21
+	mov %57, %31		#add, cyc 21
+	add %56, %5		#add, cyc 22
+	add %57, %7		#add, cyc 22
+	mov %29, %56		#assign, cyc 23
+	mov %31, %57		#assign, cyc 23
+
+.L_b5_while:
+
+.L_b6_while5_cond:
+	mov %59, num 1		#li, cyc 0
+	mov %58, num 0		#li, cyc 0
+	mov %60, %35		#sub, cyc 1
+	sub %60, %59		#sub, cyc 2
+	mov %35, %60		#assign, cyc 3
+	%61 = cmple %35, %58		#cmple, cyc 4
+	jle .L_b15_while5_tail 
+
+.L_b7_while5_body:
+	mov %66, %17		#add, cyc 0
+	mov %67, %23		#add, cyc 0
+	mov %62, %1		#add, cyc 1
+	mov %63, %7		#add, cyc 1
+	add %62, %31		#add, cyc 2
+	add %63, %25		#add, cyc 2
+	mov %1, %62		#assign, cyc 3
+	mov %7, %63		#assign, cyc 3
+	add %67, %1		#add, cyc 4
+	add %66, %7		#add, cyc 4
+	mov %23, %67		#assign, cyc 5
+	mov %17, %66		#assign, cyc 5
+	mov %68, %25		#add, cyc 6
+	mov %69, %31		#add, cyc 6
+	mov %64, %9		#add, cyc 7
+	mov %65, %15		#add, cyc 7
+	add %64, %29		#add, cyc 8
+	add %65, %27		#add, cyc 8
+	mov %9, %64		#assign, cyc 9
+	mov %15, %65		#assign, cyc 9
+	add %69, %9		#add, cyc 10
+	add %68, %15		#add, cyc 10
+	mov %31, %69		#assign, cyc 11
+	mov %25, %68		#assign, cyc 11
+
+.L_b8_while:
+
+.L_b9_while8_cond:
+	mov %71, num 1		#li, cyc 0
+	mov %70, num 0		#li, cyc 0
+	mov %72, %37		#sub, cyc 1
+	sub %72, %71		#sub, cyc 2
+	mov %37, %72		#assign, cyc 3
+	%73 = cmple %37, %70		#cmple, cyc 4
+	jle .L_b12_while8_tail 
+
+.L_b10_while8_body:
+	mov %78, %19		#add, cyc 0
+	mov %79, %21		#add, cyc 0
+	mov %80, %27		#add, cyc 1
+	mov %81, %29		#add, cyc 1
+	mov %74, %3		#add, cyc 2
+	mov %75, %5		#add, cyc 2
+	add %74, %23		#add, cyc 3
+	add %75, %17		#add, cyc 3
+	mov %3, %74		#assign, cyc 4
+	mov %5, %75		#assign, cyc 4
+	add %79, %3		#add, cyc 5
+	add %78, %5		#add, cyc 5
+	mov %21, %79		#assign, cyc 6
+	mov %19, %78		#assign, cyc 6
+	mov %76, %11		#add, cyc 7
+	mov %77, %13		#add, cyc 7
+	add %76, %31		#add, cyc 8
+	add %77, %25		#add, cyc 8
+	mov %11, %76		#assign, cyc 9
+	mov %13, %77		#assign, cyc 9
+	add %81, %11		#add, cyc 10
+	add %80, %13		#add, cyc 10
+	mov %29, %81		#assign, cyc 11
+	mov %27, %80		#assign, cyc 11
+
+.L_b11_while8_body_tail:
+	jmp .L_b9_while8_cond 
+
+.L_b12_while8_tail:
+
+.L_b14_while5_body_tail:
+	jmp .L_b6_while5_cond 
+
+.L_b15_while5_tail:
+
+.L_b17_while2_body_tail:
+	jmp .L_b3_while2_cond 
+
+.L_b19_while2_tail:
+
+.L_b20:
+	mov %82, %1		#add, cyc 0
+	add %82, %3		#add, cyc 1
+	mov %83, %82		#add, cyc 2
+	add %83, %5		#add, cyc 3
+	mov %84, %83		#add, cyc 4
+	add %84, %7		#add, cyc 5
+	mov %85, %84		#add, cyc 6
+	add %85, %9		#add, cyc 7
+	mov %86, %85		#add, cyc 8
+	add %86, %11		#add, cyc 9
+	mov %87, %86		#add, cyc 10
+	add %87, %13		#add, cyc 11
+	mov %88, %87		#add, cyc 12
+	add %88, %15		#add, cyc 13
+	mov %89, %88		#add, cyc 14
+	add %89, %17		#add, cyc 15
+	mov %90, %89		#add, cyc 16
+	add %90, %19		#add, cyc 17
+	mov %91, %90		#add, cyc 18
+	add %91, %21		#add, cyc 19
+	mov %92, %91		#add, cyc 20
+	add %92, %23		#add, cyc 21
+	mov %93, %92		#add, cyc 22
+	add %93, %25		#add, cyc 23
+	mov %94, %93		#add, cyc 24
+	add %94, %27		#add, cyc 25
+	mov %95, %94		#add, cyc 26
+	add %95, %29		#add, cyc 27
+	mov %96, %95		#add, cyc 28
+	add %96, %31		#add, cyc 29
+	mov %97, %96		#add, cyc 30
+	add %97, %33		#add, cyc 31
+	mov %98, %97		#add, cyc 32
+	add %98, %35		#add, cyc 33
+	mov %99, %98		#add, cyc 34
+	add %99, %37		#add, cyc 35
+	mov eax, %99		#save_ret, cyc 36
+
+jmp_to_ret:
+	jmp .L_return 
+x64_reg_alloc_wave 378, 
+======================== wave ========================
+
+
+============== swap 8 ==============
+===== pre cond 8
+b0=%9 r10d  b3=%15 r15d  d0=%25 r12d  d1=%27 r13d  d3=%31 r11d  
+	dirty: 	%9 1	%15 1	%25 1	%27 0	%31 1
+===== after cond 8
+b3=%15 r15d  d3=%31 r11d  i2=%37 r13d  
+	dirty: 	%15 1	%31 1	%37 1
+===== after body 8
+b1=%11 r12d  b2=%13 r13d  d0=%25 r14d  d1=%27 r10d  d2=%29 r11d  
+	dirty: 	%11 1	%13 1	%25 0	%27 1	%29 1
+while__recover_pr 237, scp .L_b11_while8_body_tail spilled: 3, swap_pr=4 r14d
+===== after body swaped 8
+b0=%9 r10d  b3=%15 r15d  d0=%25 r12d  d1=%27 r13d  d3=%31 r11d  
+	dirty: 	%9 0	%15 0	%25 0	%27 1	%31 0
+===== vr2pr 8
+b3=%15 r15d  d3=%31 r11d  i2=%37 r13d  
+	dirty: 	%15 1	%31 1	%37 1
+
+scp=8, re_alloc=1 
+===== before re_alloc 8
+b0=%9 r10d  b3=%15 r15d  d0=%25 r12d  d1=%27 r13d  d3=%31 r11d  
+	dirty: 	%9 1	%15 1	%25 1	%27 1	%31 1
+===== after re_alloc 8
+b3=%15 r15d  d1=%27 r13d  i2=%37 r12d  
+	dirty: 	%15 1	%27 1	%37 1
+ra_wave__while 498, error: scp=8, re_alloc=1, d1=%27, 6 3 
+

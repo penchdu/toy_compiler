@@ -482,7 +482,7 @@ static void _mc_schedule(Scope *scp)
 }
 void mc_schedule()
 {
-	clear_vr_consume_cnt(&file_scp);
+	clear_all_vr_consume_cnt(&file_scp);
 
 	_mc_schedule(&file_scp);
 

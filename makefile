@@ -17,7 +17,8 @@ CXXFLAGS = -std=c++20 -O0 -g -MMD -MP \
 	-Wno-unused-function \
 	-Wno-unused-value \
 	-Wno-unused-variable \
-	-Wno-writable-strings
+	-Wno-writable-strings \
+	-Wno-unused-but-set-variable
 
 # 链接阶段需要加上 ASan 选项
 #LDFLAGS += -fsanitize=address

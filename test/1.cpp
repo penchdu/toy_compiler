@@ -1,48 +1,85 @@
 int test()
 {
-    int a = 31;
-    int b = 47;
-    int c = 59;
-    int d = 71;
-    int e = 83;
-    int f = 97;
+	int a0 = 1;
+	int a1 = 2;
+	int a2 = 3;
+	int a3 = 4;
 
-    int o = 6;
+	int b0 = 11;
+	int b1 = 12;
+	int b2 = 13;
+	int b3 = 14;
 
-    while (o > 0)
-    {
-        int j = o - (o / 4) * 4;
-        int k = 2;
+	int c0 = 21;
+	int c1 = 22;
+	int c2 = 23;
+	int c3 = 24;
 
-        while (j > 0)
-        {
-            int x = (a + c + e) / 3;
-            int y = (b + d + f) / 5;
+	int d0 = 31;
+	int d1 = 32;
+	int d2 = 33;
+	int d3 = 34;
 
-            a = x + o;
-            c = x + y + 1;
-            e = (y + c) / 2;
+	int i0 = 2;
+	int i1 = 2;
+	int i2 = 2;
 
-            b = y + o;
-            d = (x + e) / 3;
-            f = (y + d) / 2;
+	while ((i0 = i0 - 1) > 0)
+	{
+		a0 = a0 + b0;
+		a1 = a1 + b1;
+		a2 = a2 + b2;
+		a3 = a3 + b3;
 
-            j = j - 1;
-        }
+		b0 = b0 + c0;
+		b1 = b1 + c1;
+		b2 = b2 + c2;
+		b3 = b3 + c3;
 
-        while (k > 0)
-        {
-            int q = (a + b + d + f) / 4;
+		c0 = c0 + d0;
+		c1 = c1 + d1;
+		c2 = c2 + d2;
+		c3 = c3 + d3;
 
-            b = q + o;
-            d = (q + c) / 2;
-            f = (q + e) / 2;
+		d0 = d0 + a0;
+		d1 = d1 + a1;
+		d2 = d2 + a2;
+		d3 = d3 + a3;
 
-            k = k - 1;
-        }
+		while ((i1 = i1 - 1) > 0)
+		{
+			a0 = a0 + d3;
+			a3 = a3 + d0;
 
-        o = o - 1;
-    }
+			b0 = b0 + d2;
+			b3 = b3 + d1;
 
-    return a + b + c + d + e + f;
+			c0 = c0 + a3;
+			c3 = c3 + a0;
+
+			d0 = d0 + b3;
+			d3 = d3 + b0;
+
+			while ((i2 = i2 - 1) > 0)
+			{
+				a1 = a1 + c3;
+				a2 = a2 + c0;
+
+				b1 = b1 + d3;
+				b2 = b2 + d0;
+
+				c1 = c1 + a2;
+				c2 = c2 + a1;
+
+				d1 = d1 + b2;
+				d2 = d2 + b1;
+			}
+		}
+	}
+
+	return a0 + a1 + a2 + a3
+		+ b0 + b1 + b2 + b3
+		+ c0 + c1 + c2 + c3
+		+ d0 + d1 + d2 + d3
+		+ i0 + i1 + i2;
 }
