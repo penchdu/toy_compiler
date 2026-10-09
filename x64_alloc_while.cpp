@@ -203,6 +203,7 @@ void while__recover_pr(Scope *while_scp,
 			spilled++;
 		}
 	}
+	LOG("scp %s spilled: %d, swap_pr=%d %s", body_inner_tail->name.c_str(), spilled, swap_pr, pr_name[swap_pr]);
 
 	if (now_pr2vr[swap_pr].vr != INVALID__VR)
 	{
@@ -233,11 +234,6 @@ void while__recover_pr(Scope *while_scp,
 	}
 	if (swap_pr == X64PR_MAX)
 		ERR();
-
-	LOG("scp %s spilled: %d, swap_pr=%d %s", body_inner_tail->name.c_str(), spilled, swap_pr, pr_name[swap_pr]);
-//	Scope *cond = scp->clds[0];
-//	auto & cond_read = cond->outer_symb_read;
-//	auto & cond_write = cond->outer_symb_write;
 
 	for (int vr = 0; vr < before_vr2pr.size(); vr++)
 	{
@@ -334,7 +330,7 @@ void while__recover_pr(Scope *while_scp,
 			x64mcs.push_back(mc);
 		}
 
-		// now_vr2pr[vr] = before_vr2pr[vr];
+// now_vr2pr[vr] = before_vr2pr[vr];
 		now_vr2pr[vr].pr = A;
 		now_pr2vr[A].vr = vr;
 	}
@@ -379,8 +375,8 @@ void ra_wave__while(Scope *while_scp)
 // select cond pr
 //	spill_vr(bb->x64mc_alloc_wave, swap_vr);
 
-	////////////////////////////////////////////////////////////
-	// while cond
+////////////////////////////////////////////////////////////
+// while cond
 //	Scope *cond = while_scp->clds[0];
 //	Scope *body = while_scp->clds[1];
 //	cond->addtional_symb_usage.resize(vr_declare_manager.size(), VR_USAGE_INVALID);
@@ -416,44 +412,6 @@ void ra_wave__while(Scope *while_scp)
 	dump_vr2pr(after_cond_vr2pr, "after cond " + to_string(while_scp->id));
 	dump_vr2pr(after_body_vr2pr, "after body " + to_string(while_scp->id));
 
-//	Scope *body_inner_tail = get_inner_tail_of_scope(body);
-//	BasicBlock *cond_bb = (BasicBlock*) cond->basic_block;
-//	BasicBlock *body_inner_tail_bb = (BasicBlock*) body_inner_tail->basic_block;
-//	vector<X64mc> &cond_mcs = cond_bb->x64mc_alloc_wave;
-//	for (auto &cond_mc : cond_mcs)
-//	{
-//		if (cond_mc.mc_stamp != MC_LD)
-//			continue;
-//
-//		int vr = cond_mc.s1;
-//		int pr = cond_mc.pr1;
-//
-//		assert(pr != X64PR_MAX);
-//
-////		if (body->outer_symb_write[vr] == 0)
-////			continue;
-//
-//		//  | vr_usage ?
-//		if (after_body_vr2pr[vr].pr == X64PR_MAX || !after_body_vr2pr[vr].dirty)
-//			continue;
-//
-//		LOG("COND_LD: while=%d vr=%d pr=%s pre=%s after_body=%s u=%d ",
-//		    //			"body_write=%d",
-//		    while_scp->id, vr, pr_name[cond_mc.pr1],
-//		    pre_cond_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[pre_cond_vr2pr[vr].pr],
-//		    after_body_vr2pr[vr].pr == X64PR_MAX ? "MAX" : pr_name[after_body_vr2pr[vr].pr],
-//		    after_body_vr2pr[vr].u
-//		    //		    ,body->outer_symb_write[vr]
-//		    );
-//
-////	    assert(after_body_vr2pr[vr].pr == );
-//		// TODO, do st only if first op of vr in cond is ld
-//		X64mc mc(MC_ST, vr);
-//		mc.pr1 = after_body_vr2pr[vr].pr;
-//		mc.ori_sem = "while spill, cond-ld st";
-//		body_inner_tail_bb->x64mc_alloc_wave.push_back(mc);
-//	}
-
 	while__recover_pr(while_scp,
 	    pre_cond_vr2pr, pre_cond_pr2vr,
 	    after_body_vr2pr, after_body_pr2vr, swap_pr);
@@ -465,9 +423,6 @@ void ra_wave__while(Scope *while_scp)
 	int re_alloc = 0;
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
-		if (after_body_vr2pr[vr].pr != pre_cond_vr2pr[vr].pr)
-			ERR();
-
 		if (after_body_vr2pr[vr].pr != X64PR_MAX
 		    && after_body_vr2pr[vr].dirty == 1
 		    && pre_cond_vr2pr[vr].dirty == 0)
@@ -482,7 +437,7 @@ void ra_wave__while(Scope *while_scp)
 		pr2vr = pre_cond_pr2vr;
 		reset_scope_symb_consume_cnt(cond, -1);
 
-		printf("scp=%d, re_alloc=%d \n", while_scp->id, re_alloc);
+		LOG("scp=%d, re_alloc=%d", while_scp->id, re_alloc);
 		dump_vr2pr(vr2pr, "before re_alloc " + to_string(while_scp->id));
 
 		ra_wave__scope(cond);
@@ -490,15 +445,55 @@ void ra_wave__while(Scope *while_scp)
 		dump_vr2pr(vr2pr, "after re_alloc " + to_string(while_scp->id));
 	}
 
+	/*
+	 * If body dirtys a VR, propagating dirty to cond then re-alloc cond fixes cond's problem.
+
+	 For a VR that has a PR in both pre_cond and after_body:
+
+	   - If cond spilled this VR (MC_ST in cond_mcs), body does NOT need to spill it again.
+	     Reason: cond already wrote the latest value to memory. Body's subsequent MC_LD
+	     reads that same value, so even if body later dirtys it, cond's spill already
+	     guarantees memory is up-to-date — body does not need to write again.
+
+	   - If cond wrote this VR (MC_ASSIGN / MC_ST in cond_mcs), body does NOT need to
+	     spill it either. Reason: cond always ends with an MC_ST for any VR it wrote
+	     (dirty VRs get spilled). So cond will overwrite the stack slot with the final
+	     value regardless. Body's dirty write is covered by cond's eventual spill.
+
+	 Therefore: if cond has EVER spilled a VR (MC_ST present in cond_mcs), body never
+	 needs to spill it — cond guarantees the memory value is correct.
+	 *
+	 */
+
+	BasicBlock *cond_bb = (BasicBlock*) cond->basic_block;
+	vector<X64mc> &cond_mcs = cond_bb->x64mc_alloc_wave;
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
-		if (after_cond_vr2pr[vr].pr != vr2pr[vr].pr)
-		    //	|| after_cond_vr2pr[vr].dirty != vr2pr[vr].dirty
+		if (after_body_vr2pr[vr].pr == X64PR_MAX || !after_body_vr2pr[vr].dirty)
+			continue;
 
-			ERR("scp=%d, re_alloc=%d, %s=%%%d, %d %d \n", while_scp->id, re_alloc,
-				vr_declare_manager.declare_at[vr]->symb->unique_name.c_str(), vr,
-			    after_cond_vr2pr[vr].pr, vr2pr[vr].pr);
+		bool cond_will_spill_this_dirty_vr = 0;
+		for (auto &cond_mc : cond_mcs)
+		{
+			if (cond_mc.mc_stamp == MC_ST && cond_mc.s1 == vr)
+			{
+				cond_will_spill_this_dirty_vr = 1;
+				break;
+			}
+		}
+		if(cond_will_spill_this_dirty_vr == 0)
+		{
+			Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
+			BasicBlock *bb = (BasicBlock*) body_inner_tail->basic_block;
+			vector<X64mc> &x64mcs = bb->x64mc_alloc_wave;
+
+			X64mc mc(MC_ST, vr);
+			mc.pr1 = after_body_vr2pr[vr].pr;
+			mc.ori_sem = "while recover st";
+			x64mcs.push_back(mc);
+		}
 	}
+
 	while__end_work(while_scp);
 }
 
@@ -637,7 +632,7 @@ void ra_wave__if(Scope *if_scp)
 //			vr_usage[i] |= VR_USAGE_WRITE;
 //	}
 
-	////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////
 //	printf("\n============== swap %d ==============\n", if_scp->id);
 //	dump_vr2pr(pre_cond_vr2pr, "pre cond " + to_string(if_scp->id));
 //	dump_vr2pr(after_cond_vr2pr, "after cond " + to_string(if_scp->id));
