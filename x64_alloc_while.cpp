@@ -480,22 +480,21 @@ void ra_wave__while(Scope *while_scp)
 	{
 		vr2pr = pre_cond_vr2pr;
 		pr2vr = pre_cond_pr2vr;
-		reset_scope_symb_consume_cnt(while_scp, -1);
+		reset_scope_symb_consume_cnt(cond, -1);
 
 		printf("scp=%d, re_alloc=%d \n", while_scp->id, re_alloc);
 		dump_vr2pr(vr2pr, "before re_alloc " + to_string(while_scp->id));
 
 		ra_wave__scope(cond);
 
-		reset_scope_symb_consume_cnt(body, 1);
 		dump_vr2pr(vr2pr, "after re_alloc " + to_string(while_scp->id));
 	}
 
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
-		if (after_cond_vr2pr[vr].pr != vr2pr[vr].pr
+		if (after_cond_vr2pr[vr].pr != vr2pr[vr].pr)
 		    //	|| after_cond_vr2pr[vr].dirty != vr2pr[vr].dirty
-		    )
+
 			ERR("scp=%d, re_alloc=%d, %s=%%%d, %d %d \n", while_scp->id, re_alloc,
 				vr_declare_manager.declare_at[vr]->symb->unique_name.c_str(), vr,
 			    after_cond_vr2pr[vr].pr, vr2pr[vr].pr);

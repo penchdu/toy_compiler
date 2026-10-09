@@ -255,7 +255,7 @@ struct BasicBlock {
 	Scope *entry_label = 0;
 	vector<X64mc> x64mc;
 	vector<X64mc> x64mc_schedu;
-	vector<int> vrids;
+	vector<int> vr_unique;
 
 //	Scope *exit_jmp = 0;
 	Scope *jmp_to = 0;
@@ -269,10 +269,11 @@ struct BasicBlock {
 
 struct Wave {
 	int vr;
+	int mc_list_size;		// == score.size() == appear_cnt.size()
 	vector<float> score;
-	vector<int> insts;		// >=0, <= 3
+	vector<int> appear_cnt;		// one vr use cnt in a mc, 0 ~ 3,  3->"a = a + a"; 2->"b = a + a"
 };
-extern vector<Wave> vr_wave;
+extern vector<Wave> bb_vr_wave;
 
 void dump_mc(Scope *scp, string mc_list_name);
 void gen_wave(BasicBlock *bb);

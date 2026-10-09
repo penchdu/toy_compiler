@@ -423,7 +423,7 @@ static void mc_schdu(Scope *scp)
 			for (int vr : x64mc[mc].vr_list)
 			{
 				if (vr >= 0)
-					bb->vrids.push_back(vr);
+					bb->vr_unique.push_back(vr);
 			}
 
 			assert(x64mc[mc].start_cycle >= 0);

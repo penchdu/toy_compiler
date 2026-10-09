@@ -25,9 +25,9 @@ void dump_wave(BasicBlock *bb)
 	};
 	printf("\n========== wave ==========\n");
 
-	for (int vr : bb->vrids)
+	for (int vr : bb->vr_unique)
 	{
-		const vector<float> &score = vr_wave[vr].score;
+		const vector<float> &score = bb_vr_wave[vr].score;
 		if (score.empty())
 			continue;
 
@@ -58,9 +58,9 @@ void dump_wave(BasicBlock *bb)
 	}
 	printf("     ");
 
-	if (!bb->vrids.empty())
+	if (!bb->vr_unique.empty())
 	{
-		int n = vr_wave[bb->vrids[0]].score.size();
+		int n = bb_vr_wave[bb->vr_unique[0]].score.size();
 		printf("   ");
 		for (int i = 0; i < n; ++i)
 		{
@@ -109,16 +109,16 @@ static void dump_all_wave_gnuplot(BasicBlock *bb)
 	FILE *fp = fopen("/tmp/all_wave.dat", "w");
 	int count = 0;
 
-	for (int vr : bb->vrids)
+	for (int vr : bb->vr_unique)
 	{
 		printf("dump VR %d size=%ld\n",
 		    vr,
-		    vr_wave[vr].score.size());
+		    bb_vr_wave[vr].score.size());
 
-		for (int pc = 0; pc < vr_wave[vr].score.size(); pc++)
+		for (int pc = 0; pc < bb_vr_wave[vr].score.size(); pc++)
 		{
 			fprintf(fp, "%d %d %.6f\n",
-			    pc, vr, vr_wave[vr].score[pc]);
+			    pc, vr, bb_vr_wave[vr].score[pc]);
 
 			count++;
 		}
@@ -130,12 +130,12 @@ static void dump_all_wave_gnuplot(BasicBlock *bb)
 static void compute_wave_triangle(Wave &w)
 {
 	constexpr int R = 5;
-	const int n = w.insts.size();
+	const int n = w.appear_cnt.size();
 	std::fill(w.score.begin(), w.score.end(), 0.0f);
 
 	for (int use_pc = 0; use_pc < n; ++use_pc)
 	{
-		if (w.insts[use_pc] == 0)
+		if (w.appear_cnt[use_pc] == 0)
 			continue;
 
 		for (int pc = 0; pc < n; ++pc)
@@ -144,7 +144,7 @@ static void compute_wave_triangle(Wave &w)
 			if (d <= R)
 			{
 				float weight = (float) (R - d) / R;
-				w.score[pc] += w.insts[use_pc] * weight;
+				w.score[pc] += w.appear_cnt[use_pc] * weight;
 			}
 		}
 	}
@@ -153,12 +153,12 @@ static void compute_wave_decay(Wave &_wave)
 {
 	int left_radius = 4;
 	float decay = 0.8f;
-	const int inst_size = _wave.insts.size();
+	const int inst_size = _wave.appear_cnt.size();
 	std::fill(_wave.score.begin(), _wave.score.end(), 0.0f);
 
 	for (int inst_idx = 0; inst_idx < inst_size; inst_idx++)
 	{
-		int count = _wave.insts[inst_idx];
+		int count = _wave.appear_cnt[inst_idx];
 		if (count == 0)
 			continue;
 
@@ -185,35 +185,34 @@ static void compute_wave_decay(Wave &_wave)
 		}
 	}
 }
-static void gen_wave_decay_gemini_improved(Wave &_wave)
+static void gen_wave_decay_gemini_improved(Wave &vr_wave)
 {
-	const int inst_size = _wave.insts.size();
-	std::fill(_wave.score.begin(), _wave.score.end(), 0.0f);
+	std::fill(vr_wave.score.begin(), vr_wave.score.end(), 0.0f);
 
 	constexpr int left_radius = 3;
 	constexpr float decay = 0.35f;
 
-	for (int inst_idx = 0; inst_idx < inst_size; inst_idx++)
+	for (int mc_idx = 0; mc_idx < vr_wave.mc_list_size; mc_idx++)
 	{
-		int count = _wave.insts[inst_idx];
+		int count = vr_wave.appear_cnt[mc_idx];
 		if (count == 0)
 			continue;
 
-		for (int pc = 0; pc < inst_size; pc++)
+		for (int pc = 0; pc < vr_wave.mc_list_size; pc++)
 		{
 			float weight = 0.0f;
 
-			if (pc < inst_idx)
+			if (pc < mc_idx)
 			{
 				// 【use 前 ( Look-ahead )】：采用平滑的二次方或高斯上升，让临近 use 时迅速拉升
-				int distance = inst_idx - pc;
+				int distance = mc_idx - pc;
 				if (distance <= left_radius)
 				{
 					float ratio = (float) distance / left_radius;
 					weight = 1.0f - ratio * ratio; // 二次方衰减，比线性更平滑，临近时上升更快
 				}
 			}
-			else if (pc == inst_idx)
+			else if (pc == mc_idx)
 			{
 				// 【use 当天】：满分 1.0
 				weight = 1.0f;
@@ -221,13 +220,13 @@ static void gen_wave_decay_gemini_improved(Wave &_wave)
 			else
 			{
 				// 【use 后】：指数衰减
-				int d = pc - inst_idx;
+				int d = pc - mc_idx;
 				weight = std::exp(-decay * d);
 			}
 
 			// 核心：利用 count 和权重累加！
 			// 连续使用时，多个 use 点的 weight 会在此处进行叠加 (Superposition)
-			_wave.score[pc] += (float) count * weight;
+			vr_wave.score[pc] += (float) count * weight;
 		}
 	}
 }
@@ -245,11 +244,11 @@ VR uses ─────────┼─ density
                     victim select
 	 *
 	 */
-	for (int vr : bb->vrids)
+	for (int vr : bb->vr_unique)
 	{
 //    	compute_wave_triangle(wave[vr]);
 //		compute_wave_decay(vrwave[vr]);
-		gen_wave_decay_gemini_improved(vr_wave[vr]);
+		gen_wave_decay_gemini_improved(bb_vr_wave[vr]);
 //		dump_wave_gnuplot(vrwave[13], 13);
 	}
 }

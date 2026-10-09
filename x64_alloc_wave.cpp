@@ -10,37 +10,39 @@
 #include "basic_block.h"
 #include <cmath>
 
-vector<Wave> vr_wave;
+vector<Wave> bb_vr_wave;
 
 void init_wave(BasicBlock *bb)
 {
-	for (auto &r : vr_wave)
+	for (auto &r : bb_vr_wave)
 	{
 		r.score.clear();
-		r.insts.clear();
+		r.score.shrink_to_fit();
+		r.appear_cnt.clear();
+		r.appear_cnt.shrink_to_fit();
 	}
 
-	auto &v = bb->vrids;
+	auto &v = bb->vr_unique;
 	std::sort(v.begin(), v.end());
 	v.erase(std::unique(v.begin(), v.end()), v.end());
 
-	int mc_size = bb->x64mc_schedu.size();
-	for (int vr : bb->vrids)
+	int mc_list_size = bb->x64mc_schedu.size();
+
+	for (int vr : bb->vr_unique)
 	{
-		vr_wave[vr].score.resize(mc_size, 0);
-		vr_wave[vr].insts.resize(mc_size, 0);
+		bb_vr_wave[vr].mc_list_size = mc_list_size;
+		bb_vr_wave[vr].score.resize(mc_list_size, 0);
+		bb_vr_wave[vr].appear_cnt.resize(mc_list_size, 0);
 	}
 
-	for (int inst_idx = 0; inst_idx < mc_size; inst_idx++)
+	for (int inst_idx = 0; inst_idx < mc_list_size; inst_idx++)
 	{
 		X64mc &mc = bb->x64mc_schedu[inst_idx];
 		for (int i = 0; i < 3; i++)
 		{
 			int vr = mc.vr_list[i];
 			if (vr >= 0)
-			{
-				vr_wave[vr].insts[inst_idx]++;
-			}
+				bb_vr_wave[vr].appear_cnt[inst_idx]++;
 		}
 	}
 }
@@ -106,7 +108,13 @@ int wave_get_pr(BasicBlock *bb, int mc_idx)
 		    || vr == mc.s2)
 			continue;
 
-		float score = vr_wave[vr].score[mc_idx];
+		// if a vr did not appear in current bb, it's score.size() is 0
+		float score;
+		if(bb_vr_wave[vr].score.empty())
+			score = 0.0;
+		else
+			score = bb_vr_wave[vr].score[mc_idx];
+
 		if (score < min_score)
 		{
 			min_score = score;
@@ -378,7 +386,7 @@ void x64_reg_alloc_wave()
 	LOG("\n======================== wave ========================\n");
 
 	clear_all_vr_consume_cnt(&file_scp);
-	vr_wave.resize(vr_declare_manager.size());
+	bb_vr_wave.resize(vr_declare_manager.size());
 
 	vr2pr.clear();
 	vr2pr.resize(vr_declare_manager.size(), {X64PR_MAX, VR_USAGE_INVALID});
@@ -389,4 +397,3 @@ void x64_reg_alloc_wave()
 
 	check_vr_consume_cnt(&file_scp);
 }
-

@@ -8,6 +8,6 @@
 int print_test()
 {
 	int r = test();
-	printf("Result: %d\n", r);
+	printf("print_test: %d\n", r);
 	return 0;
 }
