@@ -383,6 +383,69 @@ void st_new_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &new_dirty, int &
 
 	LOG("%s, meet %d, fix %d", scp->name.c_str(), meet, fix);
 }
+void st_body_tail_dirty(Scope *while_scp,
+	const vector<VrToPr> &pre_cond_vr_state,
+	const vector<VrToPr> &after_body_vr_state)
+{
+	Scope *cond = while_scp->clds[0];
+	Scope *body = while_scp->clds[1];
+
+	vector<bool> body_tail_dirty(vr_declare_manager.size(), 0);
+	int dirty_cnt = 0;
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	{
+		if (after_body_vr_state[vr].pr != X64PR_MAX
+		    && !pre_cond_vr_state[vr].dirty
+		    && after_body_vr_state[vr].dirty)
+		{
+			body_tail_dirty[vr] = 1;
+			dirty_cnt++;
+			printf("new_dirty: %%%d \n", vr);
+		}
+	}
+	if (dirty_cnt)
+	{
+		LOG("new_dirty_cnt %d", dirty_cnt);
+		auto &mcs = ((BasicBlock*) cond->basic_block)->x64mc_alloc_wave;
+		st_new_dirty(cond, mcs, body_tail_dirty, dirty_cnt);
+
+		LOG("new_dirty_cnt %d", dirty_cnt);
+	}
+
+	/*
+	 * If body dirtys a VR, propagating dirty to cond then re-alloc cond fixes cond's problem.
+
+	 For a VR that has a PR in both pre_cond and after_body:
+
+	 - If cond spilled this VR (MC_ST in cond_mcs), body does NOT need to spill it again.
+	 Reason: cond already wrote the latest value to memory. Body's subsequent MC_LD
+	 reads that same value, so even if body later dirtys it, cond's spill already
+	 guarantees memory is up-to-date — body does not need to write again.
+
+	 - If cond wrote this VR (MC_ASSIGN / MC_ST in cond_mcs), body does NOT need to
+	 spill it either. Reason: cond always ends with an MC_ST for any VR it wrote
+	 (dirty VRs get spilled). So cond will overwrite the stack slot with the final
+	 value regardless. Body's dirty write is covered by cond's eventual spill.
+
+	 Therefore: if cond has EVER spilled a VR (MC_ST present in cond_mcs), body never
+	 needs to spill it — cond guarantees the memory value is correct.
+	 *
+	 */
+
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	{
+		if (!body_tail_dirty[vr])
+			continue;
+
+		Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
+		auto &mcs = ((BasicBlock*) body_inner_tail->basic_block)->x64mc_alloc_wave;
+
+		X64mc mc(MC_ST, vr);
+		mc.pr1 = after_body_vr_state[vr].pr;
+		mc.ori_sem = "while recover st";
+		mcs.push_back(mc);
+	}
+}
 void ra_wave__while(Scope *while_scp)
 {
 	//	LOG("scp %s", scp->name.c_str());
@@ -467,139 +530,7 @@ void ra_wave__while(Scope *while_scp)
 	dump_vr2pr(vr2pr, "vr2pr " + to_string(while_scp->id));
 	printf("\n");
 
-#if 0
-	vector<bool> new_dirty(vr_declare_manager.size(), 0);
-	int dirty_cnt = 0;
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
-	{
-		if (after_body_vr2pr[vr].pr != X64PR_MAX
-		    && after_body_vr2pr[vr].dirty)
-		{
-			new_dirty[vr] = 1;
-			dirty_cnt++;
-			printf("new_dirty: %%%d \n", vr);
-		}
-	}
-	if (dirty_cnt)
-	{
-		LOG("new_dirty_cnt %d", dirty_cnt);
-
-		auto &mcs = ((BasicBlock*) cond->basic_block)->x64mc_alloc_wave;
-		st_new_dirty(cond, mcs, new_dirty, dirty_cnt);
-
-		if (dirty_cnt)
-		{
-			for (int vr = 0; vr < vr_declare_manager.size(); vr++)
-			{
-				// =====================================================================
-				// Design Hypothesis for Dirty VR Post-Body Handling
-				// ---------------------------------------------------------------------
-				// 1. st_new_dirty(cond, mcs, new_dirty)
-				//    → Fixes cond-block's SPILL sites that LACK backing ST
-				//      (cond has MC_victim but NO adjacent MC_ST — patch it here)
-				//
-				// 2. st_new_dirty(body, mcs, new_dirty)
-				//    → Fixes body-block's SPILL sites that LACK backing ST
-				//
-				// 3. Core Assumption for `dirty_cnt` After st_new_dirty(cond):
-				//    ------------------------------------------------------------------
-				//    a) dirty_cnt == 0 → NO remaining dirty issues to handle
-				//    b) dirty_cnt > 0  → Remaining dirty issues exist
-				//       AND the WHILE LOOP HAS TWO BRANCHES after cond evaluation:
-				//         • TRUE BRANCH (enters body)  → st_new_dirty(body) handles it
-				//         • FALSE BRANCH (exits while) → Dirty state PROPAGATES to
-				//           post-while (tail-exit) code — leave it for later
-				//    ------------------------------------------------------------------
-				//
-				// 4. What if st_new_dirty finds NO valid ST insertion point?
-				//    → The VR is STILL IN A PHYSICAL REGISTER (no adjacent MC_victim
-				//      to anchor a new ST) — it was NEVER spilled
-				//    → We DO NOT FORCE a spill; just keep it marked `dirty`
-				// =====================================================================
-				vr2pr[vr].dirty |= new_dirty[vr];
-			}
-
-			auto &mcs = ((BasicBlock*) body->basic_block)->x64mc_alloc_wave;
-			st_new_dirty(body, mcs, new_dirty, dirty_cnt);
-		}
-		LOG("new_dirty_cnt %d", dirty_cnt);
-	}
-
-#else
-	int re_alloc = 0;
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
-	{
-		if (after_body_vr2pr[vr].pr != X64PR_MAX
-		    && after_body_vr2pr[vr].dirty == 1
-		    && pre_cond_vr2pr[vr].dirty == 0)
-		{
-			pre_cond_vr2pr[vr].dirty = 1;
-			re_alloc++;
-		}
-	}
-	if (re_alloc)
-	{
-		vr2pr = pre_cond_vr2pr;
-		pr2vr = pre_cond_pr2vr;
-		reset_scope_symb_consume_cnt(cond, -1);
-
-		LOG("scp=%d, re_alloc=%d", while_scp->id, re_alloc);
-		dump_vr2pr(vr2pr, "before re_alloc " + to_string(while_scp->id));
-
-		ra_wave__scope(cond);
-
-		dump_vr2pr(vr2pr, "after re_alloc " + to_string(while_scp->id));
-	}
-	/*
-	 * If body dirtys a VR, propagating dirty to cond then re-alloc cond fixes cond's problem.
-
-	 For a VR that has a PR in both pre_cond and after_body:
-
-	 - If cond spilled this VR (MC_ST in cond_mcs), body does NOT need to spill it again.
-	 Reason: cond already wrote the latest value to memory. Body's subsequent MC_LD
-	 reads that same value, so even if body later dirtys it, cond's spill already
-	 guarantees memory is up-to-date — body does not need to write again.
-
-	 - If cond wrote this VR (MC_ASSIGN / MC_ST in cond_mcs), body does NOT need to
-	 spill it either. Reason: cond always ends with an MC_ST for any VR it wrote
-	 (dirty VRs get spilled). So cond will overwrite the stack slot with the final
-	 value regardless. Body's dirty write is covered by cond's eventual spill.
-
-	 Therefore: if cond has EVER spilled a VR (MC_ST present in cond_mcs), body never
-	 needs to spill it — cond guarantees the memory value is correct.
-	 *
-	 */
-
-	BasicBlock *cond_bb = (BasicBlock*) cond->basic_block;
-	vector<X64mc> &cond_mcs = cond_bb->x64mc_alloc_wave;
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
-	{
-		if (after_body_vr2pr[vr].pr == X64PR_MAX
-		    || !after_body_vr2pr[vr].dirty)
-			continue;
-
-		bool cond_will_spill_this_dirty_vr = 0;
-		for (auto &cond_mc : cond_mcs)
-		{
-			if (cond_mc.mc_stamp == MC_ST && cond_mc.s1 == vr)
-			{
-				cond_will_spill_this_dirty_vr = 1;
-				break;
-			}
-		}
-		if (cond_will_spill_this_dirty_vr == 0)
-		{
-			Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
-			auto &mcs = ((BasicBlock*) body_inner_tail->basic_block)->x64mc_alloc_wave;
-
-			X64mc mc(MC_ST, vr);
-			mc.pr1 = after_body_vr2pr[vr].pr;
-			mc.ori_sem = "while recover st";
-			mcs.push_back(mc);
-		}
-	}
-#endif
-
+	st_body_tail_dirty(while_scp, pre_cond_vr2pr, after_body_vr2pr);
 	while__end_work(while_scp);
 }
 
@@ -633,7 +564,6 @@ void ra_wave__if(Scope *if_scp)
 	Scope *tail = if_scp->clds[3];
 	Scope *then_tail = get_inner_tail_of_scope(then_branch);
 	Scope *else_tail = get_inner_tail_of_scope(else_branch);
-
 
 	// cond
 	ra_wave__scope(cond);
