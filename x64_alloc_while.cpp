@@ -442,7 +442,7 @@ void st_body_tail_dirty(Scope *while_scp,
 
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = after_body_vr_state[vr].pr;
-		mc.ori_sem = "while recover st";
+		mc.ori_sem = "while spill st dirty ";
 		mcs.push_back(mc);
 	}
 }

@@ -229,108 +229,106 @@ example `test.cpp`:
 ```c
 
 
+
 int test()
 {
 	int a0 = 1;
-	int a1 = 2;
-	int a2 = 3;
-	int a3 = 4;
+	int a1 = 3;
+	int a2 = 5;
+	int a3 = 7;
+	int b0 = 2;
+	int b1 = 4;
+	int b2 = 6;
+	int b3 = 8;
+	int c0 = 9;
+	int c1 = 11;
+	int c2 = 13;
+	int c3 = 15;
+	int d0 = 10;
+	int d1 = 12;
+	int d2 = 14;
+	int d3 = 16;
+	int skip = 1;
+	int carry = 3;
 
-	int b0 = 11;
-	int b1 = 12;
-	int b2 = 13;
-	int b3 = 14;
-
-	int c0 = 21;
-	int c1 = 22;
-	int c2 = 23;
-	int c3 = 24;
-
-	int d0 = 31;
-	int d1 = 32;
-	int d2 = 33;
-	int d3 = 34;
-
-	int i0 = 3;
-	int i1 = 2;
-	int i2 = 2;
-	int i3 = 2;
-
-	while ((i0 = i0 - 1) + a0 - a0 + b0 - b0 > 0)
+	while ((skip = skip - 1) > 0)
 	{
-		a0 = a0 + b1;
-		a1 = a1 + b0;
-
-		b0 = b0 + c1;
-		b1 = b1 + c0;
-
-		c0 = c0 + d1;
-		c1 = c1 + d0;
-
-		d0 = d0 + a1;
-		d1 = d1 + a0;
-
-		while ((i1 = i1 - 1) + c0 - c0 + d0 - d0 > 0)
+		if (carry > 0)
 		{
-			b0 = b0 + a2;
-			b1 = b1 + a3;
-
-			a2 = a2 + c0;
-			a3 = a3 + c1;
-
-			c0 = c0 + d2;
-			c1 = c1 + d3;
-
-			d2 = d2 + b1;
-			d3 = d3 + b0;
-
-			while ((i2 = i2 - 1) + a2 - a2 + b2 - b2 > 0)
-			{
-				c0 = c0 + b2;
-				c1 = c1 + b3;
-
-				b2 = b2 + d0;
-				b3 = b3 + d1;
-
-				d0 = d0 + a2;
-				d1 = d1 + a3;
-
-				a2 = a2 + c2;
-				a3 = a3 + c3;
-
-				while ((i3 = i3 - 1) + c2 - c2 + d2 - d2 > 0)
-				{
-					d0 = d0 + c0;
-					d1 = d1 + c1;
-
-					c2 = c2 + a0;
-					c3 = c3 + a1;
-
-					a0 = a0 + d2;
-					a1 = a1 + d3;
-
-					b0 = b0 + c2;
-					b1 = b1 + c3;
-				}
-
-				a2 = a2 + b0 + d1;
-				a3 = a3 + b1 + d0;
-			}
-
-			b2 = b2 + c0 + a2;
-			b3 = b3 + c1 + a3;
+			a0 = a0 + b0;
+			b0 = b0 + c0;
 		}
-
-		c2 = c2 + d0 + b0;
-		c3 = c3 + d1 + b1;
+		else
+		{
+			c0 = c0 + d0;
+			d0 = d0 + a0;
+		}
 	}
 
-	return a0 + a1 + a2 + a3
-	    + b0 + b1 + b2 + b3
-	    + c0 + c1 + c2 + c3
-	    + d0 + d1 + d2 + d3
-	    + i0 + i1 + i2 + i3;
+	a0 = (a0 + skip) / 2 + carry;
+	c0 = (c0 + skip) / 2 + a0;
+
+	int p = 6;
+
+	while ((p = p - 1) > 0)
+	{
+		if (p > 2)
+		{
+			a1 = (a1 + b1) / 2 + p;
+			c1 = (c1 + d1) / 2 + a1;
+			int q = 5;
+			while ((q = q - 1) > 0)
+			{
+				if (q > 2)
+				{
+					b2 = (b2 + c2) / 2 + q;
+					d2 = (d2 + a2) / 2 + p;
+				}
+				else
+				{
+					c2 = (c2 + a3) / 2 + q;
+					b1 = (b1 + d3) / 2 + p;
+				}
+			}
+		}
+		else
+		{
+			a3 = (a3 + c3) / 2 + p;
+			b3 = (b3 + d3) / 2 + p;
+			if (a3 > b3)
+			{
+				c3 = (c3 + a3) / 2 + carry;
+				d3 = (d3 + b3) / 2 + p;
+			}
+			else
+			{
+				c2 = (c2 + b3) / 2 + carry;
+				d2 = (d2 + a3) / 2 + p;
+			}
+		}
+
+		carry = carry + 1;
+	}
+
+	int s = 5;
+	while ((s = s - 1) > 0)
+	{
+		if (s > 2)
+		{
+			d0 = (d0 + c3) / 2 + s;
+			a0 = (a0 + b3) / 2 + s;
+		}
+		else
+		{
+			d1 = (d1 + c2) / 2 + s;
+			a1 = (a1 + b2) / 2 + s;
+		}
+	}
+
+	return a0 + a1 + a2 + a3 + b0 + b1 + b2 + b3
+	    + c0 + c1 + c2 + c3 + d0 + d1 + d2 + d3 + skip + p + s + carry;
 }
+
 
 
 
@@ -361,6 +359,7 @@ spill every register use
 
 ```
 
+
 #========== a1.s ==========#
 .intel_syntax noprefix
 .extern printf
@@ -373,524 +372,946 @@ fmt:
 main:
 	push rbp 
 	mov rbp, rsp 
-	sub rsp, 544 
+	sub rsp, 656 
 
-	mov r10d, 1                            #li 1=%0, =%-1,  idx 0, cyc 0
-	mov r11d, 2                            #li 2=%2, =%-1,  idx 1, cyc 0
-	mov r12d, r10d                         #assign a0=%1, 1=%0,  idx 0, cyc 1
-	mov r10d, r11d                         #assign a1=%3, 2=%2,  idx 1, cyc 1
-	mov r11d, 3                            #li 3=%4, =%-1,  idx 2, cyc 2
-	mov r13d, 4                            #li 4=%6, =%-1,  idx 3, cyc 2
-	mov r14d, r11d                         #assign a2=%5, 3=%4,  idx 2, cyc 3
-	mov r11d, r13d                         #assign a3=%7, 4=%6,  idx 3, cyc 3
-	mov r13d, 11                           #li 11=%8, =%-1,  idx 4, cyc 4
-	mov r15d, 12                           #li 12=%10, =%-1,  idx 5, cyc 4
-	mov dword ptr [rbp - 8], r12d          #spill a0=%1, =%-1,  idx 609, cyc -1
-	mov r12d, r13d                         #assign b0=%9, 11=%8,  idx 4, cyc 5
-	mov r13d, r15d                         #assign b1=%11, 12=%10,  idx 5, cyc 5
-	mov r15d, 13                           #li 13=%12, =%-1,  idx 6, cyc 6
-	mov dword ptr [rbp - 16], r10d         #spill a1=%3, =%-1,  idx 610, cyc -1
-	mov r10d, 14                           #li 14=%14, =%-1,  idx 7, cyc 6
-	mov dword ptr [rbp - 24], r14d         #spill a2=%5, =%-1,  idx 611, cyc -1
-	mov r14d, r15d                         #assign b2=%13, 13=%12,  idx 6, cyc 7
-	mov r15d, r10d                         #assign b3=%15, 14=%14,  idx 7, cyc 7
-	mov r10d, 21                           #li 21=%16, =%-1,  idx 8, cyc 8
-	mov dword ptr [rbp - 32], r11d         #spill a3=%7, =%-1,  idx 612, cyc -1
-	mov r11d, 22                           #li 22=%18, =%-1,  idx 9, cyc 8
-	mov dword ptr [rbp - 40], r12d         #spill b0=%9, =%-1,  idx 613, cyc -1
-	mov r12d, r10d                         #assign c0=%17, 21=%16,  idx 8, cyc 9
-	mov r10d, r11d                         #assign c1=%19, 22=%18,  idx 9, cyc 9
-	mov r11d, 23                           #li 23=%20, =%-1,  idx 10, cyc 10
-	mov dword ptr [rbp - 48], r13d         #spill b1=%11, =%-1,  idx 614, cyc -1
-	mov r13d, 24                           #li 24=%22, =%-1,  idx 11, cyc 10
-	mov dword ptr [rbp - 56], r14d         #spill b2=%13, =%-1,  idx 615, cyc -1
-	mov r14d, r11d                         #assign c2=%21, 23=%20,  idx 10, cyc 11
-	mov r11d, r13d                         #assign c3=%23, 24=%22,  idx 11, cyc 11
-	mov r13d, 31                           #li 31=%24, =%-1,  idx 12, cyc 12
-	mov dword ptr [rbp - 64], r15d         #spill b3=%15, =%-1,  idx 616, cyc -1
-	mov r15d, 32                           #li 32=%26, =%-1,  idx 13, cyc 12
-	mov dword ptr [rbp - 72], r12d         #spill c0=%17, =%-1,  idx 617, cyc -1
-	mov r12d, r13d                         #assign d0=%25, 31=%24,  idx 12, cyc 13
-	mov r13d, r15d                         #assign d1=%27, 32=%26,  idx 13, cyc 13
-	mov r15d, 33                           #li 33=%28, =%-1,  idx 14, cyc 14
-	mov dword ptr [rbp - 80], r10d         #spill c1=%19, =%-1,  idx 618, cyc -1
-	mov r10d, 34                           #li 34=%30, =%-1,  idx 15, cyc 14
-	mov dword ptr [rbp - 88], r14d         #spill c2=%21, =%-1,  idx 619, cyc -1
-	mov r14d, r15d                         #assign d2=%29, 33=%28,  idx 14, cyc 15
-	mov r15d, r10d                         #assign d3=%31, 34=%30,  idx 15, cyc 15
-	mov r10d, 3                            #li 3=%32, =%-1,  idx 16, cyc 16
-	mov dword ptr [rbp - 96], r11d         #spill c3=%23, =%-1,  idx 620, cyc -1
-	mov r11d, 2                            #li 2=%34, =%-1,  idx 17, cyc 16
-	mov dword ptr [rbp - 104], r12d        #spill d0=%25, =%-1,  idx 621, cyc -1
-	mov r12d, r10d                         #assign i0=%33, 3=%32,  idx 16, cyc 17
-	mov r10d, r11d                         #assign i1=%35, 2=%34,  idx 17, cyc 17
-	mov r11d, 2                            #li 2=%36, =%-1,  idx 18, cyc 18
-	mov dword ptr [rbp - 112], r13d        #spill d1=%27, =%-1,  idx 622, cyc -1
-	mov r13d, 2                            #li 2=%38, =%-1,  idx 19, cyc 18
-	mov dword ptr [rbp - 120], r14d        #spill d2=%29, =%-1,  idx 623, cyc -1
-	mov r14d, r11d                         #assign i2=%37, 2=%36,  idx 18, cyc 19
-	mov r11d, r13d                         #assign i3=%39, 2=%38,  idx 19, cyc 19
+	mov r10d, 1                            #li 1=%0, =%-1,  cyc 0
+	mov r11d, 3                            #li 3=%2, =%-1,  cyc 0
+	mov r12d, r10d                         #assign a0=%1, 1=%0,  cyc 1
+	#victim %0, r10d                       #victim check_dead_vr 1=%0, =%-1,  cyc -1
+	mov r10d, r11d                         #assign a1=%3, 3=%2,  cyc 1
+	#victim %2, r11d                       #victim check_dead_vr 3=%2, =%-1,  cyc -1
+	mov r11d, 5                            #li 5=%4, =%-1,  cyc 2
+	mov r13d, 7                            #li 7=%6, =%-1,  cyc 2
+	mov r14d, r11d                         #assign a2=%5, 5=%4,  cyc 3
+	#victim %4, r11d                       #victim check_dead_vr 5=%4, =%-1,  cyc -1
+	mov r11d, r13d                         #assign a3=%7, 7=%6,  cyc 3
+	#victim %6, r13d                       #victim check_dead_vr 7=%6, =%-1,  cyc -1
+	mov r13d, 2                            #li 2=%8, =%-1,  cyc 4
+	mov r15d, 4                            #li 4=%10, =%-1,  cyc 4
+	#victim %1, r12d                       #victim a0=%1, =%-1,  cyc -1
+	mov dword ptr [rbp - 8], r12d          #spill a0=%1, =%-1,  cyc -1
+	mov r12d, r13d                         #assign b0=%9, 2=%8,  cyc 5
+	#victim %8, r13d                       #victim check_dead_vr 2=%8, =%-1,  cyc -1
+	mov r13d, r15d                         #assign b1=%11, 4=%10,  cyc 5
+	#victim %10, r15d                      #victim check_dead_vr 4=%10, =%-1,  cyc -1
+	mov r15d, 6                            #li 6=%12, =%-1,  cyc 6
+	#victim %3, r10d                       #victim a1=%3, =%-1,  cyc -1
+	mov dword ptr [rbp - 16], r10d         #spill a1=%3, =%-1,  cyc -1
+	mov r10d, 8                            #li 8=%14, =%-1,  cyc 6
+	#victim %5, r14d                       #victim a2=%5, =%-1,  cyc -1
+	mov dword ptr [rbp - 24], r14d         #spill a2=%5, =%-1,  cyc -1
+	mov r14d, r15d                         #assign b2=%13, 6=%12,  cyc 7
+	#victim %12, r15d                      #victim check_dead_vr 6=%12, =%-1,  cyc -1
+	mov r15d, r10d                         #assign b3=%15, 8=%14,  cyc 7
+	#victim %14, r10d                      #victim check_dead_vr 8=%14, =%-1,  cyc -1
+	mov r10d, 9                            #li 9=%16, =%-1,  cyc 8
+	#victim %7, r11d                       #victim a3=%7, =%-1,  cyc -1
+	mov dword ptr [rbp - 32], r11d         #spill a3=%7, =%-1,  cyc -1
+	mov r11d, 11                           #li 11=%18, =%-1,  cyc 8
+	#victim %9, r12d                       #victim b0=%9, =%-1,  cyc -1
+	mov dword ptr [rbp - 40], r12d         #spill b0=%9, =%-1,  cyc -1
+	mov r12d, r10d                         #assign c0=%17, 9=%16,  cyc 9
+	#victim %16, r10d                      #victim check_dead_vr 9=%16, =%-1,  cyc -1
+	mov r10d, r11d                         #assign c1=%19, 11=%18,  cyc 9
+	#victim %18, r11d                      #victim check_dead_vr 11=%18, =%-1,  cyc -1
+	mov r11d, 13                           #li 13=%20, =%-1,  cyc 10
+	#victim %11, r13d                      #victim b1=%11, =%-1,  cyc -1
+	mov dword ptr [rbp - 48], r13d         #spill b1=%11, =%-1,  cyc -1
+	mov r13d, 15                           #li 15=%22, =%-1,  cyc 10
+	#victim %13, r14d                      #victim b2=%13, =%-1,  cyc -1
+	mov dword ptr [rbp - 56], r14d         #spill b2=%13, =%-1,  cyc -1
+	mov r14d, r11d                         #assign c2=%21, 13=%20,  cyc 11
+	#victim %20, r11d                      #victim check_dead_vr 13=%20, =%-1,  cyc -1
+	mov r11d, r13d                         #assign c3=%23, 15=%22,  cyc 11
+	#victim %22, r13d                      #victim check_dead_vr 15=%22, =%-1,  cyc -1
+	mov r13d, 10                           #li 10=%24, =%-1,  cyc 12
+	#victim %15, r15d                      #victim b3=%15, =%-1,  cyc -1
+	mov dword ptr [rbp - 64], r15d         #spill b3=%15, =%-1,  cyc -1
+	mov r15d, 12                           #li 12=%26, =%-1,  cyc 12
+	#victim %17, r12d                      #victim c0=%17, =%-1,  cyc -1
+	mov dword ptr [rbp - 72], r12d         #spill c0=%17, =%-1,  cyc -1
+	mov r12d, r13d                         #assign d0=%25, 10=%24,  cyc 13
+	#victim %24, r13d                      #victim check_dead_vr 10=%24, =%-1,  cyc -1
+	mov r13d, r15d                         #assign d1=%27, 12=%26,  cyc 13
+	#victim %26, r15d                      #victim check_dead_vr 12=%26, =%-1,  cyc -1
+	mov r15d, 14                           #li 14=%28, =%-1,  cyc 14
+	#victim %19, r10d                      #victim c1=%19, =%-1,  cyc -1
+	mov dword ptr [rbp - 80], r10d         #spill c1=%19, =%-1,  cyc -1
+	mov r10d, 16                           #li 16=%30, =%-1,  cyc 14
+	#victim %21, r14d                      #victim c2=%21, =%-1,  cyc -1
+	mov dword ptr [rbp - 88], r14d         #spill c2=%21, =%-1,  cyc -1
+	mov r14d, r15d                         #assign d2=%29, 14=%28,  cyc 15
+	#victim %28, r15d                      #victim check_dead_vr 14=%28, =%-1,  cyc -1
+	mov r15d, r10d                         #assign d3=%31, 16=%30,  cyc 15
+	#victim %30, r10d                      #victim check_dead_vr 16=%30, =%-1,  cyc -1
+	mov r10d, 1                            #li 1=%32, =%-1,  cyc 16
+	#victim %23, r11d                      #victim c3=%23, =%-1,  cyc -1
+	mov dword ptr [rbp - 96], r11d         #spill c3=%23, =%-1,  cyc -1
+	mov r11d, 3                            #li 3=%34, =%-1,  cyc 16
+	#victim %25, r12d                      #victim d0=%25, =%-1,  cyc -1
+	mov dword ptr [rbp - 104], r12d        #spill d0=%25, =%-1,  cyc -1
+	mov r12d, r10d                         #assign skip=%33, 1=%32,  cyc 17
+	#victim %32, r10d                      #victim check_dead_vr 1=%32, =%-1,  cyc -1
+	mov r10d, r11d                         #assign carry=%35, 3=%34,  cyc 17
+	#victim %34, r11d                      #victim check_dead_vr 3=%34, =%-1,  cyc -1
 
 
 .L_b2_while:
 
 
 .L_b3_while2_cond:
-	mov r13d, 1                            #li 1=%41, =%-1,  idx 21, cyc 0
-	mov dword ptr [rbp - 144], r10d        #spill i1=%35, =%-1,  idx 624, cyc -1
-	mov r10d, r12d                         #sub -=%42, i0=%33,  idx 20, cyc 0
-	sub r10d, r13d                         #sub -=%42, 1=%41,  idx 21, cyc 1
-	mov r13d, 0                            #li 0=%40, =%-1,  idx 20, cyc 1
-	mov r12d, r10d                         #assign i0=%33, -=%42,  idx 22, cyc 2
-	mov r10d, r12d                         #add +=%43, i0=%33,  idx 23, cyc 3
-	mov dword ptr [rbp - 160], r11d        #spill i3=%39, =%-1,  idx 625, cyc -1
-	mov r11d, dword ptr [rbp - 8]          #ld a0=%1, =%-1,  idx 626, cyc -1
-	add r10d, r11d                         #add +=%43, a0=%1,  idx 24, cyc 4
-	mov dword ptr [rbp - 152], r14d        #spill i2=%37, =%-1,  idx 627, cyc -1
-	mov r14d, r10d                         #sub -=%44, +=%43,  idx 25, cyc 5
-	sub r14d, r11d                         #sub -=%44, a0=%1,  idx 26, cyc 6
-	mov r10d, r14d                         #add +=%45, -=%44,  idx 27, cyc 7
-	mov r14d, dword ptr [rbp - 40]         #ld b0=%9, =%-1,  idx 628, cyc -1
-	add r10d, r14d                         #add +=%45, b0=%9,  idx 28, cyc 8
-	mov dword ptr [rbp - 128], r15d        #spill d3=%31, =%-1,  idx 629, cyc -1
-	mov r15d, r10d                         #sub -=%46, +=%45,  idx 29, cyc 9
-	sub r15d, r14d                         #sub -=%46, b0=%9,  idx 30, cyc 10
-	cmp r15d, r13d                         #cmple -=%46, 0=%40,  idx 31, cyc 11
-	setle r10b                             #cmple -=%46, 0=%40,  idx 31, cyc 11
-	movzx r10d, r10b                       #cmple -=%46, 0=%40,  idx 31, cyc 11
-	jle .L_b28_while2_tail 
+	mov r11d, 1                            #li 1=%37, =%-1,  cyc 0
+	#victim %35, r10d                      #victim carry=%35, =%-1,  cyc -1
+	mov dword ptr [rbp - 144], r10d        #spill carry=%35, =%-1,  cyc -1
+	mov r10d, 0                            #li 0=%36, =%-1,  cyc 0
+	#victim %27, r13d                      #victim d1=%27, =%-1,  cyc -1
+	mov dword ptr [rbp - 112], r13d        #spill d1=%27, =%-1,  cyc -1
+	mov r13d, r12d                         #sub -=%38, skip=%33,  cyc 1
+	sub r13d, r11d                         #sub -=%38, 1=%37,  cyc 2
+	#victim %37, r11d                      #victim check_dead_vr 1=%37, =%-1,  cyc -1
+	mov r12d, r13d                         #assign skip=%33, -=%38,  cyc 3
+	#victim %38, r13d                      #victim check_dead_vr -=%38, =%-1,  cyc -1
+	cmp r12d, r10d                         #cmple skip=%33, 0=%36,  cyc 4
+	setle r11b                             #cmple skip=%33, 0=%36,  cyc 4
+	movzx r11d, r11b                       #cmple skip=%33, 0=%36,  cyc 4
+	#victim %39, r11d                      #victim check_dead_vr >=%39, =%-1,  cyc -1
+	#victim %36, r10d                      #victim check_dead_vr 0=%36, =%-1,  cyc -1
+	jle .L_b15_while2_tail 
 
 
 .L_b4_while2_body:
-	mov r10d, r11d                         #add +=%48, a0=%1,  idx 32, cyc 0
-	mov r15d, dword ptr [rbp - 16]         #ld a1=%3, =%-1,  idx 630, cyc -1
-	mov r13d, r15d                         #add +=%49, a1=%3,  idx 35, cyc 0
-	mov dword ptr [rbp - 136], r12d        #spill i0=%33, =%-1,  idx 631, cyc -1
-	mov r12d, dword ptr [rbp - 48]         #ld b1=%11, =%-1,  idx 632, cyc -1
-	add r10d, r12d                         #add +=%48, b1=%11,  idx 33, cyc 1
-	add r13d, r14d                         #add +=%49, b0=%9,  idx 36, cyc 1
-	mov r11d, r10d                         #assign a0=%1, +=%48,  idx 34, cyc 2
-	mov r15d, r13d                         #assign a1=%3, +=%49,  idx 37, cyc 2
-	mov r10d, r14d                         #add +=%50, b0=%9,  idx 38, cyc 3
-	mov r13d, r12d                         #add +=%51, b1=%11,  idx 41, cyc 3
-	mov dword ptr [rbp - 8], r11d          #spill a0=%1, =%-1,  idx 633, cyc -1
-	mov r11d, dword ptr [rbp - 80]         #ld c1=%19, =%-1,  idx 634, cyc -1
-	add r10d, r11d                         #add +=%50, c1=%19,  idx 39, cyc 4
-	mov dword ptr [rbp - 16], r15d         #spill a1=%3, =%-1,  idx 635, cyc -1
-	mov r15d, dword ptr [rbp - 72]         #ld c0=%17, =%-1,  idx 636, cyc -1
-	add r13d, r15d                         #add +=%51, c0=%17,  idx 42, cyc 4
-	mov r14d, r10d                         #assign b0=%9, +=%50,  idx 40, cyc 5
-	mov r12d, r13d                         #assign b1=%11, +=%51,  idx 43, cyc 5
-	mov r10d, r15d                         #add +=%52, c0=%17,  idx 44, cyc 6
-	mov r13d, r11d                         #add +=%53, c1=%19,  idx 47, cyc 6
-	mov dword ptr [rbp - 40], r14d         #spill b0=%9, =%-1,  idx 637, cyc -1
-	mov r14d, dword ptr [rbp - 112]        #ld d1=%27, =%-1,  idx 638, cyc -1
-	add r10d, r14d                         #add +=%52, d1=%27,  idx 45, cyc 7
-	mov dword ptr [rbp - 48], r12d         #spill b1=%11, =%-1,  idx 639, cyc -1
-	mov r12d, dword ptr [rbp - 104]        #ld d0=%25, =%-1,  idx 640, cyc -1
-	add r13d, r12d                         #add +=%53, d0=%25,  idx 48, cyc 7
-	mov r15d, r10d                         #assign c0=%17, +=%52,  idx 46, cyc 8
-	mov r11d, r13d                         #assign c1=%19, +=%53,  idx 49, cyc 8
-	mov r10d, r12d                         #add +=%54, d0=%25,  idx 50, cyc 9
-	mov r13d, r14d                         #add +=%55, d1=%27,  idx 53, cyc 9
-	mov dword ptr [rbp - 72], r15d         #spill c0=%17, =%-1,  idx 641, cyc -1
-	mov r15d, dword ptr [rbp - 16]         #ld a1=%3, =%-1,  idx 642, cyc -1
-	add r10d, r15d                         #add +=%54, a1=%3,  idx 51, cyc 10
-	mov dword ptr [rbp - 80], r11d         #spill c1=%19, =%-1,  idx 643, cyc -1
-	mov r11d, dword ptr [rbp - 8]          #ld a0=%1, =%-1,  idx 644, cyc -1
-	add r13d, r11d                         #add +=%55, a0=%1,  idx 54, cyc 10
-	mov r12d, r10d                         #assign d0=%25, +=%54,  idx 52, cyc 11
-	mov r14d, r13d                         #assign d1=%27, +=%55,  idx 55, cyc 11
 
 
-.L_b5_while:
+.L_b6_if5_cond:
+	mov r10d, 0                            #li 0=%40, =%-1,  cyc 0
+	mov r13d, dword ptr [rbp - 144]        #ld carry=%35, =%-1,  cyc -1
+	cmp r13d, r10d                         #cmple carry=%35, 0=%40,  cyc 1
+	setle r11b                             #cmple carry=%35, 0=%40,  cyc 1
+	movzx r11d, r11b                       #cmple carry=%35, 0=%40,  cyc 1
+	#victim %41, r11d                      #victim check_dead_vr >=%41, =%-1,  cyc -1
+	#victim %40, r10d                      #victim check_dead_vr 0=%40, =%-1,  cyc -1
+	#victim %33, r12d                      #victim skip=%33, =%-1,  cyc -1
+	mov dword ptr [rbp - 136], r12d        #spill skip=%33, =%-1,  cyc -1
+	#victim %35, r13d                      #victim carry=%35, =%-1,  cyc -1
+	#victim %29, r14d                      #victim d2=%29, =%-1,  cyc -1
+	mov dword ptr [rbp - 120], r14d        #spill d2=%29, =%-1,  cyc -1
+	#victim %31, r15d                      #victim d3=%31, =%-1,  cyc -1
+	mov dword ptr [rbp - 128], r15d        #spill d3=%31, =%-1,  cyc -1
+	jle .L_b9_if5_else 
 
 
-.L_b6_while5_cond:
-	mov r10d, 1                            #li 1=%57, =%-1,  idx 23, cyc 0
-	mov r11d, dword ptr [rbp - 144]        #ld i1=%35, =%-1,  idx 645, cyc -1
-	mov r13d, r11d                         #sub -=%58, i1=%35,  idx 56, cyc 0
-	sub r13d, r10d                         #sub -=%58, 1=%57,  idx 57, cyc 1
-	mov r10d, 0                            #li 0=%56, =%-1,  idx 22, cyc 1
-	mov r11d, r13d                         #assign i1=%35, -=%58,  idx 58, cyc 2
-	mov r13d, r11d                         #add +=%59, i1=%35,  idx 59, cyc 3
-	mov dword ptr [rbp - 104], r12d        #spill d0=%25, =%-1,  idx 646, cyc -1
-	mov r12d, dword ptr [rbp - 72]         #ld c0=%17, =%-1,  idx 647, cyc -1
-	add r13d, r12d                         #add +=%59, c0=%17,  idx 60, cyc 4
-	mov dword ptr [rbp - 112], r14d        #spill d1=%27, =%-1,  idx 648, cyc -1
-	mov r14d, r13d                         #sub -=%60, +=%59,  idx 61, cyc 5
-	sub r14d, r12d                         #sub -=%60, c0=%17,  idx 62, cyc 6
-	mov r13d, r14d                         #add +=%61, -=%60,  idx 63, cyc 7
-	mov r14d, dword ptr [rbp - 104]        #ld d0=%25, =%-1,  idx 649, cyc -1
-	add r13d, r14d                         #add +=%61, d0=%25,  idx 64, cyc 8
-	mov r15d, r13d                         #sub -=%62, +=%61,  idx 65, cyc 9
-	sub r15d, r14d                         #sub -=%62, d0=%25,  idx 66, cyc 10
-	cmp r15d, r10d                         #cmple -=%62, 0=%56,  idx 67, cyc 11
-	setle r13b                             #cmple -=%62, 0=%56,  idx 67, cyc 11
-	movzx r13d, r13b                       #cmple -=%62, 0=%56,  idx 67, cyc 11
-	jle .L_b24_while5_tail 
+.L_b7_if5_then:
+	mov r11d, dword ptr [rbp - 8]          #ld a0=%1, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%42, a0=%1,  cyc 0
+	mov r13d, dword ptr [rbp - 40]         #ld b0=%9, =%-1,  cyc -1
+	mov r12d, r13d                         #add +=%43, b0=%9,  cyc 0
+	add r10d, r13d                         #add +=%42, b0=%9,  cyc 1
+	mov r14d, dword ptr [rbp - 72]         #ld c0=%17, =%-1,  cyc -1
+	add r12d, r14d                         #add +=%43, c0=%17,  cyc 1
+	mov r11d, r10d                         #assign a0=%1, +=%42,  cyc 2
+	#victim %42, r10d                      #victim check_dead_vr +=%42, =%-1,  cyc -1
+	mov r13d, r12d                         #assign b0=%9, +=%43,  cyc 2
+	#victim %43, r12d                      #victim check_dead_vr +=%43, =%-1,  cyc -1
 
 
-.L_b7_while5_body:
-	mov r13d, dword ptr [rbp - 40]         #ld b0=%9, =%-1,  idx 650, cyc -1
-	mov r10d, r13d                         #add +=%64, b0=%9,  idx 68, cyc 0
-	mov dword ptr [rbp - 144], r11d        #spill i1=%35, =%-1,  idx 651, cyc -1
-	mov r11d, dword ptr [rbp - 48]         #ld b1=%11, =%-1,  idx 652, cyc -1
-	mov r15d, r11d                         #add +=%65, b1=%11,  idx 71, cyc 0
-	mov r12d, dword ptr [rbp - 24]         #ld a2=%5, =%-1,  idx 653, cyc -1
-	add r10d, r12d                         #add +=%64, a2=%5,  idx 69, cyc 1
-	mov r14d, dword ptr [rbp - 32]         #ld a3=%7, =%-1,  idx 654, cyc -1
-	add r15d, r14d                         #add +=%65, a3=%7,  idx 72, cyc 1
-	mov r13d, r10d                         #assign b0=%9, +=%64,  idx 70, cyc 2
-	mov r11d, r15d                         #assign b1=%11, +=%65,  idx 73, cyc 2
-	mov r10d, r12d                         #add +=%66, a2=%5,  idx 74, cyc 3
-	mov r15d, r14d                         #add +=%67, a3=%7,  idx 77, cyc 3
-	mov dword ptr [rbp - 40], r13d         #spill b0=%9, =%-1,  idx 655, cyc -1
-	mov r13d, dword ptr [rbp - 72]         #ld c0=%17, =%-1,  idx 656, cyc -1
-	add r10d, r13d                         #add +=%66, c0=%17,  idx 75, cyc 4
-	mov dword ptr [rbp - 48], r11d         #spill b1=%11, =%-1,  idx 657, cyc -1
-	mov r11d, dword ptr [rbp - 80]         #ld c1=%19, =%-1,  idx 658, cyc -1
-	add r15d, r11d                         #add +=%67, c1=%19,  idx 78, cyc 4
-	mov r12d, r10d                         #assign a2=%5, +=%66,  idx 76, cyc 5
-	mov r14d, r15d                         #assign a3=%7, +=%67,  idx 79, cyc 5
-	mov r10d, r13d                         #add +=%68, c0=%17,  idx 80, cyc 6
-	mov r15d, r11d                         #add +=%69, c1=%19,  idx 83, cyc 6
-	mov dword ptr [rbp - 24], r12d         #spill a2=%5, =%-1,  idx 659, cyc -1
-	mov r12d, dword ptr [rbp - 120]        #ld d2=%29, =%-1,  idx 660, cyc -1
-	add r10d, r12d                         #add +=%68, d2=%29,  idx 81, cyc 7
-	mov dword ptr [rbp - 32], r14d         #spill a3=%7, =%-1,  idx 661, cyc -1
-	mov r14d, dword ptr [rbp - 128]        #ld d3=%31, =%-1,  idx 662, cyc -1
-	add r15d, r14d                         #add +=%69, d3=%31,  idx 84, cyc 7
-	mov r13d, r10d                         #assign c0=%17, +=%68,  idx 82, cyc 8
-	mov r11d, r15d                         #assign c1=%19, +=%69,  idx 85, cyc 8
-	mov r10d, r12d                         #add +=%70, d2=%29,  idx 86, cyc 9
-	mov r15d, r14d                         #add +=%71, d3=%31,  idx 89, cyc 9
-	mov dword ptr [rbp - 72], r13d         #spill c0=%17, =%-1,  idx 663, cyc -1
-	mov r13d, dword ptr [rbp - 48]         #ld b1=%11, =%-1,  idx 664, cyc -1
-	add r10d, r13d                         #add +=%70, b1=%11,  idx 87, cyc 10
-	mov dword ptr [rbp - 80], r11d         #spill c1=%19, =%-1,  idx 665, cyc -1
-	mov r11d, dword ptr [rbp - 40]         #ld b0=%9, =%-1,  idx 666, cyc -1
-	add r15d, r11d                         #add +=%71, b0=%9,  idx 90, cyc 10
-	mov r12d, r10d                         #assign d2=%29, +=%70,  idx 88, cyc 11
-	mov r14d, r15d                         #assign d3=%31, +=%71,  idx 91, cyc 11
+.L_b8:
+	#victim %1, r11d                       #victim a0=%1, =%-1,  cyc -1
+	mov dword ptr [rbp - 8], r11d          #spill a0=%1, =%-1,  cyc -1
+	#victim %9, r13d                       #victim b0=%9, =%-1,  cyc -1
+	mov dword ptr [rbp - 40], r13d         #spill b0=%9, =%-1,  cyc -1
+	#victim %17, r14d                      #victim c0=%17, =%-1,  cyc -1
+	jmp .L_b11_if5_tail 
 
 
-.L_b8_while:
+.L_b9_if5_else:
+	mov r11d, dword ptr [rbp - 72]         #ld c0=%17, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%44, c0=%17,  cyc 0
+	mov r13d, dword ptr [rbp - 104]        #ld d0=%25, =%-1,  cyc -1
+	mov r12d, r13d                         #add +=%45, d0=%25,  cyc 0
+	add r10d, r13d                         #add +=%44, d0=%25,  cyc 1
+	mov r14d, dword ptr [rbp - 8]          #ld a0=%1, =%-1,  cyc -1
+	add r12d, r14d                         #add +=%45, a0=%1,  cyc 1
+	mov r11d, r10d                         #assign c0=%17, +=%44,  cyc 2
+	#victim %44, r10d                      #victim check_dead_vr +=%44, =%-1,  cyc -1
+	mov r13d, r12d                         #assign d0=%25, +=%45,  cyc 2
+	#victim %45, r12d                      #victim check_dead_vr +=%45, =%-1,  cyc -1
 
 
-.L_b9_while8_cond:
-	mov r10d, 1                            #li 1=%73, =%-1,  idx 25, cyc 0
-	mov r11d, dword ptr [rbp - 152]        #ld i2=%37, =%-1,  idx 667, cyc -1
-	mov r15d, r11d                         #sub -=%74, i2=%37,  idx 92, cyc 0
-	sub r15d, r10d                         #sub -=%74, 1=%73,  idx 93, cyc 1
-	mov r10d, 0                            #li 0=%72, =%-1,  idx 24, cyc 1
-	mov r11d, r15d                         #assign i2=%37, -=%74,  idx 94, cyc 2
-	mov r15d, r11d                         #add +=%75, i2=%37,  idx 95, cyc 3
-	mov dword ptr [rbp - 120], r12d        #spill d2=%29, =%-1,  idx 668, cyc -1
-	mov r12d, dword ptr [rbp - 24]         #ld a2=%5, =%-1,  idx 669, cyc -1
-	add r15d, r12d                         #add +=%75, a2=%5,  idx 96, cyc 4
-	mov r13d, r15d                         #sub -=%76, +=%75,  idx 97, cyc 5
-	sub r13d, r12d                         #sub -=%76, a2=%5,  idx 98, cyc 6
-	mov r15d, r13d                         #add +=%77, -=%76,  idx 99, cyc 7
-	mov r13d, dword ptr [rbp - 56]         #ld b2=%13, =%-1,  idx 670, cyc -1
-	add r15d, r13d                         #add +=%77, b2=%13,  idx 100, cyc 8
-	mov dword ptr [rbp - 128], r14d        #spill d3=%31, =%-1,  idx 671, cyc -1
-	mov r14d, r15d                         #sub -=%78, +=%77,  idx 101, cyc 9
-	sub r14d, r13d                         #sub -=%78, b2=%13,  idx 102, cyc 10
-	cmp r14d, r10d                         #cmple -=%78, 0=%72,  idx 103, cyc 11
-	setle r15b                             #cmple -=%78, 0=%72,  idx 103, cyc 11
-	movzx r15d, r15b                       #cmple -=%78, 0=%72,  idx 103, cyc 11
-	jle .L_b20_while8_tail 
+.L_b10:
+	#victim %17, r11d                      #victim c0=%17, =%-1,  cyc -1
+	mov dword ptr [rbp - 72], r11d         #spill c0=%17, =%-1,  cyc -1
+	#victim %25, r13d                      #victim d0=%25, =%-1,  cyc -1
+	mov dword ptr [rbp - 104], r13d        #spill d0=%25, =%-1,  cyc -1
+	#victim %1, r14d                       #victim a0=%1, =%-1,  cyc -1
+	jmp .L_b11_if5_tail 
 
 
-.L_b10_while8_body:
-	mov r14d, dword ptr [rbp - 72]         #ld c0=%17, =%-1,  idx 672, cyc -1
-	mov r10d, r14d                         #add +=%80, c0=%17,  idx 104, cyc 0
-	mov dword ptr [rbp - 152], r11d        #spill i2=%37, =%-1,  idx 673, cyc -1
-	mov r11d, dword ptr [rbp - 80]         #ld c1=%19, =%-1,  idx 674, cyc -1
-	mov r15d, r11d                         #add +=%81, c1=%19,  idx 107, cyc 0
-	add r10d, r13d                         #add +=%80, b2=%13,  idx 105, cyc 1
-	mov r12d, dword ptr [rbp - 64]         #ld b3=%15, =%-1,  idx 675, cyc -1
-	add r15d, r12d                         #add +=%81, b3=%15,  idx 108, cyc 1
-	mov r14d, r10d                         #assign c0=%17, +=%80,  idx 106, cyc 2
-	mov r11d, r15d                         #assign c1=%19, +=%81,  idx 109, cyc 2
-	mov r10d, r13d                         #add +=%82, b2=%13,  idx 110, cyc 3
-	mov r15d, r12d                         #add +=%83, b3=%15,  idx 113, cyc 3
-	mov dword ptr [rbp - 72], r14d         #spill c0=%17, =%-1,  idx 676, cyc -1
-	mov r14d, dword ptr [rbp - 104]        #ld d0=%25, =%-1,  idx 677, cyc -1
-	add r10d, r14d                         #add +=%82, d0=%25,  idx 111, cyc 4
-	mov dword ptr [rbp - 80], r11d         #spill c1=%19, =%-1,  idx 678, cyc -1
-	mov r11d, dword ptr [rbp - 112]        #ld d1=%27, =%-1,  idx 679, cyc -1
-	add r15d, r11d                         #add +=%83, d1=%27,  idx 114, cyc 4
-	mov r13d, r10d                         #assign b2=%13, +=%82,  idx 112, cyc 5
-	mov r12d, r15d                         #assign b3=%15, +=%83,  idx 115, cyc 5
-	mov r10d, r14d                         #add +=%84, d0=%25,  idx 116, cyc 6
-	mov r15d, r11d                         #add +=%85, d1=%27,  idx 119, cyc 6
-	mov dword ptr [rbp - 56], r13d         #spill b2=%13, =%-1,  idx 680, cyc -1
-	mov r13d, dword ptr [rbp - 24]         #ld a2=%5, =%-1,  idx 681, cyc -1
-	add r10d, r13d                         #add +=%84, a2=%5,  idx 117, cyc 7
-	mov dword ptr [rbp - 64], r12d         #spill b3=%15, =%-1,  idx 682, cyc -1
-	mov r12d, dword ptr [rbp - 32]         #ld a3=%7, =%-1,  idx 683, cyc -1
-	add r15d, r12d                         #add +=%85, a3=%7,  idx 120, cyc 7
-	mov r14d, r10d                         #assign d0=%25, +=%84,  idx 118, cyc 8
-	mov r11d, r15d                         #assign d1=%27, +=%85,  idx 121, cyc 8
-	mov r10d, r13d                         #add +=%86, a2=%5,  idx 122, cyc 9
-	mov r15d, r12d                         #add +=%87, a3=%7,  idx 125, cyc 9
-	mov dword ptr [rbp - 104], r14d        #spill d0=%25, =%-1,  idx 684, cyc -1
-	mov r14d, dword ptr [rbp - 88]         #ld c2=%21, =%-1,  idx 685, cyc -1
-	add r10d, r14d                         #add +=%86, c2=%21,  idx 123, cyc 10
-	mov dword ptr [rbp - 112], r11d        #spill d1=%27, =%-1,  idx 686, cyc -1
-	mov r11d, dword ptr [rbp - 96]         #ld c3=%23, =%-1,  idx 687, cyc -1
-	add r15d, r11d                         #add +=%87, c3=%23,  idx 126, cyc 10
-	mov r13d, r10d                         #assign a2=%5, +=%86,  idx 124, cyc 11
-	mov r12d, r15d                         #assign a3=%7, +=%87,  idx 127, cyc 11
+.L_b11_if5_tail:
 
 
-.L_b11_while:
-
-
-.L_b12_while11_cond:
-	mov r10d, 1                            #li 1=%89, =%-1,  idx 27, cyc 0
-	mov r11d, dword ptr [rbp - 160]        #ld i3=%39, =%-1,  idx 688, cyc -1
-	mov r15d, r11d                         #sub -=%90, i3=%39,  idx 128, cyc 0
-	sub r15d, r10d                         #sub -=%90, 1=%89,  idx 129, cyc 1
-	mov r10d, 0                            #li 0=%88, =%-1,  idx 26, cyc 1
-	mov r11d, r15d                         #assign i3=%39, -=%90,  idx 130, cyc 2
-	mov r15d, r11d                         #add +=%91, i3=%39,  idx 131, cyc 3
-	add r15d, r14d                         #add +=%91, c2=%21,  idx 132, cyc 4
-	mov dword ptr [rbp - 32], r12d         #spill a3=%7, =%-1,  idx 689, cyc -1
-	mov r12d, r15d                         #sub -=%92, +=%91,  idx 133, cyc 5
-	sub r12d, r14d                         #sub -=%92, c2=%21,  idx 134, cyc 6
-	mov r15d, r12d                         #add +=%93, -=%92,  idx 135, cyc 7
-	mov r12d, dword ptr [rbp - 120]        #ld d2=%29, =%-1,  idx 690, cyc -1
-	add r15d, r12d                         #add +=%93, d2=%29,  idx 136, cyc 8
-	mov dword ptr [rbp - 24], r13d         #spill a2=%5, =%-1,  idx 691, cyc -1
-	mov r13d, r15d                         #sub -=%94, +=%93,  idx 137, cyc 9
-	sub r13d, r12d                         #sub -=%94, d2=%29,  idx 138, cyc 10
-	cmp r13d, r10d                         #cmple -=%94, 0=%88,  idx 139, cyc 11
-	setle r15b                             #cmple -=%94, 0=%88,  idx 139, cyc 11
-	movzx r15d, r15b                       #cmple -=%94, 0=%88,  idx 139, cyc 11
-	jle .L_b16_while11_tail 
-
-
-.L_b13_while11_body:
-	mov r13d, dword ptr [rbp - 104]        #ld d0=%25, =%-1,  idx 692, cyc -1
-	mov r10d, r13d                         #add +=%96, d0=%25,  idx 140, cyc 0
-	mov dword ptr [rbp - 160], r11d        #spill i3=%39, =%-1,  idx 693, cyc -1
-	mov r11d, dword ptr [rbp - 112]        #ld d1=%27, =%-1,  idx 694, cyc -1
-	mov r15d, r11d                         #add +=%97, d1=%27,  idx 143, cyc 0
-	mov r12d, dword ptr [rbp - 72]         #ld c0=%17, =%-1,  idx 695, cyc -1
-	add r10d, r12d                         #add +=%96, c0=%17,  idx 141, cyc 1
-	mov r14d, dword ptr [rbp - 80]         #ld c1=%19, =%-1,  idx 696, cyc -1
-	add r15d, r14d                         #add +=%97, c1=%19,  idx 144, cyc 1
-	mov r13d, r10d                         #assign d0=%25, +=%96,  idx 142, cyc 2
-	mov r11d, r15d                         #assign d1=%27, +=%97,  idx 145, cyc 2
-	mov r15d, dword ptr [rbp - 40]         #ld b0=%9, =%-1,  idx 697, cyc -1
-	mov r10d, r15d                         #add +=%102, b0=%9,  idx 158, cyc 3
-	mov r14d, dword ptr [rbp - 48]         #ld b1=%11, =%-1,  idx 698, cyc -1
-	mov r12d, r14d                         #add +=%103, b1=%11,  idx 161, cyc 3
-	mov dword ptr [rbp - 104], r13d        #spill d0=%25, =%-1,  idx 699, cyc -1
-	mov dword ptr [rbp - 112], r11d        #spill d1=%27, =%-1,  idx 700, cyc -1
-	mov r11d, dword ptr [rbp - 88]         #ld c2=%21, =%-1,  idx 701, cyc -1
-	mov r13d, r11d                         #add +=%98, c2=%21,  idx 146, cyc 4
-	mov dword ptr [rbp - 412], r10d        #spill +=%102, =%-1,  idx 702, cyc -1
-	mov r15d, dword ptr [rbp - 96]         #ld c3=%23, =%-1,  idx 703, cyc -1
-	mov r10d, r15d                         #add +=%99, c3=%23,  idx 149, cyc 4
-	mov dword ptr [rbp - 416], r12d        #spill +=%103, =%-1,  idx 704, cyc -1
-	mov r12d, dword ptr [rbp - 8]          #ld a0=%1, =%-1,  idx 705, cyc -1
-	add r13d, r12d                         #add +=%98, a0=%1,  idx 147, cyc 5
-	mov r14d, dword ptr [rbp - 16]         #ld a1=%3, =%-1,  idx 706, cyc -1
-	add r10d, r14d                         #add +=%99, a1=%3,  idx 150, cyc 5
-	mov r11d, r13d                         #assign c2=%21, +=%98,  idx 148, cyc 6
-	mov r15d, r10d                         #assign c3=%23, +=%99,  idx 151, cyc 6
-	mov r10d, dword ptr [rbp - 412]        #ld +=%102, =%-1,  idx 707, cyc -1
-	add r10d, r11d                         #add +=%102, c2=%21,  idx 159, cyc 7
-	mov r13d, dword ptr [rbp - 416]        #ld +=%103, =%-1,  idx 708, cyc -1
-	add r13d, r15d                         #add +=%103, c3=%23,  idx 162, cyc 7
-	mov r14d, r10d                         #assign b0=%9, +=%102,  idx 160, cyc 8
-	mov r10d, r13d                         #assign b1=%11, +=%103,  idx 163, cyc 8
-	mov r13d, r12d                         #add +=%100, a0=%1,  idx 152, cyc 9
-	mov dword ptr [rbp - 88], r11d         #spill c2=%21, =%-1,  idx 709, cyc -1
-	mov dword ptr [rbp - 40], r14d         #spill b0=%9, =%-1,  idx 710, cyc -1
-	mov r14d, dword ptr [rbp - 16]         #ld a1=%3, =%-1,  idx 711, cyc -1
-	mov r11d, r14d                         #add +=%101, a1=%3,  idx 155, cyc 9
-	mov dword ptr [rbp - 96], r15d         #spill c3=%23, =%-1,  idx 712, cyc -1
-	mov r15d, dword ptr [rbp - 120]        #ld d2=%29, =%-1,  idx 713, cyc -1
-	add r13d, r15d                         #add +=%100, d2=%29,  idx 153, cyc 10
-	mov dword ptr [rbp - 48], r10d         #spill b1=%11, =%-1,  idx 714, cyc -1
-	mov r10d, dword ptr [rbp - 128]        #ld d3=%31, =%-1,  idx 715, cyc -1
-	add r11d, r10d                         #add +=%101, d3=%31,  idx 156, cyc 10
-	mov r12d, r13d                         #assign a0=%1, +=%100,  idx 154, cyc 11
-	mov r14d, r11d                         #assign a1=%3, +=%101,  idx 157, cyc 11
-
-
-.L_b14_while11_body_tail:
-	mov dword ptr [rbp - 8], r12d          #spill while recover a0=%1, =%-1,  idx 716, cyc -1
-	mov dword ptr [rbp - 16], r14d         #spill while recover a1=%3, =%-1,  idx 717, cyc -1
-	mov r13d, dword ptr [rbp - 24]         #while 4, ld  a2=%5, =%-1,  idx 718, cyc -1
-	mov r12d, dword ptr [rbp - 32]         #while 4, ld  a3=%7, =%-1,  idx 719, cyc -1
-	mov r14d, dword ptr [rbp - 88]         #while 4, ld  c2=%21, =%-1,  idx 720, cyc -1
-	mov r11d, dword ptr [rbp - 96]         #while 4, ld  c3=%23, =%-1,  idx 721, cyc -1
-	jmp .L_b12_while11_cond 
-
-
-.L_b16_while11_tail:
-
-
-.L_b17:
-	mov r13d, dword ptr [rbp - 24]         #ld a2=%5, =%-1,  idx 722, cyc -1
-	mov r10d, r13d                         #add +=%104, a2=%5,  idx 164, cyc 0
-	mov dword ptr [rbp - 160], r11d        #spill i3=%39, =%-1,  idx 723, cyc -1
-	mov r11d, dword ptr [rbp - 32]         #ld a3=%7, =%-1,  idx 724, cyc -1
-	mov r15d, r11d                         #add +=%106, a3=%7,  idx 169, cyc 0
-	mov r12d, dword ptr [rbp - 40]         #ld b0=%9, =%-1,  idx 725, cyc -1
-	add r10d, r12d                         #add +=%104, b0=%9,  idx 165, cyc 1
-	mov r14d, dword ptr [rbp - 48]         #ld b1=%11, =%-1,  idx 726, cyc -1
-	add r15d, r14d                         #add +=%106, b1=%11,  idx 170, cyc 1
-	mov r13d, r10d                         #add +=%105, +=%104,  idx 166, cyc 2
-	mov r10d, r15d                         #add +=%107, +=%106,  idx 171, cyc 2
-	mov r15d, dword ptr [rbp - 112]        #ld d1=%27, =%-1,  idx 727, cyc -1
-	add r13d, r15d                         #add +=%105, d1=%27,  idx 167, cyc 3
-	mov r12d, dword ptr [rbp - 104]        #ld d0=%25, =%-1,  idx 728, cyc -1
-	add r10d, r12d                         #add +=%107, d0=%25,  idx 172, cyc 3
-	mov r14d, r13d                         #assign a2=%5, +=%105,  idx 168, cyc 4
-	mov r11d, r10d                         #assign a3=%7, +=%107,  idx 173, cyc 4
-
-
-.L_b18_while8_body_tail:
-	mov dword ptr [rbp - 24], r14d         #spill while recover a2=%5, =%-1,  idx 729, cyc -1
-	mov dword ptr [rbp - 32], r11d         #spill while recover a3=%7, =%-1,  idx 730, cyc -1
-	mov r11d, dword ptr [rbp - 40]         #while 4, ld  b0=%9, =%-1,  idx 731, cyc -1
-	mov r13d, dword ptr [rbp - 48]         #while 4, ld  b1=%11, =%-1,  idx 732, cyc -1
-	mov r12d, dword ptr [rbp - 120]        #while 4, ld  d2=%29, =%-1,  idx 733, cyc -1
-	mov r14d, dword ptr [rbp - 128]        #while 4, ld  d3=%31, =%-1,  idx 734, cyc -1
-	jmp .L_b9_while8_cond 
-
-
-.L_b20_while8_tail:
-
-
-.L_b21:
-	mov r10d, r13d                         #add +=%108, b2=%13,  idx 174, cyc 0
-	mov r15d, dword ptr [rbp - 64]         #ld b3=%15, =%-1,  idx 735, cyc -1
-	mov r14d, r15d                         #add +=%110, b3=%15,  idx 179, cyc 0
-	mov dword ptr [rbp - 152], r11d        #spill i2=%37, =%-1,  idx 736, cyc -1
-	mov r11d, dword ptr [rbp - 72]         #ld c0=%17, =%-1,  idx 737, cyc -1
-	add r10d, r11d                         #add +=%108, c0=%17,  idx 175, cyc 1
-	mov r12d, dword ptr [rbp - 80]         #ld c1=%19, =%-1,  idx 738, cyc -1
-	add r14d, r12d                         #add +=%110, c1=%19,  idx 180, cyc 1
-	mov r13d, r10d                         #add +=%109, +=%108,  idx 176, cyc 2
-	mov r10d, r14d                         #add +=%111, +=%110,  idx 181, cyc 2
-	mov r14d, dword ptr [rbp - 24]         #ld a2=%5, =%-1,  idx 739, cyc -1
-	add r13d, r14d                         #add +=%109, a2=%5,  idx 177, cyc 3
-	mov r11d, dword ptr [rbp - 32]         #ld a3=%7, =%-1,  idx 740, cyc -1
-	add r10d, r11d                         #add +=%111, a3=%7,  idx 182, cyc 3
-	mov r12d, r13d                         #assign b2=%13, +=%109,  idx 178, cyc 4
-	mov r15d, r10d                         #assign b3=%15, +=%111,  idx 183, cyc 4
-
-
-.L_b22_while5_body_tail:
-	mov dword ptr [rbp - 56], r12d         #spill while recover b2=%13, =%-1,  idx 741, cyc -1
-	mov dword ptr [rbp - 64], r15d         #spill while recover b3=%15, =%-1,  idx 742, cyc -1
-	mov r11d, dword ptr [rbp - 8]          #while 4, ld  a0=%1, =%-1,  idx 743, cyc -1
-	mov r15d, dword ptr [rbp - 16]         #while 4, ld  a1=%3, =%-1,  idx 744, cyc -1
-	mov r12d, dword ptr [rbp - 104]        #while 4, ld  d0=%25, =%-1,  idx 745, cyc -1
-	mov r14d, dword ptr [rbp - 112]        #while 4, ld  d1=%27, =%-1,  idx 746, cyc -1
-	jmp .L_b6_while5_cond 
-
-
-.L_b24_while5_tail:
-
-
-.L_b25:
-	mov r13d, dword ptr [rbp - 88]         #ld c2=%21, =%-1,  idx 747, cyc -1
-	mov r10d, r13d                         #add +=%112, c2=%21,  idx 184, cyc 0
-	mov dword ptr [rbp - 144], r11d        #spill i1=%35, =%-1,  idx 748, cyc -1
-	mov r11d, dword ptr [rbp - 96]         #ld c3=%23, =%-1,  idx 749, cyc -1
-	mov r15d, r11d                         #add +=%114, c3=%23,  idx 189, cyc 0
-	add r10d, r14d                         #add +=%112, d0=%25,  idx 185, cyc 1
-	mov r12d, dword ptr [rbp - 112]        #ld d1=%27, =%-1,  idx 750, cyc -1
-	add r15d, r12d                         #add +=%114, d1=%27,  idx 190, cyc 1
-	mov r13d, r10d                         #add +=%113, +=%112,  idx 186, cyc 2
-	mov r10d, r15d                         #add +=%115, +=%114,  idx 191, cyc 2
-	mov r15d, dword ptr [rbp - 40]         #ld b0=%9, =%-1,  idx 751, cyc -1
-	add r13d, r15d                         #add +=%113, b0=%9,  idx 187, cyc 3
-	mov r14d, dword ptr [rbp - 48]         #ld b1=%11, =%-1,  idx 752, cyc -1
-	add r10d, r14d                         #add +=%115, b1=%11,  idx 192, cyc 3
-	mov r12d, r13d                         #assign c2=%21, +=%113,  idx 188, cyc 4
-	mov r11d, r10d                         #assign c3=%23, +=%115,  idx 193, cyc 4
-
-
-.L_b26_while2_body_tail:
-	mov dword ptr [rbp - 88], r12d         #spill while recover c2=%21, =%-1,  idx 753, cyc -1
-	mov dword ptr [rbp - 96], r11d         #spill while recover c3=%23, =%-1,  idx 754, cyc -1
-	mov r15d, dword ptr [rbp - 128]        #while 4, ld  d3=%31, =%-1,  idx 755, cyc -1
-	mov r12d, dword ptr [rbp - 136]        #while 4, ld  i0=%33, =%-1,  idx 756, cyc -1
-	mov r10d, dword ptr [rbp - 144]        #while 4, ld  i1=%35, =%-1,  idx 757, cyc -1
-	mov r14d, dword ptr [rbp - 152]        #while 4, ld  i2=%37, =%-1,  idx 758, cyc -1
-	mov r11d, dword ptr [rbp - 160]        #while 4, ld  i3=%39, =%-1,  idx 759, cyc -1
+.L_b13_while2_body_tail:
+	mov r13d, dword ptr [rbp - 112]        #while 4, ld  d1=%27, =%-1,  cyc -1
+	mov r14d, dword ptr [rbp - 120]        #while 4, ld  d2=%29, =%-1,  cyc -1
+	mov r15d, dword ptr [rbp - 128]        #while 4, ld  d3=%31, =%-1,  cyc -1
+	mov r12d, dword ptr [rbp - 136]        #while 4, ld  skip=%33, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 144]        #while 4, ld  carry=%35, =%-1,  cyc -1
 	jmp .L_b3_while2_cond 
 
 
-.L_b28_while2_tail:
+.L_b15_while2_tail:
+
+
+.L_b16:
+	mov r10d, 2                            #li 2=%46, =%-1,  cyc 0
+	mov r13d, dword ptr [rbp - 72]         #ld c0=%17, =%-1,  cyc -1
+	mov r11d, r13d                         #add +=%51, c0=%17,  cyc 0
+	add r11d, r12d                         #add +=%51, skip=%33,  cyc 1
+	#victim %29, r14d                      #victim d2=%29, =%-1,  cyc -1
+	mov dword ptr [rbp - 120], r14d        #spill d2=%29, =%-1,  cyc -1
+	mov r14d, 2                            #li 2=%50, =%-1,  cyc 1
+	#victim %31, r15d                      #victim d3=%31, =%-1,  cyc -1
+	mov dword ptr [rbp - 128], r15d        #spill d3=%31, =%-1,  cyc -1
+	mov r15d, r11d                         #div /=%52, +=%51,  cyc 2
+	#victim %51, r11d                      #victim check_dead_vr +=%51, =%-1,  cyc -1
+	#victim %46, r10d                      #victim 2=%46, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 8]          #ld a0=%1, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%47, a0=%1,  cyc 2
+	mov eax, r15d 
+	cdq 
+	idiv r14d 
+	mov r15d, eax                          #div /=%52, 2=%50,  cyc 3
+	#victim %50, r14d                      #victim check_dead_vr 2=%50, =%-1,  cyc -1
+	add r11d, r12d                         #add +=%47, skip=%33,  cyc 3
+	mov r14d, 6                            #li 6=%54, =%-1,  cyc 3
+	#victim %17, r13d                      #victim c0=%17, =%-1,  cyc -1
+	mov r13d, r11d                         #div /=%48, +=%47,  cyc 4
+	#victim %47, r11d                      #victim check_dead_vr +=%47, =%-1,  cyc -1
+	mov r11d, r14d                         #assign p=%55, 6=%54,  cyc 4
+	#victim %54, r14d                      #victim check_dead_vr 6=%54, =%-1,  cyc -1
+	mov r14d, 2                            #li 2=%46, =%-1,  cyc -1
+	mov eax, r13d 
+	cdq 
+	idiv r14d 
+	mov r13d, eax                          #div /=%48, 2=%46,  cyc 13
+	#victim %46, r14d                      #victim check_dead_vr 2=%46, =%-1,  cyc -1
+	mov r14d, r15d                         #add +=%53, /=%52,  cyc 13
+	#victim %52, r15d                      #victim check_dead_vr /=%52, =%-1,  cyc -1
+	mov r15d, r13d                         #add +=%49, /=%48,  cyc 23
+	#victim %48, r13d                      #victim check_dead_vr /=%48, =%-1,  cyc -1
+	mov r13d, dword ptr [rbp - 144]        #ld carry=%35, =%-1,  cyc -1
+	add r15d, r13d                         #add +=%49, carry=%35,  cyc 24
+	mov r10d, r15d                         #assign a0=%1, +=%49,  cyc 25
+	#victim %49, r15d                      #victim check_dead_vr +=%49, =%-1,  cyc -1
+	add r14d, r10d                         #add +=%53, a0=%1,  cyc 26
+	mov r15d, r14d                         #assign c0=%17, +=%53,  cyc 27
+	#victim %53, r14d                      #victim check_dead_vr +=%53, =%-1,  cyc -1
+
+
+.L_b17_while:
+
+
+.L_b18_while17_cond:
+	mov r14d, 1                            #li 1=%57, =%-1,  cyc 0
+	#victim %1, r10d                       #victim a0=%1, =%-1,  cyc -1
+	mov dword ptr [rbp - 8], r10d          #spill a0=%1, =%-1,  cyc -1
+	mov r10d, 0                            #li 0=%56, =%-1,  cyc 0
+	#victim %33, r12d                      #victim skip=%33, =%-1,  cyc -1
+	mov dword ptr [rbp - 136], r12d        #spill skip=%33, =%-1,  cyc -1
+	mov r12d, r11d                         #sub -=%58, p=%55,  cyc 1
+	sub r12d, r14d                         #sub -=%58, 1=%57,  cyc 2
+	#victim %57, r14d                      #victim check_dead_vr 1=%57, =%-1,  cyc -1
+	mov r11d, r12d                         #assign p=%55, -=%58,  cyc 3
+	#victim %58, r12d                      #victim check_dead_vr -=%58, =%-1,  cyc -1
+	cmp r11d, r10d                         #cmple p=%55, 0=%56,  cyc 4
+	setle r12b                             #cmple p=%55, 0=%56,  cyc 4
+	movzx r12d, r12b                       #cmple p=%55, 0=%56,  cyc 4
+	#victim %59, r12d                      #victim check_dead_vr >=%59, =%-1,  cyc -1
+	#victim %56, r10d                      #victim check_dead_vr 0=%56, =%-1,  cyc -1
+	jle .L_b53_while17_tail 
+
+
+.L_b19_while17_body:
+
+
+.L_b21_if20_cond:
+	mov r10d, 2                            #li 2=%60, =%-1,  cyc 0
+	cmp r11d, r10d                         #cmple p=%55, 2=%60,  cyc 1
+	setle r12b                             #cmple p=%55, 2=%60,  cyc 1
+	movzx r12d, r12b                       #cmple p=%55, 2=%60,  cyc 1
+	#victim %61, r12d                      #victim check_dead_vr >=%61, =%-1,  cyc -1
+	#victim %60, r10d                      #victim check_dead_vr 2=%60, =%-1,  cyc -1
+	#victim %55, r11d                      #victim p=%55, =%-1,  cyc -1
+	mov dword ptr [rbp - 224], r11d        #spill p=%55, =%-1,  cyc -1
+	#victim %35, r13d                      #victim carry=%35, =%-1,  cyc -1
+	#victim %17, r15d                      #victim c0=%17, =%-1,  cyc -1
+	mov dword ptr [rbp - 72], r15d         #spill c0=%17, =%-1,  cyc -1
+	jle .L_b38_if20_else 
+
+
+.L_b22_if20_then:
+	mov r10d, 2                            #li 2=%62, =%-1,  cyc 0
+	mov r12d, dword ptr [rbp - 80]         #ld c1=%19, =%-1,  cyc -1
+	mov r11d, r12d                         #add +=%67, c1=%19,  cyc 0
+	mov r13d, dword ptr [rbp - 112]        #ld d1=%27, =%-1,  cyc -1
+	add r11d, r13d                         #add +=%67, d1=%27,  cyc 1
+	mov r14d, 2                            #li 2=%66, =%-1,  cyc 1
+	mov r15d, r11d                         #div /=%68, +=%67,  cyc 2
+	#victim %67, r11d                      #victim check_dead_vr +=%67, =%-1,  cyc -1
+	#victim %62, r10d                      #victim 2=%62, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 16]         #ld a1=%3, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%63, a1=%3,  cyc 2
+	mov eax, r15d 
+	cdq 
+	idiv r14d 
+	mov r15d, eax                          #div /=%68, 2=%66,  cyc 3
+	#victim %66, r14d                      #victim check_dead_vr 2=%66, =%-1,  cyc -1
+	mov r14d, dword ptr [rbp - 48]         #ld b1=%11, =%-1,  cyc -1
+	add r11d, r14d                         #add +=%63, b1=%11,  cyc 3
+	#victim %19, r12d                      #victim c1=%19, =%-1,  cyc -1
+	mov r12d, 5                            #li 5=%70, =%-1,  cyc 3
+	#victim %27, r13d                      #victim d1=%27, =%-1,  cyc -1
+	mov r13d, r11d                         #div /=%64, +=%63,  cyc 4
+	#victim %63, r11d                      #victim check_dead_vr +=%63, =%-1,  cyc -1
+	mov r11d, r12d                         #assign q=%71, 5=%70,  cyc 4
+	#victim %70, r12d                      #victim check_dead_vr 5=%70, =%-1,  cyc -1
+	mov r12d, 2                            #li 2=%62, =%-1,  cyc -1
+	mov eax, r13d 
+	cdq 
+	idiv r12d 
+	mov r13d, eax                          #div /=%64, 2=%62,  cyc 13
+	#victim %62, r12d                      #victim check_dead_vr 2=%62, =%-1,  cyc -1
+	mov r12d, r15d                         #add +=%69, /=%68,  cyc 13
+	#victim %68, r15d                      #victim check_dead_vr /=%68, =%-1,  cyc -1
+	mov r15d, r13d                         #add +=%65, /=%64,  cyc 23
+	#victim %64, r13d                      #victim check_dead_vr /=%64, =%-1,  cyc -1
+	mov r13d, dword ptr [rbp - 224]        #ld p=%55, =%-1,  cyc -1
+	add r15d, r13d                         #add +=%65, p=%55,  cyc 24
+	mov r10d, r15d                         #assign a1=%3, +=%65,  cyc 25
+	#victim %65, r15d                      #victim check_dead_vr +=%65, =%-1,  cyc -1
+	add r12d, r10d                         #add +=%69, a1=%3,  cyc 26
+	mov r15d, r12d                         #assign c1=%19, +=%69,  cyc 27
+	#victim %69, r12d                      #victim check_dead_vr +=%69, =%-1,  cyc -1
+
+
+.L_b23_while:
+
+
+.L_b24_while23_cond:
+	mov r12d, 1                            #li 1=%73, =%-1,  cyc 0
+	#victim %3, r10d                       #victim a1=%3, =%-1,  cyc -1
+	mov dword ptr [rbp - 16], r10d         #spill a1=%3, =%-1,  cyc -1
+	mov r10d, 0                            #li 0=%72, =%-1,  cyc 0
+	#victim %55, r13d                      #victim p=%55, =%-1,  cyc -1
+	mov r13d, r11d                         #sub -=%74, q=%71,  cyc 1
+	sub r13d, r12d                         #sub -=%74, 1=%73,  cyc 2
+	#victim %73, r12d                      #victim check_dead_vr 1=%73, =%-1,  cyc -1
+	mov r11d, r13d                         #assign q=%71, -=%74,  cyc 3
+	#victim %74, r13d                      #victim check_dead_vr -=%74, =%-1,  cyc -1
+	cmp r11d, r10d                         #cmple q=%71, 0=%72,  cyc 4
+	setle r12b                             #cmple q=%71, 0=%72,  cyc 4
+	movzx r12d, r12b                       #cmple q=%71, 0=%72,  cyc 4
+	#victim %75, r12d                      #victim check_dead_vr >=%75, =%-1,  cyc -1
+	#victim %72, r10d                      #victim check_dead_vr 0=%72, =%-1,  cyc -1
+	jle .L_b35_while23_tail 
+
+
+.L_b25_while23_body:
+
+
+.L_b27_if26_cond:
+	mov r10d, 2                            #li 2=%76, =%-1,  cyc 0
+	cmp r11d, r10d                         #cmple q=%71, 2=%76,  cyc 1
+	setle r12b                             #cmple q=%71, 2=%76,  cyc 1
+	movzx r12d, r12b                       #cmple q=%71, 2=%76,  cyc 1
+	#victim %77, r12d                      #victim check_dead_vr >=%77, =%-1,  cyc -1
+	#victim %76, r10d                      #victim check_dead_vr 2=%76, =%-1,  cyc -1
+	#victim %71, r11d                      #victim q=%71, =%-1,  cyc -1
+	mov dword ptr [rbp - 288], r11d        #spill q=%71, =%-1,  cyc -1
+	#victim %11, r14d                      #victim b1=%11, =%-1,  cyc -1
+	#victim %19, r15d                      #victim c1=%19, =%-1,  cyc -1
+	mov dword ptr [rbp - 80], r15d         #spill c1=%19, =%-1,  cyc -1
+	jle .L_b30_if26_else 
+
+
+.L_b28_if26_then:
+	mov r11d, dword ptr [rbp - 56]         #ld b2=%13, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%79, b2=%13,  cyc 0
+	mov r13d, dword ptr [rbp - 120]        #ld d2=%29, =%-1,  cyc -1
+	mov r12d, r13d                         #add +=%83, d2=%29,  cyc 0
+	mov r14d, dword ptr [rbp - 88]         #ld c2=%21, =%-1,  cyc -1
+	add r10d, r14d                         #add +=%79, c2=%21,  cyc 1
+	mov r15d, dword ptr [rbp - 24]         #ld a2=%5, =%-1,  cyc -1
+	add r12d, r15d                         #add +=%83, a2=%5,  cyc 1
+	#victim %13, r11d                      #victim b2=%13, =%-1,  cyc -1
+	mov r11d, r10d                         #div /=%80, +=%79,  cyc 2
+	#victim %79, r10d                      #victim check_dead_vr +=%79, =%-1,  cyc -1
+	mov r10d, r12d                         #div /=%84, +=%83,  cyc 2
+	#victim %83, r12d                      #victim check_dead_vr +=%83, =%-1,  cyc -1
+	mov r12d, 2                            #li 2=%78, =%-1,  cyc 3
+	#victim %29, r13d                      #victim d2=%29, =%-1,  cyc -1
+	mov r13d, 2                            #li 2=%82, =%-1,  cyc 3
+	mov eax, r11d 
+	cdq 
+	idiv r12d 
+	mov r11d, eax                          #div /=%80, 2=%78,  cyc 4
+	#victim %78, r12d                      #victim check_dead_vr 2=%78, =%-1,  cyc -1
+	mov eax, r10d 
+	cdq 
+	idiv r13d 
+	mov r10d, eax                          #div /=%84, 2=%82,  cyc 14
+	#victim %82, r13d                      #victim check_dead_vr 2=%82, =%-1,  cyc -1
+	mov r12d, r11d                         #add +=%81, /=%80,  cyc 14
+	#victim %80, r11d                      #victim check_dead_vr /=%80, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 288]        #ld q=%71, =%-1,  cyc -1
+	add r12d, r11d                         #add +=%81, q=%71,  cyc 15
+	mov r13d, r12d                         #assign b2=%13, +=%81,  cyc 16
+	#victim %81, r12d                      #victim check_dead_vr +=%81, =%-1,  cyc -1
+	mov r12d, r10d                         #add +=%85, /=%84,  cyc 24
+	#victim %84, r10d                      #victim check_dead_vr /=%84, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 224]        #ld p=%55, =%-1,  cyc -1
+	add r12d, r10d                         #add +=%85, p=%55,  cyc 25
+	#victim %21, r14d                      #victim c2=%21, =%-1,  cyc -1
+	mov r14d, r12d                         #assign d2=%29, +=%85,  cyc 26
+	#victim %85, r12d                      #victim check_dead_vr +=%85, =%-1,  cyc -1
 
 
 .L_b29:
-	mov r10d, r11d                         #add +=%116, a0=%1,  idx 194, cyc 0
-	mov r11d, dword ptr [rbp - 16]         #ld a1=%3, =%-1,  idx 760, cyc -1
-	add r10d, r11d                         #add +=%116, a1=%3,  idx 195, cyc 1
-	mov r11d, r10d                         #add +=%117, +=%116,  idx 196, cyc 2
-	mov r10d, dword ptr [rbp - 24]         #ld a2=%5, =%-1,  idx 761, cyc -1
-	add r11d, r10d                         #add +=%117, a2=%5,  idx 197, cyc 3
-	mov r10d, r11d                         #add +=%118, +=%117,  idx 198, cyc 4
-	mov r11d, dword ptr [rbp - 32]         #ld a3=%7, =%-1,  idx 762, cyc -1
-	add r10d, r11d                         #add +=%118, a3=%7,  idx 199, cyc 5
-	mov r11d, r10d                         #add +=%119, +=%118,  idx 200, cyc 6
-	add r11d, r14d                         #add +=%119, b0=%9,  idx 201, cyc 7
-	mov r10d, r11d                         #add +=%120, +=%119,  idx 202, cyc 8
-	mov r11d, dword ptr [rbp - 48]         #ld b1=%11, =%-1,  idx 763, cyc -1
-	add r10d, r11d                         #add +=%120, b1=%11,  idx 203, cyc 9
-	mov r11d, r10d                         #add +=%121, +=%120,  idx 204, cyc 10
-	mov r10d, dword ptr [rbp - 56]         #ld b2=%13, =%-1,  idx 764, cyc -1
-	add r11d, r10d                         #add +=%121, b2=%13,  idx 205, cyc 11
-	mov r10d, r11d                         #add +=%122, +=%121,  idx 206, cyc 12
-	mov r11d, dword ptr [rbp - 64]         #ld b3=%15, =%-1,  idx 765, cyc -1
-	add r10d, r11d                         #add +=%122, b3=%15,  idx 207, cyc 13
-	mov r11d, r10d                         #add +=%123, +=%122,  idx 208, cyc 14
-	mov r10d, dword ptr [rbp - 72]         #ld c0=%17, =%-1,  idx 766, cyc -1
-	add r11d, r10d                         #add +=%123, c0=%17,  idx 209, cyc 15
-	mov r10d, r11d                         #add +=%124, +=%123,  idx 210, cyc 16
-	mov r11d, dword ptr [rbp - 80]         #ld c1=%19, =%-1,  idx 767, cyc -1
-	add r10d, r11d                         #add +=%124, c1=%19,  idx 211, cyc 17
-	mov r11d, r10d                         #add +=%125, +=%124,  idx 212, cyc 18
-	mov r10d, dword ptr [rbp - 88]         #ld c2=%21, =%-1,  idx 768, cyc -1
-	add r11d, r10d                         #add +=%125, c2=%21,  idx 213, cyc 19
-	mov r10d, r11d                         #add +=%126, +=%125,  idx 214, cyc 20
-	mov r11d, dword ptr [rbp - 96]         #ld c3=%23, =%-1,  idx 769, cyc -1
-	add r10d, r11d                         #add +=%126, c3=%23,  idx 215, cyc 21
-	mov r11d, r10d                         #add +=%127, +=%126,  idx 216, cyc 22
-	mov r10d, dword ptr [rbp - 104]        #ld d0=%25, =%-1,  idx 770, cyc -1
-	add r11d, r10d                         #add +=%127, d0=%25,  idx 217, cyc 23
-	mov r10d, r11d                         #add +=%128, +=%127,  idx 218, cyc 24
-	mov r11d, dword ptr [rbp - 112]        #ld d1=%27, =%-1,  idx 771, cyc -1
-	add r10d, r11d                         #add +=%128, d1=%27,  idx 219, cyc 25
-	mov r11d, r10d                         #add +=%129, +=%128,  idx 220, cyc 26
-	mov r10d, dword ptr [rbp - 120]        #ld d2=%29, =%-1,  idx 772, cyc -1
-	add r11d, r10d                         #add +=%129, d2=%29,  idx 221, cyc 27
-	mov r10d, r11d                         #add +=%130, +=%129,  idx 222, cyc 28
-	mov r11d, dword ptr [rbp - 128]        #ld d3=%31, =%-1,  idx 773, cyc -1
-	add r10d, r11d                         #add +=%130, d3=%31,  idx 223, cyc 29
-	mov r11d, r10d                         #add +=%131, +=%130,  idx 224, cyc 30
-	add r11d, r12d                         #add +=%131, i0=%33,  idx 225, cyc 31
-	mov r10d, r11d                         #add +=%132, +=%131,  idx 226, cyc 32
-	mov r11d, dword ptr [rbp - 144]        #ld i1=%35, =%-1,  idx 774, cyc -1
-	add r10d, r11d                         #add +=%132, i1=%35,  idx 227, cyc 33
-	mov r11d, r10d                         #add +=%133, +=%132,  idx 228, cyc 34
-	mov r10d, dword ptr [rbp - 152]        #ld i2=%37, =%-1,  idx 775, cyc -1
-	add r11d, r10d                         #add +=%133, i2=%37,  idx 229, cyc 35
-	mov r10d, r11d                         #add +=%134, +=%133,  idx 230, cyc 36
-	mov r11d, dword ptr [rbp - 160]        #ld i3=%39, =%-1,  idx 776, cyc -1
-	add r10d, r11d                         #add +=%134, i3=%39,  idx 231, cyc 37
+	#victim %55, r10d                      #victim p=%55, =%-1,  cyc -1
+	#victim %71, r11d                      #victim q=%71, =%-1,  cyc -1
+	#victim %13, r13d                      #victim b2=%13, =%-1,  cyc -1
+	mov dword ptr [rbp - 56], r13d         #spill b2=%13, =%-1,  cyc -1
+	#victim %29, r14d                      #victim d2=%29, =%-1,  cyc -1
+	mov dword ptr [rbp - 120], r14d        #spill d2=%29, =%-1,  cyc -1
+	#victim %5, r15d                       #victim a2=%5, =%-1,  cyc -1
+	jmp .L_b32_if26_tail 
+
+
+.L_b30_if26_else:
+	mov r11d, dword ptr [rbp - 88]         #ld c2=%21, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%87, c2=%21,  cyc 0
+	mov r13d, dword ptr [rbp - 48]         #ld b1=%11, =%-1,  cyc -1
+	mov r12d, r13d                         #add +=%91, b1=%11,  cyc 0
+	mov r14d, dword ptr [rbp - 32]         #ld a3=%7, =%-1,  cyc -1
+	add r10d, r14d                         #add +=%87, a3=%7,  cyc 1
+	mov r15d, dword ptr [rbp - 128]        #ld d3=%31, =%-1,  cyc -1
+	add r12d, r15d                         #add +=%91, d3=%31,  cyc 1
+	#victim %21, r11d                      #victim c2=%21, =%-1,  cyc -1
+	mov r11d, r10d                         #div /=%88, +=%87,  cyc 2
+	#victim %87, r10d                      #victim check_dead_vr +=%87, =%-1,  cyc -1
+	mov r10d, r12d                         #div /=%92, +=%91,  cyc 2
+	#victim %91, r12d                      #victim check_dead_vr +=%91, =%-1,  cyc -1
+	mov r12d, 2                            #li 2=%86, =%-1,  cyc 3
+	#victim %11, r13d                      #victim b1=%11, =%-1,  cyc -1
+	mov r13d, 2                            #li 2=%90, =%-1,  cyc 3
+	mov eax, r11d 
+	cdq 
+	idiv r12d 
+	mov r11d, eax                          #div /=%88, 2=%86,  cyc 4
+	#victim %86, r12d                      #victim check_dead_vr 2=%86, =%-1,  cyc -1
+	mov eax, r10d 
+	cdq 
+	idiv r13d 
+	mov r10d, eax                          #div /=%92, 2=%90,  cyc 14
+	#victim %90, r13d                      #victim check_dead_vr 2=%90, =%-1,  cyc -1
+	mov r12d, r11d                         #add +=%89, /=%88,  cyc 14
+	#victim %88, r11d                      #victim check_dead_vr /=%88, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 288]        #ld q=%71, =%-1,  cyc -1
+	add r12d, r11d                         #add +=%89, q=%71,  cyc 15
+	mov r13d, r12d                         #assign c2=%21, +=%89,  cyc 16
+	#victim %89, r12d                      #victim check_dead_vr +=%89, =%-1,  cyc -1
+	mov r12d, r10d                         #add +=%93, /=%92,  cyc 24
+	#victim %92, r10d                      #victim check_dead_vr /=%92, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 224]        #ld p=%55, =%-1,  cyc -1
+	add r12d, r10d                         #add +=%93, p=%55,  cyc 25
+	#victim %7, r14d                       #victim a3=%7, =%-1,  cyc -1
+	mov r14d, r12d                         #assign b1=%11, +=%93,  cyc 26
+	#victim %93, r12d                      #victim check_dead_vr +=%93, =%-1,  cyc -1
+
+
+.L_b31:
+	#victim %55, r10d                      #victim p=%55, =%-1,  cyc -1
+	#victim %71, r11d                      #victim q=%71, =%-1,  cyc -1
+	#victim %21, r13d                      #victim c2=%21, =%-1,  cyc -1
+	mov dword ptr [rbp - 88], r13d         #spill c2=%21, =%-1,  cyc -1
+	#victim %11, r14d                      #victim b1=%11, =%-1,  cyc -1
+	mov dword ptr [rbp - 48], r14d         #spill b1=%11, =%-1,  cyc -1
+	#victim %31, r15d                      #victim d3=%31, =%-1,  cyc -1
+	jmp .L_b32_if26_tail 
+
+
+.L_b32_if26_tail:
+
+
+.L_b34_while23_body_tail:
+	mov r10d, dword ptr [rbp - 16]         #while 4, ld  a1=%3, =%-1,  cyc -1
+	mov r14d, dword ptr [rbp - 48]         #while 4, ld  b1=%11, =%-1,  cyc -1
+	mov r15d, dword ptr [rbp - 80]         #while 4, ld  c1=%19, =%-1,  cyc -1
+	mov r13d, dword ptr [rbp - 224]        #while 4, ld  p=%55, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 288]        #while 4, ld  q=%71, =%-1,  cyc -1
+	jmp .L_b24_while23_cond 
+
+
+.L_b35_while23_tail:
+	#victim %71, r11d                      #victim check_dead_vr q=%71, =%-1,  cyc -1
+
+
+.L_b37:
+	#victim %11, r14d                      #victim b1=%11, =%-1,  cyc -1
+	#victim %19, r15d                      #victim c1=%19, =%-1,  cyc -1
+	mov dword ptr [rbp - 80], r15d         #spill c1=%19, =%-1,  cyc -1
+	jmp .L_b49_if20_tail 
+
+
+.L_b38_if20_else:
+	mov r11d, dword ptr [rbp - 32]         #ld a3=%7, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%95, a3=%7,  cyc 0
+	mov r13d, dword ptr [rbp - 64]         #ld b3=%15, =%-1,  cyc -1
+	mov r12d, r13d                         #add +=%99, b3=%15,  cyc 0
+	mov r14d, dword ptr [rbp - 96]         #ld c3=%23, =%-1,  cyc -1
+	add r10d, r14d                         #add +=%95, c3=%23,  cyc 1
+	mov r15d, dword ptr [rbp - 128]        #ld d3=%31, =%-1,  cyc -1
+	add r12d, r15d                         #add +=%99, d3=%31,  cyc 1
+	#victim %7, r11d                       #victim a3=%7, =%-1,  cyc -1
+	mov r11d, r10d                         #div /=%96, +=%95,  cyc 2
+	#victim %95, r10d                      #victim check_dead_vr +=%95, =%-1,  cyc -1
+	mov r10d, r12d                         #div /=%100, +=%99,  cyc 2
+	#victim %99, r12d                      #victim check_dead_vr +=%99, =%-1,  cyc -1
+	mov r12d, 2                            #li 2=%94, =%-1,  cyc 3
+	#victim %15, r13d                      #victim b3=%15, =%-1,  cyc -1
+	mov r13d, 2                            #li 2=%98, =%-1,  cyc 3
+	mov eax, r11d 
+	cdq 
+	idiv r12d 
+	mov r11d, eax                          #div /=%96, 2=%94,  cyc 4
+	#victim %94, r12d                      #victim check_dead_vr 2=%94, =%-1,  cyc -1
+	mov eax, r10d 
+	cdq 
+	idiv r13d 
+	mov r10d, eax                          #div /=%100, 2=%98,  cyc 14
+	#victim %98, r13d                      #victim check_dead_vr 2=%98, =%-1,  cyc -1
+	mov r12d, r11d                         #add +=%97, /=%96,  cyc 14
+	#victim %96, r11d                      #victim check_dead_vr /=%96, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 224]        #ld p=%55, =%-1,  cyc -1
+	add r12d, r11d                         #add +=%97, p=%55,  cyc 15
+	mov r13d, r12d                         #assign a3=%7, +=%97,  cyc 16
+	#victim %97, r12d                      #victim check_dead_vr +=%97, =%-1,  cyc -1
+	mov r12d, r10d                         #add +=%101, /=%100,  cyc 24
+	#victim %100, r10d                     #victim check_dead_vr /=%100, =%-1,  cyc -1
+	add r12d, r11d                         #add +=%101, p=%55,  cyc 25
+	mov r10d, r12d                         #assign b3=%15, +=%101,  cyc 26
+	#victim %101, r12d                     #victim check_dead_vr +=%101, =%-1,  cyc -1
+
+
+.L_b40_if39_cond:
+	cmp r13d, r10d                         #cmple a3=%7, b3=%15,  cyc 0
+	setle r12b                             #cmple a3=%7, b3=%15,  cyc 0
+	movzx r12d, r12b                       #cmple a3=%7, b3=%15,  cyc 0
+	#victim %102, r12d                     #victim check_dead_vr >=%102, =%-1,  cyc -1
+	#victim %15, r10d                      #victim b3=%15, =%-1,  cyc -1
+	mov dword ptr [rbp - 64], r10d         #spill b3=%15, =%-1,  cyc -1
+	#victim %55, r11d                      #victim p=%55, =%-1,  cyc -1
+	#victim %7, r13d                       #victim a3=%7, =%-1,  cyc -1
+	mov dword ptr [rbp - 32], r13d         #spill a3=%7, =%-1,  cyc -1
+	#victim %23, r14d                      #victim c3=%23, =%-1,  cyc -1
+	#victim %31, r15d                      #victim d3=%31, =%-1,  cyc -1
+	jle .L_b43_if39_else 
+
+
+.L_b41_if39_then:
+	mov r11d, dword ptr [rbp - 96]         #ld c3=%23, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%104, c3=%23,  cyc 0
+	mov r13d, dword ptr [rbp - 128]        #ld d3=%31, =%-1,  cyc -1
+	mov r12d, r13d                         #add +=%108, d3=%31,  cyc 0
+	mov r14d, dword ptr [rbp - 32]         #ld a3=%7, =%-1,  cyc -1
+	add r10d, r14d                         #add +=%104, a3=%7,  cyc 1
+	mov r15d, dword ptr [rbp - 64]         #ld b3=%15, =%-1,  cyc -1
+	add r12d, r15d                         #add +=%108, b3=%15,  cyc 1
+	#victim %23, r11d                      #victim c3=%23, =%-1,  cyc -1
+	mov r11d, r10d                         #div /=%105, +=%104,  cyc 2
+	#victim %104, r10d                     #victim check_dead_vr +=%104, =%-1,  cyc -1
+	mov r10d, r12d                         #div /=%109, +=%108,  cyc 2
+	#victim %108, r12d                     #victim check_dead_vr +=%108, =%-1,  cyc -1
+	mov r12d, 2                            #li 2=%103, =%-1,  cyc 3
+	#victim %31, r13d                      #victim d3=%31, =%-1,  cyc -1
+	mov r13d, 2                            #li 2=%107, =%-1,  cyc 3
+	mov eax, r11d 
+	cdq 
+	idiv r12d 
+	mov r11d, eax                          #div /=%105, 2=%103,  cyc 4
+	#victim %103, r12d                     #victim check_dead_vr 2=%103, =%-1,  cyc -1
+	mov eax, r10d 
+	cdq 
+	idiv r13d 
+	mov r10d, eax                          #div /=%109, 2=%107,  cyc 14
+	#victim %107, r13d                     #victim check_dead_vr 2=%107, =%-1,  cyc -1
+	mov r12d, r11d                         #add +=%106, /=%105,  cyc 14
+	#victim %105, r11d                     #victim check_dead_vr /=%105, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 144]        #ld carry=%35, =%-1,  cyc -1
+	add r12d, r11d                         #add +=%106, carry=%35,  cyc 15
+	mov r13d, r12d                         #assign c3=%23, +=%106,  cyc 16
+	#victim %106, r12d                     #victim check_dead_vr +=%106, =%-1,  cyc -1
+	mov r12d, r10d                         #add +=%110, /=%109,  cyc 24
+	#victim %109, r10d                     #victim check_dead_vr /=%109, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 224]        #ld p=%55, =%-1,  cyc -1
+	add r12d, r10d                         #add +=%110, p=%55,  cyc 25
+	#victim %7, r14d                       #victim a3=%7, =%-1,  cyc -1
+	mov r14d, r12d                         #assign d3=%31, +=%110,  cyc 26
+	#victim %110, r12d                     #victim check_dead_vr +=%110, =%-1,  cyc -1
+
+
+.L_b42:
+	#victim %55, r10d                      #victim p=%55, =%-1,  cyc -1
+	#victim %35, r11d                      #victim carry=%35, =%-1,  cyc -1
+	#victim %23, r13d                      #victim c3=%23, =%-1,  cyc -1
+	mov dword ptr [rbp - 96], r13d         #spill c3=%23, =%-1,  cyc -1
+	#victim %31, r14d                      #victim d3=%31, =%-1,  cyc -1
+	mov dword ptr [rbp - 128], r14d        #spill d3=%31, =%-1,  cyc -1
+	#victim %15, r15d                      #victim b3=%15, =%-1,  cyc -1
+	jmp .L_b45_if39_tail 
+
+
+.L_b43_if39_else:
+	mov r11d, dword ptr [rbp - 88]         #ld c2=%21, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%112, c2=%21,  cyc 0
+	mov r13d, dword ptr [rbp - 120]        #ld d2=%29, =%-1,  cyc -1
+	mov r12d, r13d                         #add +=%116, d2=%29,  cyc 0
+	mov r14d, dword ptr [rbp - 64]         #ld b3=%15, =%-1,  cyc -1
+	add r10d, r14d                         #add +=%112, b3=%15,  cyc 1
+	mov r15d, dword ptr [rbp - 32]         #ld a3=%7, =%-1,  cyc -1
+	add r12d, r15d                         #add +=%116, a3=%7,  cyc 1
+	#victim %21, r11d                      #victim c2=%21, =%-1,  cyc -1
+	mov r11d, r10d                         #div /=%113, +=%112,  cyc 2
+	#victim %112, r10d                     #victim check_dead_vr +=%112, =%-1,  cyc -1
+	mov r10d, r12d                         #div /=%117, +=%116,  cyc 2
+	#victim %116, r12d                     #victim check_dead_vr +=%116, =%-1,  cyc -1
+	mov r12d, 2                            #li 2=%111, =%-1,  cyc 3
+	#victim %29, r13d                      #victim d2=%29, =%-1,  cyc -1
+	mov r13d, 2                            #li 2=%115, =%-1,  cyc 3
+	mov eax, r11d 
+	cdq 
+	idiv r12d 
+	mov r11d, eax                          #div /=%113, 2=%111,  cyc 4
+	#victim %111, r12d                     #victim check_dead_vr 2=%111, =%-1,  cyc -1
+	mov eax, r10d 
+	cdq 
+	idiv r13d 
+	mov r10d, eax                          #div /=%117, 2=%115,  cyc 14
+	#victim %115, r13d                     #victim check_dead_vr 2=%115, =%-1,  cyc -1
+	mov r12d, r11d                         #add +=%114, /=%113,  cyc 14
+	#victim %113, r11d                     #victim check_dead_vr /=%113, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 144]        #ld carry=%35, =%-1,  cyc -1
+	add r12d, r11d                         #add +=%114, carry=%35,  cyc 15
+	mov r13d, r12d                         #assign c2=%21, +=%114,  cyc 16
+	#victim %114, r12d                     #victim check_dead_vr +=%114, =%-1,  cyc -1
+	mov r12d, r10d                         #add +=%118, /=%117,  cyc 24
+	#victim %117, r10d                     #victim check_dead_vr /=%117, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 224]        #ld p=%55, =%-1,  cyc -1
+	add r12d, r10d                         #add +=%118, p=%55,  cyc 25
+	#victim %15, r14d                      #victim b3=%15, =%-1,  cyc -1
+	mov r14d, r12d                         #assign d2=%29, +=%118,  cyc 26
+	#victim %118, r12d                     #victim check_dead_vr +=%118, =%-1,  cyc -1
+
+
+.L_b44:
+	#victim %55, r10d                      #victim p=%55, =%-1,  cyc -1
+	#victim %35, r11d                      #victim carry=%35, =%-1,  cyc -1
+	#victim %21, r13d                      #victim c2=%21, =%-1,  cyc -1
+	mov dword ptr [rbp - 88], r13d         #spill c2=%21, =%-1,  cyc -1
+	#victim %29, r14d                      #victim d2=%29, =%-1,  cyc -1
+	mov dword ptr [rbp - 120], r14d        #spill d2=%29, =%-1,  cyc -1
+	#victim %7, r15d                       #victim a3=%7, =%-1,  cyc -1
+	jmp .L_b45_if39_tail 
+
+
+.L_b45_if39_tail:
+
+
+.L_b47:
+	jmp .L_b49_if20_tail 
+
+
+.L_b49_if20_tail:
+
+
+.L_b50:
+	mov r10d, 1                            #li 1=%119, =%-1,  cyc 0
+	mov r12d, dword ptr [rbp - 144]        #ld carry=%35, =%-1,  cyc -1
+	mov r11d, r12d                         #add +=%120, carry=%35,  cyc 0
+	add r11d, r10d                         #add +=%120, 1=%119,  cyc 1
+	#victim %119, r10d                     #victim check_dead_vr 1=%119, =%-1,  cyc -1
+	mov r12d, r11d                         #assign carry=%35, +=%120,  cyc 2
+	#victim %120, r11d                     #victim check_dead_vr +=%120, =%-1,  cyc -1
+
+
+.L_b51_while17_body_tail:
+	mov r10d, dword ptr [rbp - 8]          #while 4, ld  a0=%1, =%-1,  cyc -1
+	mov r15d, dword ptr [rbp - 72]         #while 4, ld  c0=%17, =%-1,  cyc -1
+	mov r11d, r12d                         #while 3, assign skip=%33, move %s35 =%-1, =%-1,  cyc -1
+	mov r12d, dword ptr [rbp - 136]        #while 4, ld  skip=%33, =%-1,  cyc -1
+	mov r13d, r11d                         #while 2, assign carry=%35 =%-1, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 224]        #while 4, ld  p=%55, =%-1,  cyc -1
+	mov dword ptr [rbp - 144], r13d        #while spill st dirty  carry=%35, =%-1,  cyc -1
+	jmp .L_b18_while17_cond 
+
+
+.L_b53_while17_tail:
+
+
+.L_b54:
+	mov r10d, 5                            #li 5=%121, =%-1,  cyc 0
+	mov r12d, r10d                         #assign s=%122, 5=%121,  cyc 1
+	#victim %121, r10d                     #victim check_dead_vr 5=%121, =%-1,  cyc -1
+
+
+.L_b55_while:
+
+
+.L_b56_while55_cond:
+	mov r10d, 1                            #li 1=%124, =%-1,  cyc 0
+	mov r14d, 0                            #li 0=%123, =%-1,  cyc 0
+	#victim %55, r11d                      #victim p=%55, =%-1,  cyc -1
+	mov dword ptr [rbp - 224], r11d        #spill p=%55, =%-1,  cyc -1
+	mov r11d, r12d                         #sub -=%125, s=%122,  cyc 1
+	sub r11d, r10d                         #sub -=%125, 1=%124,  cyc 2
+	#victim %124, r10d                     #victim check_dead_vr 1=%124, =%-1,  cyc -1
+	mov r12d, r11d                         #assign s=%122, -=%125,  cyc 3
+	#victim %125, r11d                     #victim check_dead_vr -=%125, =%-1,  cyc -1
+	cmp r12d, r14d                         #cmple s=%122, 0=%123,  cyc 4
+	setle r10b                             #cmple s=%122, 0=%123,  cyc 4
+	movzx r10d, r10b                       #cmple s=%122, 0=%123,  cyc 4
+	#victim %126, r10d                     #victim check_dead_vr >=%126, =%-1,  cyc -1
+	#victim %123, r14d                     #victim check_dead_vr 0=%123, =%-1,  cyc -1
+	jle .L_b68_while55_tail 
+
+
+.L_b57_while55_body:
+
+
+.L_b59_if58_cond:
+	mov r10d, 2                            #li 2=%127, =%-1,  cyc 0
+	cmp r12d, r10d                         #cmple s=%122, 2=%127,  cyc 1
+	setle r11b                             #cmple s=%122, 2=%127,  cyc 1
+	movzx r11d, r11b                       #cmple s=%122, 2=%127,  cyc 1
+	#victim %128, r11d                     #victim check_dead_vr >=%128, =%-1,  cyc -1
+	#victim %127, r10d                     #victim check_dead_vr 2=%127, =%-1,  cyc -1
+	#victim %122, r12d                     #victim s=%122, =%-1,  cyc -1
+	mov dword ptr [rbp - 492], r12d        #spill s=%122, =%-1,  cyc -1
+	#victim %35, r13d                      #victim carry=%35, =%-1,  cyc -1
+	#victim %17, r15d                      #victim c0=%17, =%-1,  cyc -1
+	mov dword ptr [rbp - 72], r15d         #spill c0=%17, =%-1,  cyc -1
+	jle .L_b62_if58_else 
+
+
+.L_b60_if58_then:
+	mov r11d, dword ptr [rbp - 104]        #ld d0=%25, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%130, d0=%25,  cyc 0
+	mov r13d, dword ptr [rbp - 8]          #ld a0=%1, =%-1,  cyc -1
+	mov r12d, r13d                         #add +=%134, a0=%1,  cyc 0
+	mov r14d, dword ptr [rbp - 96]         #ld c3=%23, =%-1,  cyc -1
+	add r10d, r14d                         #add +=%130, c3=%23,  cyc 1
+	mov r15d, dword ptr [rbp - 64]         #ld b3=%15, =%-1,  cyc -1
+	add r12d, r15d                         #add +=%134, b3=%15,  cyc 1
+	#victim %25, r11d                      #victim d0=%25, =%-1,  cyc -1
+	mov r11d, r10d                         #div /=%131, +=%130,  cyc 2
+	#victim %130, r10d                     #victim check_dead_vr +=%130, =%-1,  cyc -1
+	mov r10d, r12d                         #div /=%135, +=%134,  cyc 2
+	#victim %134, r12d                     #victim check_dead_vr +=%134, =%-1,  cyc -1
+	mov r12d, 2                            #li 2=%129, =%-1,  cyc 3
+	#victim %1, r13d                       #victim a0=%1, =%-1,  cyc -1
+	mov r13d, 2                            #li 2=%133, =%-1,  cyc 3
+	mov eax, r11d 
+	cdq 
+	idiv r12d 
+	mov r11d, eax                          #div /=%131, 2=%129,  cyc 4
+	#victim %129, r12d                     #victim check_dead_vr 2=%129, =%-1,  cyc -1
+	mov eax, r10d 
+	cdq 
+	idiv r13d 
+	mov r10d, eax                          #div /=%135, 2=%133,  cyc 14
+	#victim %133, r13d                     #victim check_dead_vr 2=%133, =%-1,  cyc -1
+	mov r12d, r11d                         #add +=%132, /=%131,  cyc 14
+	#victim %131, r11d                     #victim check_dead_vr /=%131, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 492]        #ld s=%122, =%-1,  cyc -1
+	add r12d, r11d                         #add +=%132, s=%122,  cyc 15
+	mov r13d, r12d                         #assign d0=%25, +=%132,  cyc 16
+	#victim %132, r12d                     #victim check_dead_vr +=%132, =%-1,  cyc -1
+	mov r12d, r10d                         #add +=%136, /=%135,  cyc 24
+	#victim %135, r10d                     #victim check_dead_vr /=%135, =%-1,  cyc -1
+	add r12d, r11d                         #add +=%136, s=%122,  cyc 25
+	mov r10d, r12d                         #assign a0=%1, +=%136,  cyc 26
+	#victim %136, r12d                     #victim check_dead_vr +=%136, =%-1,  cyc -1
+
+
+.L_b61:
+	#victim %1, r10d                       #victim a0=%1, =%-1,  cyc -1
+	mov dword ptr [rbp - 8], r10d          #spill a0=%1, =%-1,  cyc -1
+	#victim %122, r11d                     #victim s=%122, =%-1,  cyc -1
+	#victim %25, r13d                      #victim d0=%25, =%-1,  cyc -1
+	mov dword ptr [rbp - 104], r13d        #spill d0=%25, =%-1,  cyc -1
+	#victim %23, r14d                      #victim c3=%23, =%-1,  cyc -1
+	#victim %15, r15d                      #victim b3=%15, =%-1,  cyc -1
+	jmp .L_b64_if58_tail 
+
+
+.L_b62_if58_else:
+	mov r11d, dword ptr [rbp - 112]        #ld d1=%27, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%138, d1=%27,  cyc 0
+	mov r13d, dword ptr [rbp - 16]         #ld a1=%3, =%-1,  cyc -1
+	mov r12d, r13d                         #add +=%142, a1=%3,  cyc 0
+	mov r14d, dword ptr [rbp - 88]         #ld c2=%21, =%-1,  cyc -1
+	add r10d, r14d                         #add +=%138, c2=%21,  cyc 1
+	mov r15d, dword ptr [rbp - 56]         #ld b2=%13, =%-1,  cyc -1
+	add r12d, r15d                         #add +=%142, b2=%13,  cyc 1
+	#victim %27, r11d                      #victim d1=%27, =%-1,  cyc -1
+	mov r11d, r10d                         #div /=%139, +=%138,  cyc 2
+	#victim %138, r10d                     #victim check_dead_vr +=%138, =%-1,  cyc -1
+	mov r10d, r12d                         #div /=%143, +=%142,  cyc 2
+	#victim %142, r12d                     #victim check_dead_vr +=%142, =%-1,  cyc -1
+	mov r12d, 2                            #li 2=%137, =%-1,  cyc 3
+	#victim %3, r13d                       #victim a1=%3, =%-1,  cyc -1
+	mov r13d, 2                            #li 2=%141, =%-1,  cyc 3
+	mov eax, r11d 
+	cdq 
+	idiv r12d 
+	mov r11d, eax                          #div /=%139, 2=%137,  cyc 4
+	#victim %137, r12d                     #victim check_dead_vr 2=%137, =%-1,  cyc -1
+	mov eax, r10d 
+	cdq 
+	idiv r13d 
+	mov r10d, eax                          #div /=%143, 2=%141,  cyc 14
+	#victim %141, r13d                     #victim check_dead_vr 2=%141, =%-1,  cyc -1
+	mov r12d, r11d                         #add +=%140, /=%139,  cyc 14
+	#victim %139, r11d                     #victim check_dead_vr /=%139, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 492]        #ld s=%122, =%-1,  cyc -1
+	add r12d, r11d                         #add +=%140, s=%122,  cyc 15
+	mov r13d, r12d                         #assign d1=%27, +=%140,  cyc 16
+	#victim %140, r12d                     #victim check_dead_vr +=%140, =%-1,  cyc -1
+	mov r12d, r10d                         #add +=%144, /=%143,  cyc 24
+	#victim %143, r10d                     #victim check_dead_vr /=%143, =%-1,  cyc -1
+	add r12d, r11d                         #add +=%144, s=%122,  cyc 25
+	mov r10d, r12d                         #assign a1=%3, +=%144,  cyc 26
+	#victim %144, r12d                     #victim check_dead_vr +=%144, =%-1,  cyc -1
+
+
+.L_b63:
+	#victim %3, r10d                       #victim a1=%3, =%-1,  cyc -1
+	mov dword ptr [rbp - 16], r10d         #spill a1=%3, =%-1,  cyc -1
+	#victim %122, r11d                     #victim s=%122, =%-1,  cyc -1
+	#victim %27, r13d                      #victim d1=%27, =%-1,  cyc -1
+	mov dword ptr [rbp - 112], r13d        #spill d1=%27, =%-1,  cyc -1
+	#victim %21, r14d                      #victim c2=%21, =%-1,  cyc -1
+	#victim %13, r15d                      #victim b2=%13, =%-1,  cyc -1
+	jmp .L_b64_if58_tail 
+
+
+.L_b64_if58_tail:
+
+
+.L_b66_while55_body_tail:
+	mov r15d, dword ptr [rbp - 72]         #while 4, ld  c0=%17, =%-1,  cyc -1
+	mov r13d, dword ptr [rbp - 144]        #while 4, ld  carry=%35, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 224]        #while 4, ld  p=%55, =%-1,  cyc -1
+	mov r12d, dword ptr [rbp - 492]        #while 4, ld  s=%122, =%-1,  cyc -1
+	jmp .L_b56_while55_cond 
+
+
+.L_b68_while55_tail:
+
+
+.L_b69:
+	mov r11d, dword ptr [rbp - 8]          #ld a0=%1, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%145, a0=%1,  cyc 0
+	#victim %1, r11d                       #victim check_dead_vr a0=%1, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 16]         #ld a1=%3, =%-1,  cyc -1
+	add r10d, r11d                         #add +=%145, a1=%3,  cyc 1
+	#victim %3, r11d                       #victim check_dead_vr a1=%3, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%146, +=%145,  cyc 2
+	#victim %145, r10d                     #victim check_dead_vr +=%145, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 24]         #ld a2=%5, =%-1,  cyc -1
+	add r11d, r10d                         #add +=%146, a2=%5,  cyc 3
+	#victim %5, r10d                       #victim check_dead_vr a2=%5, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%147, +=%146,  cyc 4
+	#victim %146, r11d                     #victim check_dead_vr +=%146, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 32]         #ld a3=%7, =%-1,  cyc -1
+	add r10d, r11d                         #add +=%147, a3=%7,  cyc 5
+	#victim %7, r11d                       #victim check_dead_vr a3=%7, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%148, +=%147,  cyc 6
+	#victim %147, r10d                     #victim check_dead_vr +=%147, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 40]         #ld b0=%9, =%-1,  cyc -1
+	add r11d, r10d                         #add +=%148, b0=%9,  cyc 7
+	#victim %9, r10d                       #victim check_dead_vr b0=%9, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%149, +=%148,  cyc 8
+	#victim %148, r11d                     #victim check_dead_vr +=%148, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 48]         #ld b1=%11, =%-1,  cyc -1
+	add r10d, r11d                         #add +=%149, b1=%11,  cyc 9
+	#victim %11, r11d                      #victim check_dead_vr b1=%11, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%150, +=%149,  cyc 10
+	#victim %149, r10d                     #victim check_dead_vr +=%149, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 56]         #ld b2=%13, =%-1,  cyc -1
+	add r11d, r10d                         #add +=%150, b2=%13,  cyc 11
+	#victim %13, r10d                      #victim check_dead_vr b2=%13, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%151, +=%150,  cyc 12
+	#victim %150, r11d                     #victim check_dead_vr +=%150, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 64]         #ld b3=%15, =%-1,  cyc -1
+	add r10d, r11d                         #add +=%151, b3=%15,  cyc 13
+	#victim %15, r11d                      #victim check_dead_vr b3=%15, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%152, +=%151,  cyc 14
+	#victim %151, r10d                     #victim check_dead_vr +=%151, =%-1,  cyc -1
+	add r11d, r15d                         #add +=%152, c0=%17,  cyc 15
+	#victim %17, r15d                      #victim check_dead_vr c0=%17, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%153, +=%152,  cyc 16
+	#victim %152, r11d                     #victim check_dead_vr +=%152, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 80]         #ld c1=%19, =%-1,  cyc -1
+	add r10d, r11d                         #add +=%153, c1=%19,  cyc 17
+	#victim %19, r11d                      #victim check_dead_vr c1=%19, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%154, +=%153,  cyc 18
+	#victim %153, r10d                     #victim check_dead_vr +=%153, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 88]         #ld c2=%21, =%-1,  cyc -1
+	add r11d, r10d                         #add +=%154, c2=%21,  cyc 19
+	#victim %21, r10d                      #victim check_dead_vr c2=%21, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%155, +=%154,  cyc 20
+	#victim %154, r11d                     #victim check_dead_vr +=%154, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 96]         #ld c3=%23, =%-1,  cyc -1
+	add r10d, r11d                         #add +=%155, c3=%23,  cyc 21
+	#victim %23, r11d                      #victim check_dead_vr c3=%23, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%156, +=%155,  cyc 22
+	#victim %155, r10d                     #victim check_dead_vr +=%155, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 104]        #ld d0=%25, =%-1,  cyc -1
+	add r11d, r10d                         #add +=%156, d0=%25,  cyc 23
+	#victim %25, r10d                      #victim check_dead_vr d0=%25, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%157, +=%156,  cyc 24
+	#victim %156, r11d                     #victim check_dead_vr +=%156, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 112]        #ld d1=%27, =%-1,  cyc -1
+	add r10d, r11d                         #add +=%157, d1=%27,  cyc 25
+	#victim %27, r11d                      #victim check_dead_vr d1=%27, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%158, +=%157,  cyc 26
+	#victim %157, r10d                     #victim check_dead_vr +=%157, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 120]        #ld d2=%29, =%-1,  cyc -1
+	add r11d, r10d                         #add +=%158, d2=%29,  cyc 27
+	#victim %29, r10d                      #victim check_dead_vr d2=%29, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%159, +=%158,  cyc 28
+	#victim %158, r11d                     #victim check_dead_vr +=%158, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 128]        #ld d3=%31, =%-1,  cyc -1
+	add r10d, r11d                         #add +=%159, d3=%31,  cyc 29
+	#victim %31, r11d                      #victim check_dead_vr d3=%31, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%160, +=%159,  cyc 30
+	#victim %159, r10d                     #victim check_dead_vr +=%159, =%-1,  cyc -1
+	mov r10d, dword ptr [rbp - 136]        #ld skip=%33, =%-1,  cyc -1
+	add r11d, r10d                         #add +=%160, skip=%33,  cyc 31
+	#victim %33, r10d                      #victim check_dead_vr skip=%33, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%161, +=%160,  cyc 32
+	#victim %160, r11d                     #victim check_dead_vr +=%160, =%-1,  cyc -1
+	mov r11d, dword ptr [rbp - 224]        #ld p=%55, =%-1,  cyc -1
+	add r10d, r11d                         #add +=%161, p=%55,  cyc 33
+	#victim %55, r11d                      #victim check_dead_vr p=%55, =%-1,  cyc -1
+	mov r11d, r10d                         #add +=%162, +=%161,  cyc 34
+	#victim %161, r10d                     #victim check_dead_vr +=%161, =%-1,  cyc -1
+	add r11d, r12d                         #add +=%162, s=%122,  cyc 35
+	#victim %122, r12d                     #victim check_dead_vr s=%122, =%-1,  cyc -1
+	mov r10d, r11d                         #add +=%163, +=%162,  cyc 36
+	#victim %162, r11d                     #victim check_dead_vr +=%162, =%-1,  cyc -1
+	add r10d, r13d                         #add +=%163, carry=%35,  cyc 37
+	#victim %35, r13d                      #victim check_dead_vr carry=%35, =%-1,  cyc -1
 	#---------------- print ret ----------------# 
 	mov esi, r10d 
 	lea rdi, [rip + fmt] 
@@ -898,9 +1319,10 @@ main:
 	call printf@PLT 
 	#------------------------------------------# 
 	mov eax, r10d 
+	#victim %163, r10d                     #victim check_dead_vr +=%163, =%-1,  cyc -1
 
 
-jmp_to_ret:
+.L_b70_jmp_to_ret:
 	jmp .L_return 
 
 
@@ -910,6 +1332,7 @@ jmp_to_ret:
 	ret 
 
 .section .note.GNU-stack,"",@progbits
+
 
 
 
