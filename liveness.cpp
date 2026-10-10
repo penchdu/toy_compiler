@@ -251,12 +251,7 @@ static void _check_while_used_outer_symb(int vr, int usage)
 			if (usage & VR_USAGE_WRITE)
 			{
 				r.while_scp->outer_symb_write[vr]++;
-//				vr_usage[vr] |= VR_USAGE_WRITE;
 			}
-
-			// only the most outer-while-scope hold outer-symb
-			//inner-while not necessary to hold
-//			break;
 		}
 	}
 }
@@ -324,7 +319,9 @@ static void find_while_used_outer_symb(Scope *scp)
 	if (scp->sem_stamp == SEM_WHILE
 	    || scp->sem_stamp == SEM_WHILE_COND
 	    || scp->sem_stamp == SEM_WHILE_BODY
-	    )
+		|| scp->sem_stamp == SEM_IF
+		|| scp->sem_stamp == SEM_IF_then
+		|| scp->sem_stamp == SEM_IF_else)
 	{
 		while_use_outer_symb.push_back({scp});
 
@@ -333,18 +330,6 @@ static void find_while_used_outer_symb(Scope *scp)
 		scp->outer_symb_read.resize(vr_declare_manager.size());
 		scp->outer_symb_write.resize(vr_declare_manager.size());
 	}
-//	if (scp->sem_stamp == SEM_WHILE
-////	    || scp->sem_stamp == SEM_WHILE_COND
-////	    || scp->sem_stamp == SEM_WHILE_BODY
-//	    )
-//	{
-//		while_use_outer_symb.push_back({scp});
-//
-//		assert(scp->outer_symb_read.size() == 0);
-//		assert(scp->outer_symb_write.size() == 0);
-//		scp->outer_symb_read.resize(vr_declare_manager.size());
-//		scp->outer_symb_write.resize(vr_declare_manager.size());
-//	}
 
 	if (while_use_outer_symb.size() > 0)
 		check_while_used_outer_symb(scp);
@@ -354,7 +339,10 @@ static void find_while_used_outer_symb(Scope *scp)
 
 	if (scp->sem_stamp == SEM_WHILE
 	    || scp->sem_stamp == SEM_WHILE_COND
-	    || scp->sem_stamp == SEM_WHILE_BODY)
+	    || scp->sem_stamp == SEM_WHILE_BODY
+	    || scp->sem_stamp == SEM_IF
+	    || scp->sem_stamp == SEM_IF_then
+	    || scp->sem_stamp == SEM_IF_else)
 	{
 		while_use_outer_symb.pop_back();
 	}

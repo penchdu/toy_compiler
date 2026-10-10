@@ -164,6 +164,7 @@ void case_tk_if()
 	then_branch_inner_tail->jmp_out = tail;
 	tail->jmp_in.push_back(then_branch_inner_tail);
 
+	// set jmp_out != 0, so will not be deleted
 	Scope *else_branch_inner_tail = get_inner_tail_of_scope(else_branch);
 	else_branch_inner_tail->jmp_out = tail;
 	tail->jmp_in.push_back(else_branch_inner_tail);

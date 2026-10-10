@@ -385,6 +385,7 @@ struct VirtualRegDeclareManager
 	vector<Ast*> declare_at;
 };
 extern VirtualRegDeclareManager vr_declare_manager;
+#define vr_name(vr) vr_declare_manager.declare_at[vr]->symb->unique_name.c_str()
 
 
 #if 0
@@ -399,6 +400,10 @@ extern VirtualRegDeclareManager vr_declare_manager;
 #define PARSER_LOG(fmt, ...)
 #endif
 
+//const char* vr_name(int vr)
+//{
+//	return vr_declare_manager.declare_at[vr]->symb->unique_name.c_str();
+//}
 constexpr bool enable_bb_terminate = 0;
 extern bool in_func_define;
 

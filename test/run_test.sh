@@ -5,7 +5,8 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 # ===== test case dirs (relative to PROJECT_DIR) =====
 TEST_DIRS=(
-    case
+    case2
+    case1
 )
 
 VSC="$PROJECT_DIR/build/vsc"
@@ -73,5 +74,5 @@ int main() { printf("Result: %d\n", test()); return 0; }' > "$CD/runner.cpp"
 done
 
 #echo "----------------------------------------"
-#echo "result: all=$total | pass=$pass | fail=$fail"
+echo "result: all=$total | pass=$pass | fail=$fail"
 

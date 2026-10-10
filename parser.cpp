@@ -189,7 +189,7 @@ void case_tk_return()
 
 	Scope *jmp = new_scope_and_drop_in();
 	jmp->sem_stamp = SEM_LABEL;
-	jmp->name = "jmp_to_ret";
+	jmp->name = ".L_" + jmp->name + "_jmp_to_ret";
 	jmp->jmp_out = func->return_label;
 	exit_current_scope();
 

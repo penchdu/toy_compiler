@@ -308,7 +308,7 @@ void x64_reg_alloc();
 
 void dump_vr2pr(const vector<VrToPr> &vp, const string &tag);
 void check_pr_vr_consistency();
-void check_dead_vr(Scope *scp, int vr);
+void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr);
 void init_wave(BasicBlock *bb);
 int wave_get_pr(BasicBlock *bb, int mc_idx);
 void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i);
