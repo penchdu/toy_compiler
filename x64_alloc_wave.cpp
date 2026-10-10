@@ -10,43 +10,6 @@
 #include "basic_block.h"
 #include <cmath>
 
-vector<Wave> bb_vr_wave;
-
-void init_wave(BasicBlock *bb)
-{
-	for (auto &r : bb_vr_wave)
-	{
-		r.score.clear();
-		r.score.shrink_to_fit();
-		r.appear_cnt.clear();
-		r.appear_cnt.shrink_to_fit();
-	}
-
-	auto &v = bb->vr_unique;
-	std::sort(v.begin(), v.end());
-	v.erase(std::unique(v.begin(), v.end()), v.end());
-
-	int mc_list_size = bb->x64mc_schedu.size();
-
-	for (int vr : bb->vr_unique)
-	{
-		bb_vr_wave[vr].mc_list_size = mc_list_size;
-		bb_vr_wave[vr].score.resize(mc_list_size, 0);
-		bb_vr_wave[vr].appear_cnt.resize(mc_list_size, 0);
-	}
-
-	for (int inst_idx = 0; inst_idx < mc_list_size; inst_idx++)
-	{
-		X64mc &mc = bb->x64mc_schedu[inst_idx];
-		for (int i = 0; i < 3; i++)
-		{
-			int vr = mc.vr_list[i];
-			if (vr >= 0)
-				bb_vr_wave[vr].appear_cnt[inst_idx]++;
-		}
-	}
-}
-
 void spill_vr(vector<VrToPr> &vr_state, vector<PrToVr> &pr_state, int vr,
     vector<X64mc> &x64mc_alloc, const string &tag)
 {
@@ -59,6 +22,11 @@ void spill_vr(vector<VrToPr> &vr_state, vector<PrToVr> &pr_state, int vr,
 	assert(pr_state[pr].vr == vr);
 
 	Ast *p = vr_declare_manager.declare_at[vr];
+
+	X64mc mc(MC_victim, vr);
+	mc.pr1 = (int) pr;
+	mc.ori_sem = "victim" + tag;
+	x64mc_alloc.push_back(mc);
 
 	if (p->sem_stamp != SEM_CONST_NUM && dirty)
 	{

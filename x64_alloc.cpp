@@ -198,6 +198,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 			spill_pr(x64mc_alloc, mc.s1);
 			break;
 
+		case MC_victim:
 		default:
 			ERR("%d \n", mc_stamp);
 			break;
@@ -262,6 +263,11 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		{
 		case MC_LD:
 			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_name[mc.pr1], mc.of1);
+			PRINT_ASM_sem
+			break;
+
+		case MC_victim:
+			PRINT_ASM("#%s %%%d, %s", mc.asm_code.c_str(), mc.s1, pr_name[mc.pr1]);
 			PRINT_ASM_sem
 			break;
 

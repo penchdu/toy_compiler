@@ -114,6 +114,7 @@ enum MachineCodeStamp {
 	MC_LI,	// reg-num
 
 	MC_LD,	// reg <- ptr
+	MC_victim,
 	MC_ST,	// reg -> ptr
 
 	MC_ASSIGN,	// reg-reg
