@@ -72,13 +72,14 @@ I ran it several times, testing 1,000 programs per run, with up to 140 variables
 
 The normal back edge from the while-body to the while-condition is implemented without `spill all` on this edge. This was not an easy task.
 
-**`break` and `continue` register-state handling implemented.**
+**`continue` and `break` register-state handling implemented.**
 
-The allocator saves the register state at each `break` and `continue` point, then reconciles it with the target state after the while-loop allocation is completed. `continue` transfers control back to the while-condition, while `break` transfers control to the loop exit.
+The allocator saves the register state at each `continue` and `break` point, then reconciles it with the target state after the while-loop allocation is completed. `continue` transfers control back to the while-condition, while `break` transfers control to the loop exit.
 
-The random testing tool now generates `break` and `continue` as well, including statements after them to exercise dead-code handling. I ran multiple rounds of 1,000-program differential tests with both constructs enabled, including a run with `if/else` disabled to specifically test loop control flow without relying on the `spill all` behavior at branch boundaries. All tests passed. Honestly, I’m surprised.
+The random testing tool now generates `continue` and `break` as well, including statements after them to exercise dead-code handling. I ran multiple rounds of 1,000-program differential tests with both constructs enabled, including a run with `if/else` disabled to specifically test loop control flow without relying on the `spill all` behavior at branch boundaries. All tests passed. 
+I use the method designed for while-body to implement `continue` and `break`, it works, honestly, I’m quite surprised, I thought these two token are much more complex than while-body.
 
-Still need to reason more carefully about the correctness of `break` and `continue` register-state reconciliation, even though extensive random testing has not revealed any problems yet.
+Still need to reason more carefully about the correctness of `continue` and `break` register-state reconciliation, even though extensive random testing has not revealed any problems yet.
 
 
 
