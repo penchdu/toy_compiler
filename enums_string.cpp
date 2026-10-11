@@ -70,7 +70,7 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 	[SEM_CONST_NUM] = "SEM_CONST_NUM",
 
 	[SEM_IF] = "SEM_IF",
-	[SEM_IF_cond] = "SEM_IF_COND",
+	[SEM_IF_cond] = "SEM_IF_cond",
 	[SEM_IF_then] = "SEM_IF_then",
 	[SEM_IF_else] = "SEM_IF_else",
 	[SEM_LABEL] = "SEM_LABEL",
@@ -78,6 +78,8 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 	[SEM_WHILE] = "SEM_WHILE",
 	[SEM_WHILE_COND] = "SEM_WHILE_COND",
 	[SEM_WHILE_BODY] = "SEM_WHILE_BODY",
+	[SEM_CONTINUE] = "SEM_CONTINUE",
+	[SEM_BREAK] = "SEM_BREAK",
 
 	[SEM_FUNC_DECLARE] = "SEM_FUNC_DECLARE",
 	[SEM_FUNC_DEFINE] = "SEM_FUNC_DEFINE",

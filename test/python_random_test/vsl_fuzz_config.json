@@ -1,0 +1,28 @@
+{
+  "test": {
+    "cases": 1000,
+    "seed": "time",
+    "timeout_seconds": 3.0,
+    "failure_dir": "fuzz_failures",
+    "generate_only": false
+  },
+  "tools": {
+    "vsc": "../../build/vsc",
+    "reference_compiler": "g++",
+    "assembler": "gcc"
+  },
+  "generation": {
+    "vars_min": 8,
+    "vars_max": 140,
+    "max_depth": 30,
+    "statement_budget": 320,
+    "tokens": {
+      "if": true,
+      "else": true,
+      "while": true,
+      "break": true,
+      "continue": true
+    },
+    "force_statements_after_break_continue": true
+  }
+}

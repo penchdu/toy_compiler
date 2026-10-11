@@ -289,6 +289,9 @@ enum VrUsage
 	VR_USAGE_INVALID = 0,
 };
 
+struct VrToPr;
+struct PrToVr;
+
 struct Scope
 {
 public:
@@ -323,11 +326,12 @@ public:
 	vector<int> consume_cnt_in_bb;
 
 	// continue, break
-	vector<Scope*> continue__break;
+	vector<Scope*> continue_list;
+	vector<Scope*> break_list;
 	bool bb_terminated;
 
-	void *scp_vr_state = 0;
-	void *scp_pr_state = 0;
+	vector<VrToPr> *scp_vr_state;
+	vector<PrToVr> *scp_pr_state;
 
 	vector<Tac> tac;
 	void *basic_block = 0;

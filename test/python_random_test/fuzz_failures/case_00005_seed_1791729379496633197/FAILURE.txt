@@ -1,0 +1,2 @@
+category: vsc_failed
+VSC failed or did not produce a1.s. Check vsc_compile.log.

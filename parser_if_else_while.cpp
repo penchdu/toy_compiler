@@ -232,15 +232,16 @@ void case_tk_while()
 	tail->jmp_in.push_back(while_cond);
 
 	//
-	for (Scope *p : while_body->continue__break)
+	for (Scope *p : while_body->continue_list)
 	{
-		if (p->name == "continue")
-			p->jmp_out = while_cond;
-		else if (p->name == "break")
-			p->jmp_out = tail;
-		else
-			ERR();
-		p->sem_stamp = SEM_LABEL;
+		p->jmp_out = while_cond;
+		p->name += "_while" + to_string(while_scp->id)+ "_continue";
+	}
+
+	for (Scope *p : while_body->break_list)
+	{
+		p->jmp_out = tail;
+		p->name += "_while" + to_string(while_scp->id)+ "_break";
 	}
 
 	rm_duplicant_jmp_in(tail);
@@ -268,7 +269,7 @@ void make_bb_terminate()
 	scp_terminate->name += "_SEM_bb_terminate";
 	exit_current_scope();
 }
-static Scope* case_tk_continue_break()
+static Scope* case_tk_continue_break(Semantic sem_stamp)
 {
 	Token tk = tokens.get();
 	PARSER_LOG("%s", tk.src.c_str());
@@ -280,7 +281,18 @@ static Scope* case_tk_continue_break()
 	assert(while_body);
 
 	Scope *scp = new_virtual_scope_and_drop_in();
-	while_body->continue__break.push_back(scp);
+
+	if(sem_stamp == SEM_CONTINUE)
+	{
+		scp->sem_stamp = SEM_CONTINUE;
+		while_body->continue_list.push_back(scp);
+	}
+	else if(sem_stamp == SEM_BREAK)
+	{
+		scp->sem_stamp = SEM_BREAK;
+		while_body->break_list.push_back(scp);
+	}
+
 	exit_current_scope();
 
 	make_bb_terminate();
@@ -290,14 +302,10 @@ static Scope* case_tk_continue_break()
 }
 void case_tk_continue()
 {
-	Scope *scp = case_tk_continue_break();
-	scp->sem_stamp = SEM_CONTINUE;
-	scp->name = "continue";
+	Scope *scp = case_tk_continue_break(SEM_CONTINUE);
 }
 void case_tk_break()
 {
-	Scope *scp = case_tk_continue_break();
-	scp->sem_stamp = SEM_BREAK;
-	scp->name = "break";
+	Scope *scp = case_tk_continue_break(SEM_BREAK);
 }
 

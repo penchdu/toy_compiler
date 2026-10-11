@@ -17,7 +17,10 @@ printf 'Cases: %s\n' "$CASES"
 python3 vsl_diff_fuzz.py \
     --vsc ../../build/vsc \
     --cases "$CASES" \
-    --seed "$SEED"
+    --seed "$SEED"  
+
+
+# --config vsl_fuzz_config_no_if_else.json --generate-only
 
 
 

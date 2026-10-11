@@ -327,7 +327,7 @@ void while__recover_pr(Scope *scp,
 
 void ra_wave__while(Scope *scp);
 void ra_wave__continue_break_save_vr_state(Scope *scp);
-void ra_wave__continue(Scope *while_scp);
+//void ra_wave__continue(Scope *while_scp);
 void ra_wave__if(Scope *if_scp);
 
 #endif /* X64_BACK_END_H_ */

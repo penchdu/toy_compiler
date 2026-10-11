@@ -153,6 +153,8 @@ static void gen_mc(Scope *scp)
 	    || scp->sem_stamp == SEM_WHILE
 	    || scp->sem_stamp == SEM_WHILE_COND
 	    || scp->sem_stamp == SEM_WHILE_BODY
+	    || scp->sem_stamp == SEM_CONTINUE
+	    || scp->sem_stamp == SEM_BREAK
 	    || scp->sem_stamp == SEM_LABEL
 	    || scp->jmp_in.size() > 0
 	    || scp->asts.size() > 0)
@@ -209,7 +211,7 @@ static void gen_mc(Scope *scp)
 			Ast *cond = scp->asts[0];
 			bb->jmp_mc_stamp = op2jmp_mc[cond->op];
 		}
-		else if (stamp == SEM_LABEL)
+		else if (stamp == SEM_LABEL || stamp == SEM_CONTINUE || stamp == SEM_BREAK)
 		{
 			bb->jmp_mc_stamp = MC_JMP;
 		}
