@@ -157,6 +157,7 @@ Semantic analysis performs:
 ### Three Address Code
 
 - `bb_terminate` 
+
 	Originally, it was an optional optimization method used to eliminate some dead code and dead jump labels. Later, I realized that it is actually necessary for register allocation. It prevents TAC generation from producing instructions for unreachable code, so the register allocator does not allocate physical registers for these dead instructions. Therefore, the `vr_state` remains correct.
 
 
@@ -175,10 +176,12 @@ Schedule priority:
 ### Register Allocation
 
 - `pre_cond_swap_pr` & `after_cond_swap_pr`: 
+
 	A temporary physical register used to break register move cycles during this state transition. It does not preserve program state; it only provides temporary storage for register swapping.
 
 
 - `mc_victim`
+
 	A debugging marker used to track potential dirty-value loss across control-flow edges. It records physical registers containing virtual registers that become dirty after a loop body, while they were clean before entering the body. When such a register is spilled later, the allocator must generate a store instruction. Otherwise, the updated value may be lost because the new value only exists in the physical register. `mc_victim` helps detect this kind of incorrect spill behavior.
 
 
