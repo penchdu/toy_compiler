@@ -179,9 +179,9 @@ Schedule priority:
 
 
 - `mc_victim`
-	A bookkeeping marker used to detect incorrect dirty-value handling across control-flow edges. It records a physical register candidate where a virtual register becomes dirty after a loop body, while it was clean before entering the loop. If this value is spilled later without generating a store instruction, the register allocator may lose the updated value. `mc_victim` helps locate this case during debugging.
-  
-  
+	A debugging marker used to track potential dirty-value loss across control-flow edges. It records physical registers containing virtual registers that become dirty after a loop body, while they were clean before entering the body. When such a register is spilled later, the allocator must generate a store instruction. Otherwise, the updated value may be lost because the new value only exists in the physical register. `mc_victim` helps detect this kind of incorrect spill behavior.
+
+
 ### Optimization Goal
 
 ```c
