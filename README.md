@@ -101,6 +101,7 @@ Still need to reason more carefully about the correctness of `break` and `contin
 - [ ] x64 Inst-schedule (global, use score)
 - [x] x64 -O0 reg-alloc	(spill/reload)
 - [x] x64 -O1 reg-alloc (BasicBlock-level Wavefront)
+- [x] x64 -O1 reg-alloc local register state reconciliation on control-flow edges
 - [ ] x64 -O1 reg-alloc (global Wavefront)
 - [x] x64 asm
 
@@ -153,8 +154,11 @@ Semantic analysis performs:
 - variable renaming
 
 
-### Intermediate Representation
-...
+### Three Address Code
+
+- `bb_terminate` 
+	Originally, it was an optional optimization method used to eliminate some dead code and dead jump labels. Later, I realized that it is actually necessary for register allocation. It prevents TAC generation from producing instructions for unreachable code, so the register allocator does not allocate physical registers for these dead instructions. Therefore, the `vr_state` remains correct.
+
 
 ### Instruction Select
 ...
@@ -170,15 +174,14 @@ Schedule priority:
 
 ### Register Allocation
 
-```c
--O0:
-- simple allocation, load/store based strategy
+- `pre_cond_swap_pr` & `after_cond_swap_pr`: 
+	A temporary physical register used to break register move cycles during this state transition. It does not preserve program state; it only provides temporary storage for register swapping.
 
--O1:
-- BasicBlock-level Wavefront
 
-```
-
+- `mc_victim`
+	A bookkeeping marker used to detect incorrect dirty-value handling across control-flow edges. It records a physical register candidate where a virtual register becomes dirty after a loop body, while it was clean before entering the loop. If this value is spilled later without generating a store instruction, the register allocator may lose the updated value. `mc_victim` helps locate this case during debugging.
+  
+  
 ### Optimization Goal
 
 ```c
