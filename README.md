@@ -375,6 +375,202 @@ int test()
 ```
 
 
+### AST
+
+```
+
+========== ast ==========
+======b0=0  parent=0====== SEM_FILE_SCOPE
+
+    ======test=1  parent=0====== SEM_FUNC_DEFINE
+    symbol: i 1
+    symbol: a 3
+    symbol: b 5
+    symbol: c 7
+    symbol: %0 0
+    symbol: %2 2
+    symbol: %4 4
+    symbol: %6 6
+    symbol: %26 26
+    symbol: %27 27
+    symbol: %28 28
+    ast:
+    └── [del INT]
+        └── [var i %1]
+    ast:
+    └── [OP_ASSIGN %1]
+        ├── [var i %1]
+        └── [num 5 %0]
+    ast:
+    └── [del INT]
+        └── [var a %3]
+    ast:
+    └── [OP_ASSIGN %3]
+        ├── [var a %3]
+        └── [num 0 %2]
+    ast:
+    └── [del INT]
+        └── [var b %5]
+    ast:
+    └── [OP_ASSIGN %5]
+        ├── [var b %5]
+        └── [num 1 %4]
+    ast:
+    └── [del INT]
+        └── [var c %7]
+    ast:
+    └── [OP_ASSIGN %7]
+        ├── [var c %7]
+        └── [num 2 %6]
+
+        ======.L_b2_while=2  parent=1====== SEM_WHILE
+
+            ======.L_b3_while2_cond=3  parent=2====== SEM_WHILE_COND out=28  in=26 
+            symbol: %8 8
+            symbol: %9 9
+            symbol: %10 10
+            symbol: %11 11
+            ast:
+            └── [OP_CMP_LE %11]
+                ├── [OP_ASSIGN %1]
+                │   ├── [var i %1]
+                │   └── [OP_SUB %10]
+                │       ├── [var i %1]
+                │       └── [num 1 %9]
+                └── [num 0 %8]
+
+            ======.L_b4_while2_body=4  parent=2====== SEM_WHILE_BODY
+            symbol: %12 12
+            symbol: %24 24
+            symbol: %25 25
+            ast:
+            └── [OP_ASSIGN %3]
+                ├── [var a %3]
+                └── [OP_ADD %12]
+                    ├── [var a %3]
+                    └── [var i %1]
+
+                ======.L_b5_if5=5  parent=4====== SEM_IF
+
+                    ======.L_b6_if5_cond=6  parent=5====== SEM_IF_cond out=11
+                    symbol: %13 13
+                    symbol: %14 14
+                    ast:
+                    └── [OP_CMP_NE %14]
+                        ├── [var i %1]
+                        └── [num 3 %13]
+
+                    ======.L_b7_if5_then=7  parent=5====== SEM_IF_then
+                    symbol: %15 15
+                    symbol: %16 16
+                    ast:
+                    └── [OP_ASSIGN %5]
+                        ├── [var b %5]
+                        └── [OP_ADD %15]
+                            ├── [var b %5]
+                            └── [var a %3]
+
+                        ======.L_b8_while2_continue=8  parent=7====== SEM_CONTINUE out=3 virtual
+
+                        ======.L_b9=9  parent=7====== SEM_LABEL virtual
+                        ast:
+                        └── [OP_ASSIGN %3]
+                            ├── [var a %3]
+                            └── [num 100 %16]
+
+                        ======.L_b10=10  parent=7====== SEM_LABEL out=13 virtual
+
+                    ======.L_b11_if5_else=11  parent=5====== SEM_IF_else  in=6 
+                    symbol: %17 17
+                    ast:
+                    └── [OP_ASSIGN %7]
+                        ├── [var c %7]
+                        └── [OP_ADD %17]
+                            ├── [var c %7]
+                            └── [var i %1]
+
+                        ======.L_b12=12  parent=11====== SEM_LABEL out=13 virtual
+
+                    ======.L_b13_if5_tail=13  parent=5====== SEM_LABEL  in=10 12  virtual
+
+                ======.L_b15_if15=15  parent=4====== SEM_IF
+
+                    ======.L_b16_if15_cond=16  parent=15====== SEM_IF_cond out=21
+                    symbol: %18 18
+                    symbol: %19 19
+                    ast:
+                    └── [OP_CMP_NE %19]
+                        ├── [var i %1]
+                        └── [num 2 %18]
+
+                    ======.L_b17_if15_then=17  parent=15====== SEM_IF_then
+                    symbol: %20 20
+                    symbol: %21 21
+                    symbol: %22 22
+                    ast:
+                    └── [OP_ASSIGN %5]
+                        ├── [var b %5]
+                        └── [OP_ADD %21]
+                            ├── [var b %5]
+                            └── [num 10 %20]
+
+                        ======.L_b18_while2_break=18  parent=17====== SEM_BREAK out=28 virtual
+
+                        ======.L_b19=19  parent=17====== SEM_LABEL virtual
+                        ast:
+                        └── [OP_ASSIGN %7]
+                            ├── [var c %7]
+                            └── [num 200 %22]
+
+                        ======.L_b20=20  parent=17====== SEM_LABEL out=24 virtual
+
+                    ======.L_b21_if15_else=21  parent=15====== SEM_IF_else  in=16 
+                    symbol: %23 23
+                    ast:
+                    └── [OP_ASSIGN %3]
+                        ├── [var a %3]
+                        └── [OP_ADD %23]
+                            ├── [var a %3]
+                            └── [var c %7]
+
+                        ======.L_b22=22  parent=21====== SEM_LABEL out=24 virtual
+
+                    ======.L_b24_if15_tail=24  parent=15====== SEM_LABEL  in=20 22  virtual
+
+                ======.L_b25=25  parent=4====== SEM_LABEL virtual
+                ast:
+                └── [OP_ASSIGN %7]
+                    ├── [var c %7]
+                    └── [OP_ADD %25]
+                        ├── [var c %7]
+                        └── [num 1 %24]
+
+                ======.L_b26_while2_body_tail=26  parent=4====== SEM_LABEL out=3 virtual
+
+            ======.L_b28_while2_tail=28  parent=2====== SEM_LABEL  in=3  virtual
+
+        ======.L_b29=29  parent=1====== SEM_LABEL virtual
+        ast:
+        └── [save-ret(return) %28]
+            └── [OP_ADD %28]
+                ├── [OP_ADD %27]
+                │   ├── [OP_ADD %26]
+                │   │   ├── [var a %3]
+                │   │   └── [var b %5]
+                │   └── [var c %7]
+                └── [var i %1]
+
+        ======.L_b30_jmp_to_ret=30  parent=1====== SEM_LABEL out=32
+
+=========================
+
+
+
+```
+
+
+
+
 the `vsc` compile the .cpp into two assembly: `a0.s` and `a1.s`
 
 
