@@ -60,19 +60,26 @@ Next steps: global-Inst-select and global-reg-alloc
 
 
 
-
 ### 2026.10.11
 
 **Random Testing Tool Written by ChatGPT**
 
-GPT wrote a very useful and awesome Python-based random testing tool.
+GPT wrote a very useful and awesome Python-based random testing tool to stress-test VSC.
 
-It uses random seeds to generate programs with configurable variable counts, nesting depths, and AST statement budgets. It supports deeply nested `if/else` and `while`(no `continue` and `break`) constructs. The tool compiles and runs each generated program with both GCC and VSC, then compares their results to automatically detect miscompilation.
+It uses random seeds to generate programs with configurable variable counts, nesting depths, and AST statement budgets. It supports deeply nested `if/else` and `while` constructs, and can selectively enable or disable language features through a JSON configuration file. The tool compiles and runs each generated program with both GCC and VSC, then compares their results to automatically detect miscompilation.
 
-I ran it several times, testing 1,000 programs per run, with up to 140 variables, max nest depth of 30, AST statement budget of 320 per program. All passed.
+I ran it several times, testing 1,000 programs per run, with up to 140 variables, a maximum nesting depth of 30, and an AST statement budget of 320 per program. All tests passed.
 
-The back edge from while-body to while-condition is implemented, no `spill all` any more on this edge, it is really not an easy work. 
-The problem now: back edge of `continue` and `break` didn't implemented.
+The normal back edge from the while-body to the while-condition is implemented without `spill all` on this edge. This was not an easy task.
+
+**`break` and `continue` register-state handling implemented.**
+
+The allocator saves the register state at each `break` and `continue` point, then reconciles it with the target state after the while-loop allocation is completed. `continue` transfers control back to the while-condition, while `break` transfers control to the loop exit.
+
+The random testing tool now generates `break` and `continue` as well, including statements after them to exercise dead-code handling. I ran multiple rounds of 1,000-program differential tests with both constructs enabled, including a run with `if/else` disabled to specifically test loop control flow without relying on the `spill all` behavior at branch boundaries. All tests passed.
+
+Still need to reason more carefully about the correctness of `break` and `continue` register-state reconciliation, even though extensive random testing has not revealed any problems yet.
+
 
 
 
