@@ -344,7 +344,7 @@ void while__recover_pr(Scope *while_scp,
 	}
 }
 
-void st_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &new_dirty, int &dirty_cnt)
+void st_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &body_tail_dirty, int &dirty_cnt)
 {
 	int meet = 0;
 	int fix = 0;
@@ -355,13 +355,13 @@ void st_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &new_dirty, int &dirt
 
 		int vr = mcs[i].s1;
 
-		if (!new_dirty[vr])
+		if (!body_tail_dirty[vr])
 			continue;
 
 		meet++;
 
 		/*
-		 * the first victim of new_dirty[*] must follow a st
+		 * the first victim of body_tail_dirty[*] must followed by st
 		 *
 		 * example:
 		 * a is clean in pre_cond
@@ -369,7 +369,7 @@ void st_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &new_dirty, int &dirt
 		 *
 		 * in currnet cond asm:
 		 * 1st time:
-		 * victim a, no st (lost the value of new dirty a)
+		 * victim a, no st (lost the value of body_tail_dirty[a])
 		 *
 		 * 2nd time:
 		 * alloc a
@@ -377,7 +377,7 @@ void st_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &new_dirty, int &dirt
 		 * victim a
 		 * st a
 		 *
-		 * the 2nd time "victim + st" dosn't st new dirty a
+		 * the 2nd time "victim + st" dosn't st body_tail_dirty[a]
 		 *
 		 */
 
@@ -386,20 +386,18 @@ void st_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &new_dirty, int &dirt
 		    && mcs[i + 1].s1 == vr)
 		{
 			//already have st
-			new_dirty[vr] = 0;
-			dirty_cnt--;
 		}
 		else
 		{
 			X64mc mc(MC_ST, vr);
 			mc.pr1 = mcs[i].pr1;
 			mc.ori_sem = "while dirty st";
-			mcs.insert(mcs.begin() + 1 + i, mc);
-
+			mcs.insert(mcs.begin() + i + 1, mc);
 			fix++;
-			new_dirty[vr] = 0;
-			dirty_cnt--;
 		}
+
+		body_tail_dirty[vr] = 0;
+		dirty_cnt--;
 
 		if (dirty_cnt == 0)
 			return;
@@ -456,19 +454,21 @@ void st_body_tail_dirty(Scope *while_scp,
 	 needs to spill it — cond guarantees the memory value is correct.
 	 *
 	 */
-
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	if (dirty_cnt)
 	{
-		if (!body_tail_dirty[vr])
-			continue;
+		for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+		{
+			if (!body_tail_dirty[vr])
+				continue;
 
-		Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
-		auto &mcs = ((BasicBlock*) body_inner_tail->basic_block)->x64mc_alloc_wave;
+			Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
+			auto &mcs = ((BasicBlock*) body_inner_tail->basic_block)->x64mc_alloc_wave;
 
-		X64mc mc(MC_ST, vr);
-		mc.pr1 = after_body_vr_state[vr].pr;
-		mc.ori_sem = "while spill st dirty ";
-		mcs.push_back(mc);
+			X64mc mc(MC_ST, vr);
+			mc.pr1 = after_body_vr_state[vr].pr;
+			mc.ori_sem = "while spill st dirty ";
+			mcs.push_back(mc);
+		}
 	}
 }
 void ra_wave__while(Scope *while_scp)
