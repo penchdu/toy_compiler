@@ -58,6 +58,22 @@ Implemented an innovative wavefront based reg-alloc method for -O1 optimization:
 
 Next steps: global-Inst-select and global-reg-alloc
 
+
+
+
+### 2026.10.11
+
+**Random Testing Tool Written by ChatGPT**
+
+GPT wrote a very useful and awesome Python-based random testing tool.
+
+It uses random seeds to generate programs with configurable variable counts, nesting depths, and AST statement budgets. It supports deeply nested `if/else` and `while` constructs. The tool compiles and runs each generated program with both GCC and VSC, then compares their results to automatically detect miscompilation.
+
+I ran it several times, testing 1,000 programs per run, with up to 140 variables, max nesting depth of 30, AST statement budget of 320 per program. All passed.
+
+
+
+
 ## Project Status
 - [x] Lexer
 - [x] two-stack Parser
@@ -120,38 +136,12 @@ Implements a hierarchical lexical scoping mechanism to support nested code block
 
 ### Scope and Semantic Analysis
 
-```c
-
 Semantic analysis performs:
 
 - variable declaration checking
 - symbol table construction
 - scope resolution
 - variable renaming
-
-```
-
-Example:
-
-Source:
-
-```c
-int a;
-
-{
-    int a;
-}
-```
-
-Internal names:
-
-```
-global_a
-block2_a
-```
-
-
----
 
 
 ### Intermediate Representation
@@ -198,8 +188,6 @@ Schedule priority:
 
 ## Auto Test
 
-
-
 ```c
 
 $make
@@ -207,8 +195,15 @@ $./test/run_test.sh
 
 ```
 
+## Random Test
 
+```c
 
+$make
+$cd test/python_random_test
+$./python_random_test_time_seed.sh  100
+
+```
 
 ## Single Test
 

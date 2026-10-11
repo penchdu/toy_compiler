@@ -1,98 +1,94 @@
 int test()
 {
-	int a0 = 1;
-	int a1 = 3;
-	int a2 = 5;
-	int a3 = 7;
-	int b0 = 2;
-	int b1 = 4;
-	int b2 = 6;
-	int b3 = 8;
-	int c0 = 9;
-	int c1 = 11;
-	int c2 = 13;
-	int c3 = 15;
-	int d0 = 10;
-	int d1 = 12;
-	int d2 = 14;
-	int d3 = 16;
-	int skip = 1;
-	int carry = 3;
+	int v0 = 2;
+	int v1 = 9;
+	int v2 = 12;
+	int v3 = 12;
+	int v4 = 1;
+	int v5 = 4;
+	int v6 = 1;
+	int v7 = 7;
+	int v8 = 12;
+	int v9 = 7;
+	int v10 = 7;
+	int v11 = 10;
+	int v12 = 6;
+	int v13 = 12;
+	int c0 = 0;
+	int c1 = 0;
+	int c2 = 0;
 
-	while ((skip = skip - 1) > 0)
+	c0 = 3;
+	while ((c0 = c0 - 1) > 0)
 	{
-		if (carry > 0)
+		v13 = v6 - 3;
+		if (v11 > v4)
 		{
-			a0 = a0 + b0;
-			b0 = b0 + c0;
-		}
-		else
-		{
-			c0 = c0 + d0;
-			d0 = d0 + a0;
-		}
-	}
-
-	a0 = (a0 + skip) / 2 + carry;
-	c0 = (c0 + skip) / 2 + a0;
-
-	int p = 6;
-
-	while ((p = p - 1) > 0)
-	{
-		if (p > 2)
-		{
-			a1 = (a1 + b1) / 2 + p;
-			c1 = (c1 + d1) / 2 + a1;
-			int q = 5;
-			while ((q = q - 1) > 0)
+			v11 = (v9 - v1) / 3;
+			v0 = (v0 + v6) / 2 - 1;
+			c1 = 1;
+			while ((c1 = c1 - 1) > 0)
 			{
-				if (q > 2)
+				v7 = v8 + 1;
+				v3 = v4 - 0;
+				v8 = (v2 + v10) / 4;
+				v1 = v11 + 1;
+			}
+			c2 = 4;
+			while ((c2 = c2 - 1) > 0)
+			{
+				v10 = (v4 - v4) / 4;
+				if (v13 > v8)
 				{
-					b2 = (b2 + c2) / 2 + q;
-					d2 = (d2 + a2) / 2 + p;
+					v8 = v9 + 3;
+					v11 = v6 + 2;
+					v11 = v1 + 2;
 				}
 				else
 				{
-					c2 = (c2 + a3) / 2 + q;
-					b1 = (b1 + d3) / 2 + p;
+					v2 = (v13 + v6) / 2 + 0;
+					v0 = v0 - 2;
+					v9 = (v9 + v6) / 2 - 1;
+					v3 = (v12 + v3) / 4;
 				}
+				v8 = v13 - 1;
+				v4 = (v9 + v11) / 2 - 2;
 			}
 		}
 		else
 		{
-			a3 = (a3 + c3) / 2 + p;
-			b3 = (b3 + d3) / 2 + p;
-			if (a3 > b3)
+			if (v7 > v0)
 			{
-				c3 = (c3 + a3) / 2 + carry;
-				d3 = (d3 + b3) / 2 + p;
+				v2 = (v12 + v8) / 2 - 1;
+				v0 = v13 - 1;
+				v8 = v7 + 1;
+				v0 = (v8 + v9) / 2 + 2;
 			}
 			else
 			{
-				c2 = (c2 + b3) / 2 + carry;
-				d2 = (d2 + a3) / 2 + p;
+				v0 = (v10 - v2) / 4;
+				v13 = (v12 + v8) / 3;
+				v10 = (v1 + v13) / 2;
+			}
+			if (v4 > v10)
+			{
+				v1 = (v2 + v5) / 2 + 0;
+				v2 = v8 + 2;
+			}
+			else
+			{
 			}
 		}
-
-		carry = carry + 1;
 	}
 
-	int s = 5;
-	while ((s = s - 1) > 0)
+	if (v7 > v11)
 	{
-		if (s > 2)
-		{
-			d0 = (d0 + c3) / 2 + s;
-			a0 = (a0 + b3) / 2 + s;
-		}
-		else
-		{
-			d1 = (d1 + c2) / 2 + s;
-			a1 = (a1 + b2) / 2 + s;
-		}
+		v5 = v7 + 3;
+	}
+	else
+	{
+		v4 = v5 - 3;
 	}
 
-	return a0 + a1 + a2 + a3 + b0 + b1 + b2 + b3
-	    + c0 + c1 + c2 + c3 + d0 + d1 + d2 + d3 + skip + p + s + carry;
+	return v0 + v1 + v2 + v3 + v4 + v5 + v6 + v7 + v8 + v9 + v10 + v11 + v12 + v13 + c0 + c1 + c2;
 }
