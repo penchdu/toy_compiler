@@ -1,36 +1,38 @@
 int test()
 {
-	int x = 50;
-	int y = 0;
-	int step = 15;
+	int i = 5;
+	int a = 0;
+	int b = 1;
+	int c = 2;
 
-	while (x > 0)
+	while ((i = i - 1) > 0)
 	{
-		x = x - step;
+		a = a + i;
 
-		if (x > 30)
+		if (i == 3)
 		{
-			y = y + 5;
+			b = b + a;
 			continue;
+			a = 100;
 		}
 		else
 		{
-			if (x > 10)
-			{
-				y = y + 10;
-			}
-			else
-			{
-				y = y + 20;
-				if (y > 40)
-				{
-					break;
-				}
-			}
+			c = c + i;
 		}
 
-		y = y + x;
+		if (i == 2)
+		{
+			b = b + 10;
+			break;
+			c = 200;
+		}
+		else
+		{
+			a = a + c;
+		}
+
+		c = c + 1;
 	}
 
-	return x + y + step;
+	return a + b + c + i;
 }
