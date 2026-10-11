@@ -67,10 +67,12 @@ Next steps: global-Inst-select and global-reg-alloc
 
 GPT wrote a very useful and awesome Python-based random testing tool.
 
-It uses random seeds to generate programs with configurable variable counts, nesting depths, and AST statement budgets. It supports deeply nested `if/else` and `while` constructs. The tool compiles and runs each generated program with both GCC and VSC, then compares their results to automatically detect miscompilation.
+It uses random seeds to generate programs with configurable variable counts, nesting depths, and AST statement budgets. It supports deeply nested `if/else` and `while`(no `continue` and `break`) constructs. The tool compiles and runs each generated program with both GCC and VSC, then compares their results to automatically detect miscompilation.
 
-I ran it several times, testing 1,000 programs per run, with up to 140 variables, max nesting depth of 30, AST statement budget of 320 per program. All passed.
+I ran it several times, testing 1,000 programs per run, with up to 140 variables, max nest depth of 30, AST statement budget of 320 per program. All passed.
 
+The back edge from while-body to while-condition is implemented, no `spill all` any more on this edge, it is really not an easy work. 
+The problem now: back edge of `continue` and `break` didn't implemented.
 
 
 
