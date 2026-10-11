@@ -123,11 +123,6 @@ Still need to reason more carefully about the correctness of `break` and `contin
 
 ## Compiler components detail
 
-### Lexer
-...
-
-### Parser
-
 
 #### Scope Management & Lexical Scoping
 
@@ -150,18 +145,103 @@ Implements a hierarchical lexical scoping mechanism to support nested code block
 	During semantic analysis, variables are assigned unique internal names (for example, `global_a` and `block2_a`) so that shadowed identifiers can be distinguished in the flat intermediate representation.
 
 
+### Scope-based Compiler Architecture
+
+`Scope` is central internal representation throughout the compiler pipeline.
+
+In many traditional compilers, lexical scope, AST structure, control-flow graph, and basic blocks are represented by separate data structures. VSC takes a simpler approach: these structures are unified through a hierarchical `Scope` tree.
+
+A `Scope` represents not only a lexical block, but also a control-flow region.
+
+A Scope can represent:
+
+- normal block scope `{ ... }`
+- `if/else` branches
+- `while` loops
+- loop control targets (`break` / `continue`)
+- basic block boundaries
+
+The same Scope tree is used by:
+
+- semantic analysis
+- TAC generation
+- basic block construction
+- instruction scheduling
+- register allocation
+
+The compiler pipeline can be viewed as:
+
+```
+source code
+    |
+    v
+ Scope tree
+    |
+    +---- TAC generation
+    |
+    +---- Basic blocks
+    |
+    +---- Instruction scheduling
+    |
+    +---- Register allocation
+    |
+    v
+assembly
+```
+
+### Control Flow Through Scope
+
+Control flow is also represented using Scope relationships.
+
+For example, a `while` Scope contains:
+
+```
+while Scope
+    |
+    +-- condition Scope
+    |
+    +-- body Scope
+```
+
+The loop Scope owns the targets of `break` and `continue`.
+
+- `continue` transfers control back to the loop condition.
+- `break` transfers control to the code after the loop.
+
+Nested loops naturally work because each loop Scope keeps its own control-flow targets.
+
+```
+outer while Scope
+    |
+    +-- inner while Scope
+            |
+            +-- continue -> inner condition
+            +-- break    -> after inner while
+```
+
+### Scope and Reachability
+
+`Scope` also defines reachable code boundaries.
+
+When a terminating statement such as `break`, `continue`, or `return` appears, VSC inserts a `bb_terminate` marker.
+
+The following statements remain in the source Scope tree, but they are unreachable and do not generate TAC.
+
+This is important for register allocation:
+
+- TAC generation does not create instructions for dead code.
+- Register allocation does not allocate physical registers for unreachable
+  instructions.
+- The virtual-register state is therefore not polluted by dead code.
+
+This simple mechanism makes control-flow handling and register-state
+tracking much more reliable.
+
+
 
 ### DAG Construction
 ...
 
-### Scope and Semantic Analysis
-
-Semantic analysis performs:
-
-- variable declaration checking
-- symbol table construction
-- scope resolution
-- variable renaming
 
 
 ### Three Address Code
