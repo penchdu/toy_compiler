@@ -344,7 +344,7 @@ void while__recover_pr(Scope *while_scp,
 	}
 }
 
-void st_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &additional_dirty, int &dirty_cnt)
+void st_additional_dirty_in_cond(Scope *scp, vector<X64mc> &mcs, vector<bool> &additional_dirty, int &dirty_cnt)
 {
 	int meet = 0;
 	int fix = 0;
@@ -431,7 +431,7 @@ void st_body_tail_dirty(Scope *while_scp,
 		LOG("dirty_cnt %d", dirty_cnt);
 		auto &mcs = ((BasicBlock*) cond->basic_block)->x64mc_alloc_wave;
 
-		st_dirty(cond, mcs, tail_dirty, dirty_cnt);
+		st_additional_dirty_in_cond(cond, mcs, tail_dirty, dirty_cnt);
 
 		LOG("dirty_cnt %d", dirty_cnt);
 	}
@@ -563,7 +563,7 @@ void ra_wave__continue(Scope *while_scp,
 		Scope *cond = while_scp->clds[0];
 		auto &mcs = ((BasicBlock*) cond->basic_block)->x64mc_alloc_wave;
 
-		st_dirty(cond, mcs, addtional_dirty, dirty_cnt);
+		st_additional_dirty_in_cond(cond, mcs, addtional_dirty, dirty_cnt);
 
 		LOG("dirty_cnt %d", dirty_cnt);
 	}
@@ -699,6 +699,8 @@ void ra_wave__while(Scope *while_scp)
 	dump_vr_state(vr_state, "vr_state " + to_string(while_scp->id));
 	printf("\n");
 
+	////////////////////////////////////////////////////////////////////////////////////////
+
 //	st_body_tail_dirty(while_scp, pre_cond_vr_state, after_body_vr_state, body_inner_tail);
 	vector<bool> addtional_dirty(vr_declare_manager.size(), 0);
 
@@ -709,7 +711,7 @@ void ra_wave__while(Scope *while_scp)
 		LOG("dirty_cnt %d", dirty_cnt);
 		auto &mcs = ((BasicBlock*) cond->basic_block)->x64mc_alloc_wave;
 
-		st_dirty(cond, mcs, addtional_dirty, dirty_cnt);
+		st_additional_dirty_in_cond(cond, mcs, addtional_dirty, dirty_cnt);
 
 		LOG("dirty_cnt %d", dirty_cnt);
 	}
@@ -719,6 +721,9 @@ void ra_wave__while(Scope *while_scp)
 		Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
 		st_additional_dirty(body_inner_tail, after_body_vr_state, addtional_dirty);
 	}
+
+
+	////////////////////////////////////////////////////////////////////////////////////////
 
 	for (Scope *p : body->continue_list)
 	{
