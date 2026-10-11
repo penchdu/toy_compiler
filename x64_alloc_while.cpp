@@ -344,7 +344,7 @@ void while__recover_pr(Scope *while_scp,
 	}
 }
 
-void st_new_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &new_dirty, int &dirty_cnt)
+void st_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &new_dirty, int &dirty_cnt)
 {
 	int meet = 0;
 	int fix = 0;
@@ -360,9 +360,36 @@ void st_new_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &new_dirty, int &
 
 		meet++;
 
-		if (i + 1 == mcs.size()
-		    || mcs[i + 1].mc_stamp != MC_ST
-		    || mcs[i + 1].s1 != vr)
+		/*
+		 * the first victim of new_dirty[*] must follow a st
+		 *
+		 * example:
+		 * a is clean in pre_cond
+		 * a is dirty in new_dirty
+		 *
+		 * in currnet cond asm:
+		 * 1st time:
+		 * victim a, no st (lost the value of new dirty a)
+		 *
+		 * 2nd time:
+		 * alloc a
+		 * dirty a
+		 * victim a
+		 * st a
+		 *
+		 * the 2nd time "victim + st" dosn't st new dirty a
+		 *
+		 */
+
+		if (i + 1 < mcs.size()
+		    && mcs[i + 1].mc_stamp == MC_ST
+		    && mcs[i + 1].s1 == vr)
+		{
+			//already have st
+			new_dirty[vr] = 0;
+			dirty_cnt--;
+		}
+		else
 		{
 			X64mc mc(MC_ST, vr);
 			mc.pr1 = mcs[i].pr1;
@@ -370,22 +397,19 @@ void st_new_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &new_dirty, int &
 			mcs.insert(mcs.begin() + 1 + i, mc);
 
 			fix++;
-		}
-		else
-		{
-			//already have st
+			new_dirty[vr] = 0;
+			dirty_cnt--;
 		}
 
-		new_dirty[vr] = 0;
-		if (--dirty_cnt == 0)
+		if (dirty_cnt == 0)
 			return;
 	}
 
 	LOG("%s, meet %d, fix %d", scp->name.c_str(), meet, fix);
 }
 void st_body_tail_dirty(Scope *while_scp,
-	const vector<VrToPr> &pre_cond_vr_state,
-	const vector<VrToPr> &after_body_vr_state)
+    const vector<VrToPr> &pre_cond_vr_state,
+    const vector<VrToPr> &after_body_vr_state)
 {
 	Scope *cond = while_scp->clds[0];
 	Scope *body = while_scp->clds[1];
@@ -405,11 +429,12 @@ void st_body_tail_dirty(Scope *while_scp,
 	}
 	if (dirty_cnt)
 	{
-		LOG("new_dirty_cnt %d", dirty_cnt);
+		LOG("dirty_cnt %d", dirty_cnt);
 		auto &mcs = ((BasicBlock*) cond->basic_block)->x64mc_alloc_wave;
-		st_new_dirty(cond, mcs, body_tail_dirty, dirty_cnt);
 
-		LOG("new_dirty_cnt %d", dirty_cnt);
+		st_dirty(cond, mcs, body_tail_dirty, dirty_cnt);
+
+		LOG("dirty_cnt %d", dirty_cnt);
 	}
 
 	/*

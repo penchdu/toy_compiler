@@ -267,7 +267,8 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			break;
 
 		case MC_victim:
-			PRINT_ASM("#%s %%%d, %s", mc.asm_code.c_str(), mc.s1, pr_name[mc.pr1]);
+//			PRINT_ASM("#%s %%%d, %s", mc.asm_code.c_str(), mc.s1, pr_name[mc.pr1]);
+			PRINT_ASM("");
 			PRINT_ASM_sem
 			break;
 
