@@ -5,7 +5,7 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 # ===== test case dirs (relative to PROJECT_DIR) =====
 TEST_DIRS=(
-	vsl_alloc_cases
+	case3_vsl_alloc_cases
     case2
     case1
 )

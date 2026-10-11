@@ -291,11 +291,13 @@ static Scope* case_tk_continue_break()
 void case_tk_continue()
 {
 	Scope *scp = case_tk_continue_break();
+	scp->sem_stamp = SEM_CONTINUE;
 	scp->name = "continue";
 }
 void case_tk_break()
 {
 	Scope *scp = case_tk_continue_break();
+	scp->sem_stamp = SEM_BREAK;
 	scp->name = "break";
 }
 

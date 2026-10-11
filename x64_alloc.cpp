@@ -51,14 +51,14 @@ const char* pr_name_byte(int pr)
 
 extern Mc2mc fake_cmp_mc_to_real_mc[];
 
-vector<VrToPr> vr2pr;
-vector<PrToVr> pr2vr(X64PR_MAX, {INVALID__VR});
+vector<VrToPr> vr_state;
+vector<PrToVr> pr_state(X64PR_MAX, {INVALID_VR});
 
 static X64pr get_pr()
 {
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
-		if (pr2vr[i].vr == INVALID__VR)
+		if (pr_state[i].vr == INVALID_VR)
 		{
 			return (X64pr) i;
 		}
@@ -77,36 +77,36 @@ static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 	 * s1 == s2
 	 */
 	bool need_load = 0;
-	if (vr2pr[vr].pr == X64PR_MAX)
+	if (vr_state[vr].pr == X64PR_MAX)
 	{
 		int pr = get_pr();
-		vr2pr[vr].pr = pr;
-		vr2pr[vr].u = u;
-		pr2vr[pr].vr = vr;
+		vr_state[vr].pr = pr;
+		vr_state[vr].u = u;
+		pr_state[pr].vr = vr;
 		need_load = (u & VR_USAGE_READ);
 	}
-	else if (!(vr2pr[vr].u & VR_USAGE_READ) && (u & VR_USAGE_READ))
+	else if (!(vr_state[vr].u & VR_USAGE_READ) && (u & VR_USAGE_READ))
 	{
 		need_load = 1;
 	}
 
-	vr2pr[vr].u |= u;
+	vr_state[vr].u |= u;
 
 	if (need_load)
 	{
 		X64mc mc(MC_LD, vr);
-		mc.pr1 = vr2pr[vr].pr;
+		mc.pr1 = vr_state[vr].pr;
 		mc.ori_sem = "alloc";
 		x64mc_alloced.push_back(mc);
 	}
 
-	return vr2pr[vr].pr;
+	return vr_state[vr].pr;
 }
 
 static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 {
-	int pr = vr2pr[vr].pr;
-	int u = vr2pr[vr].u;
+	int pr = vr_state[vr].pr;
+	int u = vr_state[vr].u;
 
 	assert(pr != X64PR_MAX);
 	assert(u != VR_USAGE_INVALID);
@@ -119,11 +119,11 @@ static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 		x64mc_alloced.push_back(mc);
 	}
 
-	vr2pr[vr].pr = X64PR_MAX;
-	vr2pr[vr].u = VR_USAGE_INVALID;
+	vr_state[vr].pr = X64PR_MAX;
+	vr_state[vr].u = VR_USAGE_INVALID;
 
-	assert(pr2vr[pr].vr == vr);
-	pr2vr[pr].vr = INVALID__VR;
+	assert(pr_state[pr].vr == vr);
+	pr_state[pr].vr = INVALID_VR;
 }
 static void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
 {
@@ -385,7 +385,7 @@ static void dump_asm(const string &asm_file)
 
 void x64_reg_alloc()
 {
-	vr2pr.resize(vr_declare_manager.size());
+	vr_state.resize(vr_declare_manager.size());
 
 	x64_reg_alloc_o0(&file_scp);
 	dump_asm("a0.s");

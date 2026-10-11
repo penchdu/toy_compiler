@@ -326,8 +326,11 @@ public:
 	vector<Scope*> continue__break;
 	bool bb_terminated;
 
+	void *scp_vr_state = 0;
+	void *scp_pr_state = 0;
+
 	vector<Tac> tac;
-	void *basic_block;
+	void *basic_block = 0;
 
 	// for function
 	Scope *return_label = 0;

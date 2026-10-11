@@ -95,15 +95,15 @@ struct VrToPr
 	int expected_usage = VR_USAGE_INVALID;
 	int score = 0;
 };
-extern vector<VrToPr> vr2pr;
+extern vector<VrToPr> vr_state;
 
-constexpr int INVALID__VR = -1;
+constexpr int INVALID_VR = -1;
 struct PrToVr
 {
-	int vr = INVALID__VR;
+	int vr = INVALID_VR;
 //	int u = VR_USEAGE_INVALID;
 };
-extern vector<PrToVr> pr2vr;
+extern vector<PrToVr> pr_state;
 
 struct McDepend {
 	vector<int> mcs;
@@ -306,7 +306,7 @@ void spill_vr(vector<VrToPr> &vr_to_pr, vector<PrToVr> &pr_to_vr,
 void spill_all_pr(BasicBlock *bb);
 void x64_reg_alloc();
 
-void dump_vr2pr(const vector<VrToPr> &vp, const string &tag);
+void dump_vr_state(const vector<VrToPr> &vp, const string &tag);
 void check_pr_vr_consistency();
 void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr);
 void init_wave(BasicBlock *bb);
@@ -326,6 +326,8 @@ void while__recover_pr(Scope *scp,
     int swap_pr);
 
 void ra_wave__while(Scope *scp);
+void ra_wave__continue_break_save_vr_state(Scope *scp);
+void ra_wave__continue(Scope *while_scp);
 void ra_wave__if(Scope *if_scp);
 
 #endif /* X64_BACK_END_H_ */

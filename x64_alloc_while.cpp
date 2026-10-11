@@ -9,19 +9,23 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
+
+
+
+
 static int get_swap_pr(BasicBlock *bb)
 {
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
-		if (pr2vr[i].vr == INVALID__VR)
+		if (pr_state[i].vr == INVALID_VR)
 			return i;
 	}
 
 	int swap_pr = X64PR_MAX;
 	for (int pr = R10D; pr < X64PR_MAX; pr++)
 	{
-		int vr = pr2vr[pr].vr;
-		if (vr2pr[vr].u == VR_USAGE_READ)
+		int vr = pr_state[pr].vr;
+		if (vr_state[vr].u == VR_USAGE_READ)
 		{
 			swap_pr = pr;
 			break;
@@ -30,8 +34,8 @@ static int get_swap_pr(BasicBlock *bb)
 	if (swap_pr == X64PR_MAX)
 		swap_pr = X64PR_MAX - 1;
 
-	spill_vr(vr2pr, pr2vr, pr2vr[swap_pr].vr, bb->x64mc_alloc_wave);
-	pr2vr[swap_pr].vr == INVALID__VR;
+	spill_vr(vr_state, pr_state, pr_state[swap_pr].vr, bb->x64mc_alloc_wave);
+	pr_state[swap_pr].vr == INVALID_VR;
 	return swap_pr;
 }
 //static int while__get_pr(BasicBlock *bb, int score)
@@ -160,7 +164,7 @@ void while__end_work(Scope *scp)
 			check_dead_vr(scp, mcs, vr);
 	}
 }
-void dump_vr2pr(const vector<VrToPr> &vr_state, const string &tag)
+void dump_vr_state(const vector<VrToPr> &vr_state, const string &tag)
 {
 	printf("===== %s\n", tag.c_str());
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
@@ -184,14 +188,14 @@ void while__recover_pr(Scope *while_scp,
     const vector<PrToVr> &before_pr2vr,
     vector<VrToPr> &now_vr2pr,
     vector<PrToVr> &now_pr2vr,
+    Scope *scp_to_gen_mc,
     int swap_pr)
 {
-	Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
-	BasicBlock *bb = (BasicBlock*) body_inner_tail->basic_block;
+	BasicBlock *bb = (BasicBlock*) scp_to_gen_mc->basic_block;
 	vector<X64mc> &x64mcs = bb->x64mc_alloc_wave;
 	X64mc mc;
-	(void) vr2pr;
-	(void) pr2vr;
+	(void) vr_state;
+	(void) pr_state;
 
 	int spilled = 0;
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
@@ -205,14 +209,14 @@ void while__recover_pr(Scope *while_scp,
 			spilled++;
 		}
 	}
-	LOG("scp %s spilled: %d, swap_pr=%d %s", body_inner_tail->name.c_str(), spilled, swap_pr, pr_name[swap_pr]);
+	LOG("scp %s spilled: %d, swap_pr=%d %s", scp_to_gen_mc->name.c_str(), spilled, swap_pr, pr_name[swap_pr]);
 
-	if (now_pr2vr[swap_pr].vr != INVALID__VR)
+	if (now_pr2vr[swap_pr].vr != INVALID_VR)
 	{
 		int free_pr = X64PR_MAX;
 		for (int i = R10D; i < X64PR_MAX; i++)
 		{
-			if (now_pr2vr[i].vr == INVALID__VR)
+			if (now_pr2vr[i].vr == INVALID_VR)
 			{
 				free_pr = i;
 				break;
@@ -232,7 +236,7 @@ void while__recover_pr(Scope *while_scp,
 		now_vr2pr[vr].pr = free_pr;
 		now_pr2vr[free_pr].vr = vr;
 
-		now_pr2vr[swap_pr].vr = INVALID__VR;
+		now_pr2vr[swap_pr].vr = INVALID_VR;
 	}
 	if (swap_pr == X64PR_MAX)
 		ERR();
@@ -258,9 +262,9 @@ void while__recover_pr(Scope *while_scp,
 			int now_A_vr = now_pr2vr[A].vr;
 
 			// (curr A is busy && B == PR)
-			if (now_A_vr != INVALID__VR)
+			if (now_A_vr != INVALID_VR)
 			{
-				assert(now_pr2vr[swap_pr].vr == INVALID__VR);
+				assert(now_pr2vr[swap_pr].vr == INVALID_VR);
 				auto &now_A_vr_struct = now_vr2pr[now_A_vr];
 
 				mc = X64mc(MC_ASSIGN);
@@ -294,20 +298,20 @@ void while__recover_pr(Scope *while_scp,
 
 				//
 //				now_pr2vr[vr]
-				now_pr2vr[B].vr = INVALID__VR;
+				now_pr2vr[B].vr = INVALID_VR;
 			}
 		}
 		else	// B == X64PR_MAX
 		{
 			int now_A_vr = now_pr2vr[A].vr;
 
-			if (now_A_vr != INVALID__VR)
+			if (now_A_vr != INVALID_VR)
 			{
 				// must have another free pr
 				int free_pr = X64PR_MAX;
 				for (int pr = R10D; pr < X64PR_MAX; pr++)
 				{
-					if (now_pr2vr[pr].vr == INVALID__VR && pr != swap_pr)
+					if (now_pr2vr[pr].vr == INVALID_VR && pr != swap_pr)
 					{
 						free_pr = pr;
 						break;
@@ -405,14 +409,15 @@ void st_dirty(Scope *scp, vector<X64mc> &mcs, vector<bool> &body_tail_dirty, int
 
 	LOG("%s, meet %d, fix %d", scp->name.c_str(), meet, fix);
 }
+
 void st_body_tail_dirty(Scope *while_scp,
     const vector<VrToPr> &pre_cond_vr_state,
-    const vector<VrToPr> &after_body_vr_state)
+    const vector<VrToPr> &after_body_vr_state,
+    Scope *scp_to_gen_mc)
 {
 	Scope *cond = while_scp->clds[0];
-	Scope *body = while_scp->clds[1];
 
-	vector<bool> body_tail_dirty(vr_declare_manager.size(), 0);
+	vector<bool> tail_dirty(vr_declare_manager.size(), 0);
 	int dirty_cnt = 0;
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
@@ -420,7 +425,7 @@ void st_body_tail_dirty(Scope *while_scp,
 		    && !pre_cond_vr_state[vr].dirty
 		    && after_body_vr_state[vr].dirty)
 		{
-			body_tail_dirty[vr] = 1;
+			tail_dirty[vr] = 1;
 			dirty_cnt++;
 			printf("new_dirty: %%%d \n", vr);
 		}
@@ -430,7 +435,7 @@ void st_body_tail_dirty(Scope *while_scp,
 		LOG("dirty_cnt %d", dirty_cnt);
 		auto &mcs = ((BasicBlock*) cond->basic_block)->x64mc_alloc_wave;
 
-		st_dirty(cond, mcs, body_tail_dirty, dirty_cnt);
+		st_dirty(cond, mcs, tail_dirty, dirty_cnt);
 
 		LOG("dirty_cnt %d", dirty_cnt);
 	}
@@ -458,11 +463,10 @@ void st_body_tail_dirty(Scope *while_scp,
 	{
 		for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 		{
-			if (!body_tail_dirty[vr])
+			if (!tail_dirty[vr])
 				continue;
 
-			Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
-			auto &mcs = ((BasicBlock*) body_inner_tail->basic_block)->x64mc_alloc_wave;
+			auto &mcs = ((BasicBlock*) scp_to_gen_mc->basic_block)->x64mc_alloc_wave;
 
 			X64mc mc(MC_ST, vr);
 			mc.pr1 = after_body_vr_state[vr].pr;
@@ -470,6 +474,71 @@ void st_body_tail_dirty(Scope *while_scp,
 			mcs.push_back(mc);
 		}
 	}
+}
+void ra_wave__continue_break_save_vr_state(Scope *scp)
+{
+	scp->scp_vr_state = new vector<VrToPr>;
+	scp->scp_pr_state = new vector<PrToVr>;
+	vector<VrToPr> &scp_vr_state = *((vector<VrToPr>*)scp->scp_vr_state);
+	vector<PrToVr> &scp_pr_state = *((vector<PrToVr>*)scp->scp_pr_state);
+	scp_vr_state = vr_state;
+	scp_pr_state = pr_state;
+}
+void ra_wave__continue(Scope *while_scp,
+	Scope *continue_break,
+	vector<VrToPr> &pre_cond_vr_state,
+	vector<PrToVr> &pre_cond_pr_state,
+	int pre_cond_swap_pr)
+{
+	//	LOG("scp %s", scp->name.c_str());
+	vector<VrToPr> &scp_vr_state = *((vector<VrToPr>*)continue_break->scp_vr_state);
+	vector<PrToVr> &scp_pr_state = *((vector<PrToVr>*)continue_break->scp_pr_state);
+
+	////////////////////////////////////////////////////////////
+	printf("\n============== swap %d ==============\n", while_scp->id);
+	dump_vr_state(pre_cond_vr_state, "pre cond " + to_string(while_scp->id));
+	dump_vr_state(scp_vr_state, "continue " + to_string(while_scp->id));
+
+	while__recover_pr(while_scp,
+	    pre_cond_vr_state,
+	    pre_cond_pr_state,
+	    scp_vr_state,
+	    scp_pr_state,
+	    continue_break,
+	    pre_cond_swap_pr);
+
+	dump_vr_state(scp_vr_state, "after continue swaped " + to_string(while_scp->id));
+	printf("\n");
+
+	st_body_tail_dirty(while_scp, pre_cond_vr_state, scp_vr_state, continue_break);
+}
+void ra_wave__break(Scope *while_scp,
+	Scope *continue_break,
+	vector<VrToPr> &after_cond_vr_state,
+	vector<PrToVr> &after_cond_pr_state,
+	int after_cond_swap_pr)
+{
+	//	LOG("scp %s", scp->name.c_str());
+	vector<VrToPr> &scp_vr_state = *((vector<VrToPr>*)continue_break->scp_vr_state);
+	vector<PrToVr> &scp_pr_state = *((vector<PrToVr>*)continue_break->scp_pr_state);
+
+	////////////////////////////////////////////////////////////
+	printf("\n============== swap %d ==============\n", while_scp->id);
+	dump_vr_state(after_cond_vr_state, "after cond " + to_string(while_scp->id));
+	dump_vr_state(scp_vr_state, "break " + to_string(while_scp->id));
+
+	while__recover_pr(while_scp,
+	    after_cond_vr_state,
+	    after_cond_pr_state,
+	    scp_vr_state,
+	    scp_pr_state,
+	    continue_break,
+	    after_cond_swap_pr);
+
+	dump_vr_state(scp_vr_state, "after break swaped " + to_string(while_scp->id));
+	printf("\n");
+
+	st_body_tail_dirty(while_scp, after_cond_vr_state, scp_vr_state, continue_break);
 }
 void ra_wave__while(Scope *while_scp)
 {
@@ -494,10 +563,8 @@ void ra_wave__while(Scope *while_scp)
 	 *
 	 */
 
-	int swap_pr = X64PR_MAX;
-	swap_pr = get_swap_pr((BasicBlock*) while_scp->basic_block);
-	if (swap_pr == X64PR_MAX)
-		ERR();
+	int swap_pr = get_swap_pr((BasicBlock*) while_scp->basic_block);
+	assert(swap_pr != X64PR_MAX);
 
 // try alloc cond write
 //	for(int vr : scp->outer_symb_write)
@@ -520,42 +587,52 @@ void ra_wave__while(Scope *while_scp)
 //		if (cond->outer_symb_read[i] > 0 && body->outer_symb_write[i] > 0)
 //			cond->addtional_symb_usage[i] |= VR_USAGE_WRITE;
 //	}
-	vector<VrToPr> pre_cond_vr2pr = vr2pr;
-	vector<PrToVr> pre_cond_pr2vr = pr2vr;
+	cond->scp_vr_state = new vector<VrToPr>;
+	cond->scp_pr_state = new vector<PrToVr>;
+	vector<VrToPr> &pre_cond_vr_state = *((vector<VrToPr>*)cond->scp_vr_state);
+	vector<PrToVr> &pre_cond_pr_state = *((vector<PrToVr>*)cond->scp_pr_state);
+	pre_cond_vr_state = vr_state;
+	pre_cond_pr_state = pr_state;
 
 	ra_wave__scope(cond);
-//	if(pr2vr[swap_pr].vr != INVALID__VR)
-//		ERR();
 
-	vector<VrToPr> after_cond_vr2pr = vr2pr;
-	vector<PrToVr> after_cond_pr2vr = pr2vr;
+	swap_pr = get_swap_pr((BasicBlock*) while_scp->basic_block);
+	assert(swap_pr != X64PR_MAX);
+
+	vector<VrToPr> after_cond_vr_state = vr_state;
+	vector<PrToVr> after_cond_pr_state = pr_state;
 
 	////////////////////////////////////////////////////////////
 	// while body
 	ra_wave__scope(body);
 
-	vector<VrToPr> after_body_vr2pr = vr2pr;
-	vector<PrToVr> after_body_pr2vr = pr2vr;
+	vector<VrToPr> after_body_vr_state = vr_state;
+	vector<PrToVr> after_body_pr_state = pr_state;
 
 	////////////////////////////////////////////////////////////
-	vr2pr = after_cond_vr2pr;
-	pr2vr = after_cond_pr2vr;
+	vr_state = after_cond_vr_state;
+	pr_state = after_cond_pr_state;
 
 	////////////////////////////////////////////////////////////
 	printf("\n============== swap %d ==============\n", while_scp->id);
-	dump_vr2pr(pre_cond_vr2pr, "pre cond " + to_string(while_scp->id));
-	dump_vr2pr(after_cond_vr2pr, "after cond " + to_string(while_scp->id));
-	dump_vr2pr(after_body_vr2pr, "after body " + to_string(while_scp->id));
+	dump_vr_state(pre_cond_vr_state, "pre cond " + to_string(while_scp->id));
+	dump_vr_state(after_cond_vr_state, "after cond " + to_string(while_scp->id));
+	dump_vr_state(after_body_vr_state, "after body " + to_string(while_scp->id));
 
 	while__recover_pr(while_scp,
-	    pre_cond_vr2pr, pre_cond_pr2vr,
-	    after_body_vr2pr, after_body_pr2vr, swap_pr);
+	    pre_cond_vr_state,
+	    pre_cond_pr_state,
+	    after_body_vr_state,
+	    after_body_pr_state,
+	    get_inner_tail_of_scope(while_scp->clds[1]),
+	    swap_pr);
 
-	dump_vr2pr(after_body_vr2pr, "after body swaped " + to_string(while_scp->id));
-	dump_vr2pr(vr2pr, "vr2pr " + to_string(while_scp->id));
+	dump_vr_state(after_body_vr_state, "after body swaped " + to_string(while_scp->id));
+	dump_vr_state(vr_state, "vr2pr " + to_string(while_scp->id));
 	printf("\n");
 
-	st_body_tail_dirty(while_scp, pre_cond_vr2pr, after_body_vr2pr);
+	Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
+	st_body_tail_dirty(while_scp, pre_cond_vr_state, after_body_vr_state, body_inner_tail);
 	while__end_work(while_scp);
 }
 
@@ -594,8 +671,8 @@ void ra_wave__if(Scope *if_scp)
 	ra_wave__scope(cond);
 	spill_all_pr((BasicBlock*) cond->basic_block);
 
-	vector<VrToPr> cond_vr2pr = vr2pr;
-	vector<PrToVr> cond_pr2vr = pr2vr;
+	vector<VrToPr> cond_vr2pr = vr_state;
+	vector<PrToVr> cond_pr2vr = pr_state;
 
 	// then
 	for (int vr = 0; vr < else_branch->outer_symb_read.size(); vr++)
@@ -610,8 +687,8 @@ void ra_wave__if(Scope *if_scp)
 	ra_wave__scope(then_branch);
 	spill_all_pr((BasicBlock*) then_tail->basic_block);
 
-	vector<VrToPr> then_vr2pr = vr2pr;
-	vector<PrToVr> then_pr2vr = pr2vr;
+	vector<VrToPr> then_vr2pr = vr_state;
+	vector<PrToVr> then_pr2vr = pr_state;
 
 	// else
 	for (int vr = 0; vr < else_branch->outer_symb_read.size(); vr++)
@@ -623,8 +700,8 @@ void ra_wave__if(Scope *if_scp)
 		symb->use_cnt += cnt;
 	}
 
-	vr2pr = cond_vr2pr;
-	pr2vr = cond_pr2vr;
+	vr_state = cond_vr2pr;
+	pr_state = cond_pr2vr;
 
 	ra_wave__scope(else_branch);
 	spill_all_pr((BasicBlock*) else_tail->basic_block);
