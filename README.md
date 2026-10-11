@@ -77,6 +77,7 @@ The normal back edge from the while-body to the while-condition is implemented w
 The allocator saves the register state at each `continue` and `break` point, then reconciles it with the target state after the while-loop allocation is completed. `continue` transfers control back to the while-condition, while `break` transfers control to the loop exit.
 
 The random testing tool now generates `continue` and `break` as well, including statements after them to exercise dead-code handling. I ran multiple rounds of 1,000-program differential tests with both constructs enabled, including a run with `if/else` disabled to specifically test loop control flow without relying on the `spill all` behavior at branch boundaries. All tests passed. 
+
 I use the method designed for while-body to implement `continue` and `break`, it works, honestly, I’m quite surprised, I thought these two token are much more complex than while-body.
 
 Still need to reason more carefully about the correctness of `continue` and `break` register-state reconciliation, even though extensive random testing has not revealed any problems yet.
