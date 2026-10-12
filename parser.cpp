@@ -87,7 +87,7 @@ void exit_current_scope()
 //	return p;
 //}
 
-static Ast* new_ast_node(Token t)
+Ast* new_ast_node(Token t)
 {
 	Ast *p = new Ast(t);
 
@@ -413,7 +413,7 @@ static Ast* case_tk_semicolon()
 	// maybe "if(...);" need semicolon to make a empty ast
 	Token tk = tokens.get();
 	return 0;
-	return new Ast(tk);
+//	return new_ast_node(tk);
 }
 void case_tk_eof()
 {

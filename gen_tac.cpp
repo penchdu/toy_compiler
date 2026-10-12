@@ -97,6 +97,9 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 
 	return -1;
 }
+
+extern bool enable_bb_terminate;
+
 static bool gen_tac(Scope *scp)
 {
 //	LOG("scp %s", scp->name.c_str());

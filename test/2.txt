@@ -1,0 +1,99 @@
+
+
+
+
+
+int test()
+{
+	int a = 1;
+	int b = 200;
+	int sum = 0;
+	int i = 0;
+
+	if (a < b)
+	{
+		int a = 10;
+		int e = 5;
+		while (i < 120)
+		{
+			if (a < 50)
+			{
+				e = e + 6;
+				break;
+
+				e = e + 7;
+			}
+
+			if (b > 0)
+			{
+				i = i + 1;
+				continue;
+
+				i = i + 2;
+			}
+
+			sum = sum + a + e;
+			i = i + 1;
+		}
+	}
+
+	sum = sum + a;
+
+	while (i < 100)
+	{
+		int e = 12;
+		while (i < 10)
+		{
+			int a = 1;
+			a = a + e;
+			if (i > 5)
+				break;
+			i = i + a;
+		}
+		i = i + 1;
+		sum = sum + i;
+	}
+	return sum;
+}
+
+
+int test()
+{
+	int i = 0;
+	int a = 1; int  b = 2; int  c = 3; int  d = 4;
+	int e = 5; int  f = 6; int  g = 7; int  h = 8;
+
+	while (i < 1)
+	{
+		if (i != 0)
+		{
+			break;
+
+			a = 101;
+			b = 102;
+			c = 103;
+			d = 104;
+			e = 105;
+			f = 106;
+			g = 107;
+			h = 108;
+
+			a = a + b;
+			c = c + d;
+			e = e + f;
+			g = g + h;
+		}
+		else
+		{
+			a = a + 10;
+			b = b + 20;
+			c = c + 30;
+			d = d + 40;
+		}
+
+		i = i + 1;
+	}
+
+	return a + 3 * b + 5 * c + 7 * d
+	    + 11 * e + 13 * f + 17 * g + 19 * h;
+}

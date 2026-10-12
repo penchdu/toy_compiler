@@ -36,8 +36,8 @@ static Scope* cond_to_negative()
 	}
 	else
 	{
-		Ast *eq = new Ast({"==", TK_CMP_E});
-		Ast *zero = new Ast({"0", TK_CONST_NUM});
+		Ast *eq = new_ast_node({"==", TK_CMP_E});
+		Ast *zero = new_ast_node({"0", TK_CONST_NUM});
 		eq->left = zero;
 		eq->right = p;
 		p = eq;
@@ -257,6 +257,8 @@ void case_tk_while()
 //	current_scope_pointer->jmp_in.push_back(while_scp);
 	return;
 }
+
+bool enable_bb_terminate = 0;
 void make_bb_terminate()
 {
 	// bb_terminate can eliminate some dead code, and dead jmp-label

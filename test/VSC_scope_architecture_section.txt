@@ -97,3 +97,8 @@ This is important for register allocation:
 
 This simple mechanism makes control-flow handling and register-state
 tracking much more reliable.
+
+
+
+
+	Originally, it was an optional optimization method used to eliminate some dead code and dead jump labels. Later, I realized that it is actually necessary for register allocation. It prevents TAC generation from producing instructions for unreachable code, so the register allocator does not allocate physical registers for these dead instructions. Therefore, the `vr_state` remains correct.

@@ -313,21 +313,23 @@ void init_wave(BasicBlock *bb);
 int wave_get_pr(BasicBlock *bb, int mc_idx);
 void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i);
 void x64_reg_alloc_wave();
-void ra_wave__regular_scope(Scope *scp);
-void ra_wave__scope(Scope *scp);
+void ra_wave_regular_scope(Scope *scp);
+void ra_wave_scope(Scope *scp);
 
 void while__pre_work(Scope *scp);
 void while__end_work(Scope *scp);
-void while__recover_pr(Scope *scp,
-	const vector<VrToPr> &before_vr2pr,
-	const vector<PrToVr> &before_pr2vr,
+int get_swap_pr(BasicBlock *bb);
+void while__recover_pr(
+    const vector<VrToPr> &before_vr2pr,
+    const vector<PrToVr> &before_pr2vr,
     vector<VrToPr> &now_vr2pr,
     vector<PrToVr> &now_pr2vr,
+    Scope *scp_to_gen_mc,
     int swap_pr);
 
-void ra_wave__while(Scope *scp);
-void ra_wave__continue_break_save_vr_state(Scope *scp);
+void ra_wave_while(Scope *scp);
+void ra_wave_continue_break_save_vr_state(Scope *scp);
 //void ra_wave__continue(Scope *while_scp);
-void ra_wave__if(Scope *if_scp);
+void ra_wave_if(Scope *if_scp);
 
 #endif /* X64_BACK_END_H_ */

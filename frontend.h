@@ -127,7 +127,7 @@ struct Symbol
 //	int cld_use_cnt = 0;
 //	int cld_consume_cnt = 0;
 
-	int appear_cnt = 0;
+	int reference_cnt = 0;
 
 	SymbolStamp stamp = SYMB_INVALID;
 	Scope *scp = 0;
@@ -412,9 +412,10 @@ extern VirtualRegDeclareManager vr_declare_manager;
 //{
 //	return vr_declare_manager.declare_at[vr]->symb->unique_name.c_str();
 //}
-constexpr bool enable_bb_terminate = 0;
+
 extern bool in_func_define;
 
+Ast* new_ast_node(Token t);
 Scope* new_scope_and_drop_in();
 Scope* new_virtual_scope_and_drop_in();
 void exit_current_scope();

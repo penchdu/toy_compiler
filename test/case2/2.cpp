@@ -7,24 +7,29 @@ int test()
 
 	if (a < b)
 	{
-		int a = 10;        // 裸块 shadow
+		int a = 10;
 		int e = 5;
 		while (i < 120)
 		{
 			if (a < 50)
-			{    // a 找裸块的 100
+			{
+				e = e + 6;
 				break;
+
+				e = e + 7;
 			}
 			if (b > 0)
 			{
 				i = i + 1;
 				continue;
+
+				i = i + 2;
 			}
-			sum = sum + a + e;   // 正常路径
+			sum = sum + a + e;
 			i = i + 1;
 		}
 	}
-	// 块外恢复：a 又回到 1
+
 	sum = sum + a;
 
 	while (i < 100)

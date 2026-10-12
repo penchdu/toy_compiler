@@ -12,8 +12,8 @@
     "assembler": "gcc"
   },
   "generation": {
-    "vars_min": 8,
-    "vars_max": 140,
+    "vars_min": 2,
+    "vars_max": 10,
     "max_depth": 30,
     "statement_budget": 320,
     "tokens": {

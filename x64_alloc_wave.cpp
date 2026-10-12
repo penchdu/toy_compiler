@@ -316,7 +316,7 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 	}
 }
 
-void ra_wave__regular_scope(Scope *scp)
+void ra_wave_regular_scope(Scope *scp)
 {
 	//	LOG("scp %s", scp->name.c_str());
 	BasicBlock *bb = scp->basic_block;
@@ -336,9 +336,9 @@ void ra_wave__regular_scope(Scope *scp)
 	}
 
 	for (Scope *p : scp->clds)
-		ra_wave__scope(p);
+		ra_wave_scope(p);
 }
-void ra_wave__scope(Scope *scp)
+void ra_wave_scope(Scope *scp)
 {
 	//	LOG("scp %s", scp->name.c_str());
 	scp->consume_cnt_in_bb.clear();
@@ -351,13 +351,13 @@ void ra_wave__scope(Scope *scp)
 //	dump_wave(bb);
 
 	if (scp->sem_stamp == SEM_WHILE)
-		ra_wave__while(scp);
+		ra_wave_while(scp);
 	else if (scp->sem_stamp == SEM_CONTINUE || scp->sem_stamp == SEM_BREAK)
-		ra_wave__continue_break_save_vr_state(scp);
+		ra_wave_continue_break_save_vr_state(scp);
 	else if (scp->sem_stamp == SEM_IF)
-		ra_wave__if(scp);
+		ra_wave_if(scp);
 	else
-		ra_wave__regular_scope(scp);
+		ra_wave_regular_scope(scp);
 }
 
 void x64_reg_alloc_wave()
@@ -372,7 +372,7 @@ void x64_reg_alloc_wave()
 	pr_state.clear();
 	pr_state.resize(X64PR_MAX, {INVALID_VR});
 
-	ra_wave__scope(&file_scp);
+	ra_wave_scope(&file_scp);
 
 	check_vr_consume_cnt(&file_scp);
 }

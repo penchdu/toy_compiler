@@ -145,13 +145,13 @@ static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 		{
 			symb->use_cnt++;
 //			symb->cld_use_cnt++;
-			symb->appear_cnt++;
+			symb->reference_cnt++;
 			scp->use_cnt_in_bb[vr]++;
 //			scp->outer_symb_used.push_back(vr);
 		}
 
 		if (usage & VR_USAGE_WRITE)
-			symb->appear_cnt++;
+			symb->reference_cnt++;
 
 		scp->appear_cnt_in_bb[vr]++;
 	}
@@ -160,11 +160,11 @@ static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 		if (usage & VR_USAGE_READ)
 		{
 			symb->use_cnt++;
-			symb->appear_cnt++;
+			symb->reference_cnt++;
 			scp->use_cnt_in_bb[vr]++;
 		}
 		if (usage & VR_USAGE_WRITE)
-			symb->appear_cnt++;
+			symb->reference_cnt++;
 
 		scp->appear_cnt_in_bb[vr]++;
 	}
@@ -233,7 +233,7 @@ static void _gen_liveness(Scope *scp)
 		_gen_liveness(p);
 }
 
-/////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 static void _check_while_used_outer_symb(int vr, int usage)
 {
 	Ast *p = vr_declare_manager.declare_at[vr];
