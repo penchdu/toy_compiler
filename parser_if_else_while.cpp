@@ -258,17 +258,10 @@ void case_tk_while()
 	return;
 }
 
-bool enable_bb_terminate = 0;
+bool enable_bb_terminate = 1;
 void make_bb_terminate()
 {
 	// bb_terminate can eliminate some dead code, and dead jmp-label
-	/*
-	 * and the very important point is: bb_terminate is necessary for reg-alloc
-	 * it eliminate dead code, so tac-generator do not read these dead code,
-	 * and reg-allocer do not alloc pr for these dead code, so the vr_state keeps right
-	 *
-	 */
-
 	if (!enable_bb_terminate)
 		return;
 

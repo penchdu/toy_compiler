@@ -84,6 +84,18 @@ Still need to reason more carefully about the correctness of `continue` and `bre
 
 
 
+### 2026.1012
+
+**if/else branch merge without spill-all is implemented**
+
+Previously, spill-all at the end of `then/else` branches. Now, merge the register state of `then/else` branches at the end if if-scope. 
+Just use the same way of `while` to implemente `then/else`, works.
+
+Things seems easier from now, the complex problem of `while` and `if` have been work out.
+Current merge algorithm is too simple. an improve is: consider future VR use after if-scope, reduce reg-spill.
+
+
+
 
 ## Project Status
 - [x] Lexer
@@ -250,7 +262,7 @@ tracking much more reliable.
 
 - `bb_terminate` 
 
-	Originally, it was an optional optimization method used to eliminate some dead code and dead jump labels. Later, I realized that it is actually necessary for register allocation. It prevents TAC generation from producing instructions for unreachable code, so the register allocator does not allocate physical registers for these dead instructions. Therefore, the `vr_state` remains correct.
+	Ab optional optimization method used to eliminate some dead code and dead jump labels. 
 
 
 ### Instruction Select
