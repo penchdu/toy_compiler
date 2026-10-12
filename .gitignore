@@ -21,6 +21,8 @@ build/
 .project
 *.bak
 
+test/python_random_test/fuzz_failures
+
 t1
 t2
 2.txt
