@@ -322,8 +322,7 @@ $./test/run_test.sh
 ```c
 
 $make
-$cd test/python_random_test
-$./python_random_test_time_seed.sh  100
+$./test/python_random_test/python_random_test.sh 100
 
 ```
 

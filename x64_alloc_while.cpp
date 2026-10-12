@@ -115,15 +115,6 @@ void while__pre_work(Scope *scp)
 		Symbol *symb = p->symb;
 		symb->use_cnt += cnt;
 	}
-//	for (int vr = 0; vr < scp->outer_symb_write.size(); vr++)
-//	{
-//		int cnt = scp->outer_symb_write[vr];
-//		if (cnt == 0)
-//			continue;
-//		Ast *p = vr_declare_manager.declare_at[vr];
-//		Symbol *symb = p->symb;
-//		 symb->use_cnt += cnt;
-//	}
 }
 void while__end_work(Scope *scp)
 {
@@ -136,15 +127,6 @@ void while__end_work(Scope *scp)
 		Symbol *symb = p->symb;
 		symb->use_cnt -= cnt;
 	}
-//	for (int vr = 0; vr < scp->outer_symb_write.size(); vr++)
-//	{
-//		int cnt = scp->outer_symb_write[vr];
-//		if (cnt == 0)
-//			continue;
-//		Ast *p = vr_declare_manager.declare_at[vr];
-//		Symbol *symb = p->symb;
-//		 symb->use_cnt -= cnt;
-//	}
 
 	Scope *tail = scp->clds[2];
 	auto &mcs = tail->basic_block->x64mc_alloc_wave;
@@ -152,11 +134,6 @@ void while__end_work(Scope *scp)
 	for (int vr = 0; vr < scp->outer_symb_read.size(); vr++)
 	{
 		if (scp->outer_symb_read[vr] > 0)
-			check_dead_vr(scp, mcs, vr);
-	}
-	for (int vr = 0; vr < scp->outer_symb_write.size(); vr++)
-	{
-		if (scp->outer_symb_write[vr] > 0)
 			check_dead_vr(scp, mcs, vr);
 	}
 }
@@ -179,7 +156,7 @@ void dump_vr_state(const vector<VrToPr> &vr_state, const string &tag)
 	printf("\n");
 }
 
-void while__recover_pr(
+void while_recover_pr(
     const vector<VrToPr> &before_vr2pr,
     const vector<PrToVr> &before_pr2vr,
     vector<VrToPr> &now_vr2pr,
@@ -336,7 +313,6 @@ void while__recover_pr(
 
 			// don't care if before dirty == 1
 			// now.dirty = 0, seems ok
-			// but if before.u == write and now.dirty is false, the semantic seems conflict
 //			now_vr2pr[vr].u = VR_USAGE_READ;
 			now_vr2pr[vr] = before_vr2pr[vr];
 			now_vr2pr[vr].dirty = 0;
@@ -514,7 +490,7 @@ void ra_wave__continue_break(Scope *cond,
 	dump_vr_state(cond_vr_state, "cond_vr_state " + to_string(cond->id));
 	dump_vr_state(source_vr_state, "source " + to_string(source->id));
 
-	while__recover_pr(
+	while_recover_pr(
 		cond_vr_state,
 		cond_pr_state,
 	    source_vr_state,
@@ -609,7 +585,7 @@ void ra_wave_while(Scope *while_scp)
 	dump_vr_state(after_cond_vr_state, "after cond " + to_string(while_scp->id));
 	dump_vr_state(after_body_vr_state, "after body " + to_string(while_scp->id));
 
-	while__recover_pr(
+	while_recover_pr(
 	    pre_cond_vr_state,
 	    pre_cond_pr_state,
 	    after_body_vr_state,

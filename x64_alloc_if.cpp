@@ -88,7 +88,7 @@ void ra_wave_if(Scope *if_scp)
 //	vector<VrToPr> after_else_vr_state = vr_state;
 //	vector<PrToVr> after_else_pr_state = pr_state;
 
-	while__recover_pr(
+	while_recover_pr(
 		after_then_vr_state,
 		after_then_pr_state,
 		vr_state,
