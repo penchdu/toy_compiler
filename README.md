@@ -88,10 +88,10 @@ Still need to reason more carefully about the correctness of `continue` and `bre
 
 **if/else branch merge without spill-all is implemented**
 
-Previously, spill-all at the end of `then/else` branches. Now, merge the register state of `then/else` branches at the end if if-scope. 
+Previously, spill-all at the end of `then/else` branches. Now, merge the register state of `then/else` branches at the end of if-scope. 
 Just use the same way of `while` to implemente `then/else`, works.
 
-Things seems easier from now, the complex problem of `while` and `if` have been work out.
+Things seems easier from now, the complex control-flow problem of `while` and `if` have been work out.
 Current merge algorithm is too simple. an improve is: consider future VR use after if-scope, reduce reg-spill.
 
 
