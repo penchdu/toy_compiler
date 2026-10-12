@@ -70,7 +70,8 @@ It uses random seeds to generate programs with configurable variable counts, nes
 
 I ran it several times, testing 1,000 programs per run, with up to 140 variables, a maximum nesting depth of 30, and an AST statement budget of 320 per program. All tests passed.
 
-The normal back edge from the while-body to the while-condition is implemented without `spill all` on this edge. This was not an easy task.
+Reg-state merge for the back edge of while-body is implemented, without `spill all`. I think it is not an easy task.
+
 
 **`continue` and `break` register-state handling implemented.**
 
