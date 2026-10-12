@@ -17,7 +17,7 @@ vector<ScopeUsedOuterSymb> while_cond_body_use_outer_symb;
 
 void reset_scope_symb_consume_cnt(Scope *scp, int value)
 {
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
 	{
 		const X64mc &mc = bb->x64mc_schedu[i];
@@ -172,7 +172,7 @@ static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 
 static void _gen_liveness(Scope *scp)
 {
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 	scp->use_cnt_in_bb.resize(vr_declare_manager.size());
 	scp->appear_cnt_in_bb.resize(vr_declare_manager.size());
 
@@ -257,7 +257,7 @@ static void _check_while_used_outer_symb(int vr, int usage)
 }
 static void check_while_used_outer_symb(Scope *scp)
 {
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 	scp->use_cnt_in_bb.resize(vr_declare_manager.size());
 	scp->appear_cnt_in_bb.resize(vr_declare_manager.size());
 

@@ -144,7 +144,7 @@ static void gen_mc(Scope *scp)
 {
 	X64mc mc;
 	scp->basic_block = new BasicBlock;
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 
 	if (scp->sem_stamp == SEM_FUNC_DEFINE
 	    || scp->sem_stamp == SEM_IF_cond
@@ -240,7 +240,7 @@ static void gen_mc(Scope *scp)
 
 void dump_mc(Scope *scp, string mc_list_name)
 {
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 
 	if (bb->entry_label != 0)
 		PRINT_ASM_HEAD("\n%s:", bb->entry_label->name.c_str());

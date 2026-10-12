@@ -319,7 +319,7 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 void ra_wave__regular_scope(Scope *scp)
 {
 	//	LOG("scp %s", scp->name.c_str());
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 
 	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
 	{
@@ -343,7 +343,7 @@ void ra_wave__scope(Scope *scp)
 	//	LOG("scp %s", scp->name.c_str());
 	scp->consume_cnt_in_bb.clear();
 	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 	bb->x64mc_alloc_wave.clear();
 
 	init_wave(bb);

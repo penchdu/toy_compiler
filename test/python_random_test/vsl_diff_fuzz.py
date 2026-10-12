@@ -40,11 +40,15 @@ class GeneratedCase:
     direct_break_count: int
     direct_continue_count: int
     post_control_statement_count: int
+    random_control_placement: bool
+    block_start_break_count: int
+    block_start_continue_count: int
 
 
 class ProgramGenerator:
     def __init__(self, seed: int, data_count: int, max_depth: int, budget: int,
-                 tokens: dict[str, bool], force_dead_tail: bool):
+                 tokens: dict[str, bool], force_dead_tail: bool,
+                 random_control_placement_probability: float):
         self.rng = random.Random(seed)
         self.seed = seed
         self.data_vars = [f"v{i}" for i in range(data_count)]
@@ -53,6 +57,11 @@ class ProgramGenerator:
         self.budget = budget
         self.tokens = dict(tokens)
         self.force_dead_tail = force_dead_tail
+        # Choose one placement style for the whole program. Most programs
+        # suppress break/continue as the first sibling statement in each block;
+        # a minority keep them eligible at every position for edge-case coverage.
+        self.random_control_placement_probability = random_control_placement_probability
+        self.random_control_placement = self.rng.random() < random_control_placement_probability
         self.next_counter = 0
         self.break_count = 0
         self.continue_count = 0
@@ -62,6 +71,8 @@ class ProgramGenerator:
         self.direct_break_count = 0
         self.direct_continue_count = 0
         self.post_control_statement_count = 0
+        self.block_start_break_count = 0
+        self.block_start_continue_count = 0
 
     def choose_data(self) -> str:
         return self.rng.choice(self.data_vars)
@@ -117,11 +128,43 @@ class ProgramGenerator:
 
         count = self.rng.randint(2, 4)
         out: list[str] = []
-        for _ in range(count):
+        for statement_index in range(count):
             if self.budget <= 0:
                 break
-            out.extend(self.statement(depth, level, loop_depth, branch_depth))
+            # In the common mode, the first sibling statement in a block is
+            # ordinary code (assignment/if/while), not break/continue. A small
+            # fraction of whole programs keeps controls eligible from position 0.
+            allow_control = self.random_control_placement or statement_index > 0
+            out.extend(self.statement(
+                depth, level, loop_depth, branch_depth,
+                allow_control=allow_control,
+                is_block_start=(statement_index == 0),
+            ))
         return out
+
+    def block_with_budget(
+        self,
+        depth: int,
+        level: int,
+        loop_depth: int,
+        branch_depth: int,
+        quota: int,
+    ) -> list[str]:
+        """Generate a block within a local quota without starving its siblings.
+
+        The unused part of `quota` is returned to the enclosing program budget.
+        This is used for if/else arms so a deeply nested then-arm cannot consume
+        the entire budget before its else-arm gets generated.
+        """
+        if quota <= 0 or self.budget <= 0:
+            return []
+        quota = min(quota, self.budget)
+        outer_remaining = self.budget
+        self.budget = quota
+        lines = self.block(depth, level, loop_depth, branch_depth)
+        used = quota - self.budget
+        self.budget = outer_remaining - used
+        return lines
 
     def statement(
         self,
@@ -130,6 +173,8 @@ class ProgramGenerator:
         loop_depth: int,
         branch_depth: int,
         force_dead_tail: bool = True,
+        allow_control: bool = True,
+        is_block_start: bool = False,
     ) -> list[str]:
         """Generate one statement, optionally forcing code after loop control.
 
@@ -147,14 +192,19 @@ class ProgramGenerator:
         can_recurse = depth < self.max_depth and self.budget > 0
         kinds = ["assign"]
         weights = [6]
-        if can_recurse and self.tokens["if"]:
+        # If an else arm is enabled, leave enough budget after this statement
+        # to emit at least one statement into each arm. Otherwise a selected if
+        # could consume the last budget unit in its then-arm and emit `else {}`.
+        min_if_budget = 2 if self.tokens["else"] else 1
+        can_make_if = depth < self.max_depth and self.budget >= min_if_budget
+        if can_make_if and self.tokens["if"]:
             kinds.append("if")
             weights.append(3)
         if can_recurse and self.tokens["while"]:
             kinds.append("while")
             weights.append(2)
 
-        if loop_depth > 0:
+        if loop_depth > 0 and allow_control:
             # Control statements are independently configurable and do not
             # require an if/else wrapper.
             if self.tokens["break"]:
@@ -173,10 +223,14 @@ class ProgramGenerator:
                 self.break_count += 1
                 if branch_depth == 0:
                     self.direct_break_count += 1
+                if is_block_start:
+                    self.block_start_break_count += 1
             else:
                 self.continue_count += 1
                 if branch_depth == 0:
                     self.direct_continue_count += 1
+                if is_block_start:
+                    self.block_start_continue_count += 1
 
             # Deliberately emit code immediately after break/continue. The
             # forced tail is generated at the same lexical level; it may itself
@@ -188,9 +242,13 @@ class ProgramGenerator:
                 for _ in range(tail_count):
                     if self.budget <= 0:
                         break
+                    # Keep the immediate post-control tail to normal source code
+                    # rather than another sibling break/continue. Nested blocks
+                    # can still contain controls according to the selected mode.
                     tail = self.statement(
                         depth, level, loop_depth, branch_depth,
                         force_dead_tail=False,
+                        allow_control=False,
                     )
                     if not tail:
                         break
@@ -204,13 +262,28 @@ class ProgramGenerator:
             return out
 
         if kind == "if":
-            then_lines = self.block(depth + 1, level + 1, loop_depth, branch_depth + 1)
+            if self.tokens["else"]:
+                # Split the remaining budget before generating either arm.
+                # This prevents depth-first generation of the then-arm from
+                # starving the else-arm, especially at large nesting depths.
+                available = self.budget
+                then_quota = self.rng.randint(1, available - 1)
+                else_quota = available - then_quota
+                then_lines = self.block_with_budget(
+                    depth + 1, level + 1, loop_depth, branch_depth + 1, then_quota
+                )
+                else_lines = self.block_with_budget(
+                    depth + 1, level + 1, loop_depth, branch_depth + 1, else_quota
+                )
+            else:
+                then_lines = self.block(depth + 1, level + 1, loop_depth, branch_depth + 1)
+                else_lines = []
+
             out.append(f"{pad}if ({self.condition()})")
             out.append(f"{pad}{{")
             out.extend(then_lines)
             out.append(f"{pad}}}")
             if self.tokens["else"]:
-                else_lines = self.block(depth + 1, level + 1, loop_depth, branch_depth + 1)
                 out.append(f"{pad}else")
                 out.append(f"{pad}{{")
                 out.extend(else_lines)
@@ -297,6 +370,9 @@ class ProgramGenerator:
             self.direct_break_count,
             self.direct_continue_count,
             self.post_control_statement_count,
+            self.random_control_placement,
+            self.block_start_break_count,
+            self.block_start_continue_count,
         )
 
 
@@ -361,6 +437,7 @@ DEFAULT_CONFIG = {
             "continue": True,
         },
         "force_statements_after_break_continue": True,
+        "random_control_placement_probability": 0.15,
     },
 }
 
@@ -395,6 +472,10 @@ def load_config(path: Path) -> dict:
             raise ValueError(f"generation.tokens.{key} must be true or false")
     if not isinstance(merged["generation"]["force_statements_after_break_continue"], bool):
         raise ValueError("generation.force_statements_after_break_continue must be true or false")
+    probability = merged["generation"].get("random_control_placement_probability", 0.15)
+    if not isinstance(probability, (int, float)) or isinstance(probability, bool) or not 0.0 <= probability <= 1.0:
+        raise ValueError("generation.random_control_placement_probability must be between 0.0 and 1.0")
+    merged["generation"]["random_control_placement_probability"] = float(probability)
     if not isinstance(merged["test"]["generate_only"], bool):
         raise ValueError("test.generate_only must be true or false")
     return merged
@@ -447,6 +528,7 @@ def main() -> int:
     budget = args.budget if args.budget is not None else gen_cfg["statement_budget"]
     generate_only = args.generate_only if args.generate_only is not None else test_cfg["generate_only"]
     force_dead_tail = gen_cfg["force_statements_after_break_continue"]
+    random_control_probability = gen_cfg["random_control_placement_probability"]
 
     if not isinstance(seed, int) or isinstance(seed, bool):
         parser.error("test.seed must be an integer, null, or 'time'")
@@ -466,6 +548,8 @@ def main() -> int:
         parser.error("timeout_seconds / --timeout must be > 0")
     if not isinstance(force_dead_tail, bool):
         parser.error("generation.force_statements_after_break_continue must be true or false")
+    if not 0.0 <= random_control_probability <= 1.0:
+        parser.error("generation.random_control_placement_probability must be between 0.0 and 1.0")
 
     # A break/continue token without any while construct cannot be emitted.
     if not tokens["while"] and (tokens["break"] or tokens["continue"]):
@@ -495,6 +579,7 @@ def main() -> int:
     print(f"Cases: {cases}; variables: {vars_min}..{vars_max}; max depth: {depth}; budget: {budget}")
     print("Enabled tokens: " + (", ".join(name for name, enabled in tokens.items() if enabled) or "(none)"))
     print(f"Force statements after break/continue: {force_dead_tail}")
+    print(f"Fully random control-placement probability: {random_control_probability:.0%} per program")
 
     counts = {"pass": 0, "vsc_failed": 0, "assemble_failed": 0, "runtime_mismatch": 0,
               "reference_failed": 0, "timeout": 0, "bad_output": 0}
@@ -504,17 +589,26 @@ def main() -> int:
     total_direct_breaks = 0
     total_direct_continues = 0
     total_post_control_statements = 0
+    random_control_placement_programs = 0
+    total_block_start_breaks = 0
+    total_block_start_continues = 0
 
     for index in range(cases):
         case_seed = seed + index * 104729
         case_rng = random.Random(case_seed ^ 0x5A17)
         data_count = case_rng.randint(vars_min, vars_max)
-        generated = ProgramGenerator(case_seed, data_count, depth, budget, tokens, force_dead_tail).generate()
+        generated = ProgramGenerator(
+            case_seed, data_count, depth, budget, tokens, force_dead_tail,
+            random_control_probability,
+        ).generate()
         total_breaks += generated.break_count
         total_continues += generated.continue_count
         total_direct_breaks += generated.direct_break_count
         total_direct_continues += generated.direct_continue_count
         total_post_control_statements += generated.post_control_statement_count
+        random_control_placement_programs += int(generated.random_control_placement)
+        total_block_start_breaks += generated.block_start_break_count
+        total_block_start_continues += generated.block_start_continue_count
         label = f"case_{index + 1:05d}_seed_{case_seed}"
 
         run_settings = {
@@ -529,6 +623,8 @@ def main() -> int:
             "statement_budget": budget,
             "tokens": tokens,
             "force_statements_after_break_continue": force_dead_tail,
+            "random_control_placement_probability": random_control_probability,
+            "random_control_placement_for_this_program": generated.random_control_placement,
             "vsc": str(vsc),
             "reference_compiler": reference_compiler,
             "assembler": assembler,
@@ -545,7 +641,10 @@ def main() -> int:
                 f"continue={generated.continue_count}\n"
                 f"direct_break={generated.direct_break_count}\n"
                 f"direct_continue={generated.direct_continue_count}\n"
-                f"post_control_statements={generated.post_control_statement_count}\n",
+                f"post_control_statements={generated.post_control_statement_count}\n"
+                f"random_control_placement={generated.random_control_placement}\n"
+                f"block_start_break={generated.block_start_break_count}\n"
+                f"block_start_continue={generated.block_start_continue_count}\n",
                 encoding="utf-8",
             )
             counts["pass"] += 1
@@ -659,6 +758,8 @@ def main() -> int:
         print(f"Generated control statements: break={total_breaks}, continue={total_continues}")
         print(f"Direct loop-body controls: break={total_direct_breaks}, continue={total_direct_continues}")
         print(f"Statements forced after break/continue: {total_post_control_statements}")
+        print(f"Programs using fully random control placement: {random_control_placement_programs}/{cases}")
+        print(f"Block-start controls: break={total_block_start_breaks}, continue={total_block_start_continues}")
         print("`break` and `continue` are generated only inside loop bodies; code is also generated after them.")
         print("The generator avoids the comma operator and unary +/-.")
         return 0
@@ -670,6 +771,8 @@ def main() -> int:
     print(f"direct loop-body break statements: {total_direct_breaks}")
     print(f"direct loop-body continue statements: {total_direct_continues}")
     print(f"statements forced after break/continue: {total_post_control_statements}")
+    print(f"programs using fully random control placement: {random_control_placement_programs}/{cases}")
+    print(f"block-start controls: break={total_block_start_breaks}, continue={total_block_start_continues}")
     for key in ["pass", "vsc_failed", "assemble_failed", "runtime_mismatch", "reference_failed", "timeout", "bad_output"]:
         if counts[key]:
             print(f"{key}: {counts[key]}")

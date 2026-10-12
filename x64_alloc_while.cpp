@@ -147,7 +147,7 @@ void while__end_work(Scope *scp)
 	}
 
 	Scope *tail = scp->clds[2];
-	auto &mcs = ((BasicBlock*) tail->basic_block)->x64mc_alloc_wave;
+	auto &mcs = tail->basic_block->x64mc_alloc_wave;
 
 	for (int vr = 0; vr < scp->outer_symb_read.size(); vr++)
 	{
@@ -179,7 +179,7 @@ void dump_vr_state(const vector<VrToPr> &vr_state, const string &tag)
 	printf("\n");
 }
 
-void while__recover_pr(Scope *while_scp,
+void while__recover_pr(
     const vector<VrToPr> &before_vr2pr,
     const vector<PrToVr> &before_pr2vr,
     vector<VrToPr> &now_vr2pr,
@@ -187,7 +187,7 @@ void while__recover_pr(Scope *while_scp,
     Scope *scp_to_gen_mc,
     int swap_pr)
 {
-	BasicBlock *bb = (BasicBlock*) scp_to_gen_mc->basic_block;
+	BasicBlock *bb = scp_to_gen_mc->basic_block;
 	vector<X64mc> &x64mcs = bb->x64mc_alloc_wave;
 	X64mc mc;
 	(void) vr_state;
@@ -344,10 +344,43 @@ void while__recover_pr(Scope *while_scp,
 	}
 }
 
-void st_additional_dirty_in_cond(Scope *scp, vector<X64mc> &mcs, vector<bool> &additional_dirty, int &dirty_cnt)
+void ra_wave__continue_break_save_vr_state(Scope *scp)
+{
+//	LOG("%s", scp->name.c_str());
+
+	scp->scp_vr_state = new vector<VrToPr>;
+	scp->scp_pr_state = new vector<PrToVr>;
+	vector<VrToPr> &scp_vr_state = *scp->scp_vr_state;
+	vector<PrToVr> &scp_pr_state = *scp->scp_pr_state;
+	scp_vr_state = vr_state;
+	scp_pr_state = pr_state;
+}
+
+int find_additional_dirty(const vector<VrToPr> &state_a,
+    const vector<VrToPr> &state_b,
+    vector<bool> &addtional_dirty)
+{
+	int dirty_cnt = 0;
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	{
+		if (state_b[vr].pr != X64PR_MAX
+		    && !state_a[vr].dirty
+		    && state_b[vr].dirty)
+		{
+			addtional_dirty[vr] = 1;
+			dirty_cnt++;
+			printf("new_dirty: %%%d \n", vr);
+		}
+	}
+
+	return dirty_cnt;
+}
+void st_additional_dirty_in_cond(Scope *cond, vector<bool> &additional_dirty, int &dirty_cnt)
 {
 	int meet = 0;
 	int fix = 0;
+	auto &mcs = cond->basic_block->x64mc_alloc_wave;
+
 	for (int i = 0; i < mcs.size(); i++)
 	{
 		if (mcs[i].mc_stamp != MC_victim)
@@ -403,39 +436,12 @@ void st_additional_dirty_in_cond(Scope *scp, vector<X64mc> &mcs, vector<bool> &a
 			return;
 	}
 
-	LOG("%s, meet %d, fix %d", scp->name.c_str(), meet, fix);
+	LOG("%s, meet %d, fix %d", cond->name.c_str(), meet, fix);
 }
-
-void st_body_tail_dirty(Scope *while_scp,
-    const vector<VrToPr> &pre_cond_vr_state,
-    const vector<VrToPr> &after_body_vr_state,
-    Scope *scp_to_gen_mc)
+void st_additional_dirty_in_tail(Scope *scp,
+    const vector<VrToPr> &state,
+    const vector<bool> &addtional_dirty)
 {
-	Scope *cond = while_scp->clds[0];
-
-	vector<bool> tail_dirty(vr_declare_manager.size(), 0);
-	int dirty_cnt = 0;
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
-	{
-		if (after_body_vr_state[vr].pr != X64PR_MAX
-		    && !pre_cond_vr_state[vr].dirty
-		    && after_body_vr_state[vr].dirty)
-		{
-			tail_dirty[vr] = 1;
-			dirty_cnt++;
-			printf("new_dirty: %%%d \n", vr);
-		}
-	}
-	if (dirty_cnt)
-	{
-		LOG("dirty_cnt %d", dirty_cnt);
-		auto &mcs = ((BasicBlock*) cond->basic_block)->x64mc_alloc_wave;
-
-		st_additional_dirty_in_cond(cond, mcs, tail_dirty, dirty_cnt);
-
-		LOG("dirty_cnt %d", dirty_cnt);
-	}
-
 	/*
 	 * If body dirtys a VR, propagating dirty to cond then re-alloc cond fixes cond's problem.
 
@@ -455,63 +461,12 @@ void st_body_tail_dirty(Scope *while_scp,
 	 needs to spill it — cond guarantees the memory value is correct.
 	 *
 	 */
-	if (dirty_cnt)
-	{
-		for (int vr = 0; vr < vr_declare_manager.size(); vr++)
-		{
-			if (!tail_dirty[vr])
-				continue;
-
-			auto &mcs = ((BasicBlock*) scp_to_gen_mc->basic_block)->x64mc_alloc_wave;
-
-			X64mc mc(MC_ST, vr);
-			mc.pr1 = after_body_vr_state[vr].pr;
-			mc.ori_sem = "while spill st dirty ";
-			mcs.push_back(mc);
-		}
-	}
-}
-void ra_wave__continue_break_save_vr_state(Scope *scp)
-{
-//	LOG("%s", scp->name.c_str());
-
-	scp->scp_vr_state = new vector<VrToPr>;
-	scp->scp_pr_state = new vector<PrToVr>;
-	vector<VrToPr> &scp_vr_state = *scp->scp_vr_state;
-	vector<PrToVr> &scp_pr_state = *scp->scp_pr_state;
-	scp_vr_state = vr_state;
-	scp_pr_state = pr_state;
-}
-
-int find_additional_dirty(const vector<VrToPr> &state_a,
-    const vector<VrToPr> &state_b,
-    vector<bool> &addtional_dirty)
-{
-	int dirty_cnt = 0;
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
-	{
-		if (state_b[vr].pr != X64PR_MAX
-		    && !state_a[vr].dirty
-		    && state_b[vr].dirty)
-		{
-			addtional_dirty[vr] = 1;
-			dirty_cnt++;
-			printf("new_dirty: %%%d \n", vr);
-		}
-	}
-
-	return dirty_cnt;
-}
-void st_additional_dirty(Scope *scp,
-    const vector<VrToPr> &state,
-    const vector<bool> &addtional_dirty)
-{
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
 	{
 		if (!addtional_dirty[vr])
 			continue;
 
-		auto &mcs = ((BasicBlock*) scp->basic_block)->x64mc_alloc_wave;
+		auto &mcs = scp->basic_block->x64mc_alloc_wave;
 
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = state[vr].pr;
@@ -519,94 +474,58 @@ void st_additional_dirty(Scope *scp,
 		mcs.push_back(mc);
 	}
 }
-
-void ra_wave__continue(Scope *while_scp,
-    Scope *continue_scp,
-    const vector<VrToPr> &pre_cond_vr_state,
-    const vector<PrToVr> &pre_cond_pr_state,
-    int pre_cond_swap_pr)
+void st_additional_dirty(Scope *cond,
+    const vector<VrToPr> &cond_vr_state,
+    Scope *body_tail__continue__break,
+    const vector<VrToPr> &body_tail__continue__break_vr_state)
 {
-	//	LOG("scp %s", scp->name.c_str());
-	assert(continue_scp->scp_vr_state != nullptr);
-	assert(continue_scp->scp_pr_state != nullptr);
+	vector<bool> additional_dirty(vr_declare_manager.size(), 0);
 
-	auto &scp_vr_state = *continue_scp->scp_vr_state;
-	auto &scp_pr_state = *continue_scp->scp_pr_state;
-	LOG("%lu", scp_vr_state.size());
+	int dirty_cnt = find_additional_dirty(cond_vr_state, body_tail__continue__break_vr_state, additional_dirty);
 
-	////////////////////////////////////////////////////////////
-	printf("\n============== while %d continue %d ==============\n",
-	    while_scp->id, continue_scp->id);
-
-	string tag = string("while") + to_string(while_scp->id) + " pre cond";
-	dump_vr_state(pre_cond_vr_state, tag);
-	dump_vr_state(scp_vr_state, "continue " + to_string(continue_scp->id));
-
-	while__recover_pr(while_scp,
-	    pre_cond_vr_state,
-	    pre_cond_pr_state,
-	    scp_vr_state,
-	    scp_pr_state,
-	    continue_scp,
-	    pre_cond_swap_pr);
-
-	dump_vr_state(scp_vr_state, "after continue swaped " + to_string(while_scp->id));
-	printf("\n");
-
-	vector<bool> addtional_dirty(vr_declare_manager.size(), 0);
-
-	int dirty_cnt = find_additional_dirty(pre_cond_vr_state, scp_vr_state, addtional_dirty);
-
-	if (dirty_cnt)
+	if (dirty_cnt && cond)
 	{
-		LOG("dirty_cnt %d", dirty_cnt);
-		Scope *cond = while_scp->clds[0];
-		auto &mcs = ((BasicBlock*) cond->basic_block)->x64mc_alloc_wave;
-
-		st_additional_dirty_in_cond(cond, mcs, addtional_dirty, dirty_cnt);
-
-		LOG("dirty_cnt %d", dirty_cnt);
+		auto &mcs = cond->basic_block->x64mc_alloc_wave;
+		st_additional_dirty_in_cond(cond, additional_dirty, dirty_cnt);
 	}
 
 	if (dirty_cnt)
-		st_additional_dirty(continue_scp, scp_vr_state, addtional_dirty);
+		st_additional_dirty_in_tail(body_tail__continue__break, body_tail__continue__break_vr_state, additional_dirty);
 }
-void ra_wave__break(Scope *while_scp,
-    Scope *break_scp,
-    vector<VrToPr> &after_cond_vr_state,
-    vector<PrToVr> &after_cond_pr_state,
-    int after_cond_swap_pr)
+
+void ra_wave__continue_break(Scope *cond,
+    vector<VrToPr> &cond_vr_state,
+    vector<PrToVr> &cond_pr_state,
+    Scope *source,
+    int swap_pr)
 {
 	//	LOG("scp %s", scp->name.c_str());
-	assert(break_scp->scp_vr_state != nullptr);
-	assert(break_scp->scp_pr_state != nullptr);
+	assert(source->scp_vr_state != nullptr);
+	assert(source->scp_pr_state != nullptr);
 
-	auto &scp_vr_state = *break_scp->scp_vr_state;
-	auto &scp_pr_state = *break_scp->scp_pr_state;
+	auto &source_vr_state = *source->scp_vr_state;
+	auto &source_pr_state = *source->scp_pr_state;
 
 	////////////////////////////////////////////////////////////
-	printf("\n============== while %d ==============\n", while_scp->id);
-	dump_vr_state(after_cond_vr_state, "after cond " + to_string(while_scp->id));
-	dump_vr_state(scp_vr_state, "break " + to_string(while_scp->id));
+	printf("\n============== cond %d ==============\n", cond->id);
+	dump_vr_state(cond_vr_state, "cond_vr_state " + to_string(cond->id));
+	dump_vr_state(source_vr_state, "source " + to_string(source->id));
 
-	while__recover_pr(while_scp,
-	    after_cond_vr_state,
-	    after_cond_pr_state,
-	    scp_vr_state,
-	    scp_pr_state,
-	    break_scp,
-	    after_cond_swap_pr);
+	while__recover_pr(
+		cond_vr_state,
+		cond_pr_state,
+	    source_vr_state,
+	    source_pr_state,
+	    source,
+	    swap_pr);
 
-	dump_vr_state(scp_vr_state, "after break swaped " + to_string(while_scp->id));
+	dump_vr_state(source_vr_state, "after source swaped " + to_string(source->id));
 	printf("\n");
 
-//	st_body_tail_dirty(while_scp, after_cond_vr_state, scp_vr_state, continue_break);
-	vector<bool> addtional_dirty(vr_declare_manager.size(), 0);
-
-	int dirty_cnt = find_additional_dirty(after_cond_vr_state, scp_vr_state, addtional_dirty);
-
-	if (dirty_cnt)
-		st_additional_dirty(break_scp, scp_vr_state, addtional_dirty);
+	if (source->sem_stamp == SEM_BREAK)
+		st_additional_dirty(0, cond_vr_state, source, source_vr_state);
+	else
+		st_additional_dirty(cond, cond_vr_state, source, source_vr_state);
 }
 void ra_wave__while(Scope *while_scp)
 {
@@ -631,7 +550,7 @@ void ra_wave__while(Scope *while_scp)
 	 *
 	 */
 
-	int pre_cond_swap_pr = get_swap_pr((BasicBlock*) while_scp->basic_block);
+	int pre_cond_swap_pr = get_swap_pr(while_scp->basic_block);
 	assert(pre_cond_swap_pr != X64PR_MAX);
 
 // try alloc cond write
@@ -664,7 +583,7 @@ void ra_wave__while(Scope *while_scp)
 
 	ra_wave__scope(cond);
 
-	int after_cond_swap_pr = get_swap_pr((BasicBlock*) while_scp->basic_block);
+	int after_cond_swap_pr = get_swap_pr(while_scp->basic_block);
 	assert(after_cond_swap_pr != X64PR_MAX);
 
 	vector<VrToPr> after_cond_vr_state = vr_state;
@@ -687,7 +606,7 @@ void ra_wave__while(Scope *while_scp)
 	dump_vr_state(after_cond_vr_state, "after cond " + to_string(while_scp->id));
 	dump_vr_state(after_body_vr_state, "after body " + to_string(while_scp->id));
 
-	while__recover_pr(while_scp,
+	while__recover_pr(
 	    pre_cond_vr_state,
 	    pre_cond_pr_state,
 	    after_body_vr_state,
@@ -701,45 +620,25 @@ void ra_wave__while(Scope *while_scp)
 
 	////////////////////////////////////////////////////////////////////////////////////////
 
-//	st_body_tail_dirty(while_scp, pre_cond_vr_state, after_body_vr_state, body_inner_tail);
-	vector<bool> addtional_dirty(vr_declare_manager.size(), 0);
+	Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
 
-	int dirty_cnt = find_additional_dirty(pre_cond_vr_state, after_body_vr_state, addtional_dirty);
-
-	if (dirty_cnt)
-	{
-		LOG("dirty_cnt %d", dirty_cnt);
-		auto &mcs = ((BasicBlock*) cond->basic_block)->x64mc_alloc_wave;
-
-		st_additional_dirty_in_cond(cond, mcs, addtional_dirty, dirty_cnt);
-
-		LOG("dirty_cnt %d", dirty_cnt);
-	}
-
-	if (dirty_cnt)
-	{
-		Scope *body_inner_tail = get_inner_tail_of_scope(while_scp->clds[1]);
-		st_additional_dirty(body_inner_tail, after_body_vr_state, addtional_dirty);
-	}
-
-
-	////////////////////////////////////////////////////////////////////////////////////////
+	st_additional_dirty(cond, pre_cond_vr_state, body_inner_tail, after_body_vr_state);
 
 	for (Scope *p : body->continue_list)
 	{
-		ra_wave__continue(while_scp,
-		    p,
+		ra_wave__continue_break(cond,
 		    pre_cond_vr_state,
 		    pre_cond_pr_state,
+		    p,
 		    pre_cond_swap_pr);
 	}
 
 	for (Scope *p : body->break_list)
 	{
-		ra_wave__break(while_scp,
-		    p,
+		ra_wave__continue_break(cond,
 		    after_cond_vr_state,
 		    after_cond_pr_state,
+		    p,
 		    after_cond_swap_pr);
 	}
 
@@ -748,7 +647,7 @@ void ra_wave__while(Scope *while_scp)
 
 static void get_future_use_vr(Scope *scp, std::set<int> &vrs)
 {
-	auto &mcs = ((BasicBlock*) scp->basic_block)->x64mc_schedu;
+	auto &mcs = (scp->basic_block)->x64mc_schedu;
 	for (auto mc : mcs)
 	{
 		for (int i = 0; i < 3; i++)
@@ -779,7 +678,7 @@ void ra_wave__if(Scope *if_scp)
 
 	// cond
 	ra_wave__scope(cond);
-	spill_all_pr((BasicBlock*) cond->basic_block);
+	spill_all_pr(cond->basic_block);
 
 	vector<VrToPr> cond_vr2pr = vr_state;
 	vector<PrToVr> cond_pr2vr = pr_state;
@@ -795,7 +694,7 @@ void ra_wave__if(Scope *if_scp)
 	}
 
 	ra_wave__scope(then_branch);
-	spill_all_pr((BasicBlock*) then_tail->basic_block);
+	spill_all_pr(then_tail->basic_block);
 
 	vector<VrToPr> then_vr2pr = vr_state;
 	vector<PrToVr> then_pr2vr = pr_state;
@@ -814,7 +713,7 @@ void ra_wave__if(Scope *if_scp)
 	pr_state = cond_pr2vr;
 
 	ra_wave__scope(else_branch);
-	spill_all_pr((BasicBlock*) else_tail->basic_block);
+	spill_all_pr(else_tail->basic_block);
 
 	// future pr use
 //	std::set<int> future_vr;
@@ -850,7 +749,7 @@ void ra_wave__if(Scope *if_scp)
 //
 //		if (std::find(future_vr.begin(), future_vr.end(), vr) == future_vr.end())
 //		{
-//			auto &mcs = ((BasicBlock*) then_branch->basic_block)->x64mc_alloc_wave;
+//			auto &mcs = then_branch->basic_block->x64mc_alloc_wave;
 //			spill_vr(then_vr2pr, then_pr2vr, vr, mcs, " then");
 //			then_branch_prs--;
 //		}
@@ -868,7 +767,7 @@ void ra_wave__if(Scope *if_scp)
 //
 //		if (std::find(future_vr.begin(), future_vr.end(), vr) == future_vr.end())
 //		{
-//			auto &mcs = ((BasicBlock*) else_branch->basic_block)->x64mc_alloc_wave;
+//			auto &mcs = else_branch->basic_block->x64mc_alloc_wave;
 //			spill_vr(vr2pr, pr2vr, vr, mcs, " else");
 //			else_branch_prs--;
 //		}
@@ -888,11 +787,11 @@ void ra_wave__if(Scope *if_scp)
 //
 //	}
 
-//	BasicBlock *cond_bb = (BasicBlock*) cond->basic_block;
-//	BasicBlock *tail_bb = (BasicBlock*) tail->basic_block;
+//	BasicBlock *cond_bb = cond->basic_block;
+//	BasicBlock *tail_bb = tail->basic_block;
 
 //	int swap_pr = X64PR_MAX;
-//	swap_pr = get_swap_pr((BasicBlock*) if_scp->basic_block);
+//	swap_pr = get_swap_pr(if_scp->basic_block);
 //	if (swap_pr == X64PR_MAX)
 //		ERR();
 
@@ -911,8 +810,8 @@ void ra_wave__if(Scope *if_scp)
 //
 //	Scope *body_tial = get_inner_tail_of_scope(if_scp->clds[1]);
 //
-//	BasicBlock *cond_bb = (BasicBlock*) cond->basic_block;
-//	BasicBlock *bs_bb = (BasicBlock*) body_tial->basic_block;
+//	BasicBlock *cond_bb = cond->basic_block;
+//	BasicBlock *bs_bb = body_tial->basic_block;
 //	vector<X64mc> &cond_mcs = cond_bb->x64mc_alloc_wave;
 //	for (auto &cond_mc : cond_mcs)
 //	{

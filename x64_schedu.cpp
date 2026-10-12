@@ -371,7 +371,7 @@ static void mc_schdu(Scope *scp)
 	 */
 
 //	LOG("scp %s", scp->name.c_str());
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 	vector<X64mc> &x64mc = bb->x64mc;
 	vector<X64mc> &x64mc_schedu = bb->x64mc_schedu;
 
@@ -466,7 +466,7 @@ static void mc_schdu(Scope *scp)
 static void _mc_schedule(Scope *scp)
 {
 	select_pulled = 0;
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 
 	if (bb->x64mc.size())
 	{

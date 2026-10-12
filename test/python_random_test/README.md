@@ -66,7 +66,8 @@ Relative paths in a config (such as `tools.vsc` and `test.failure_dir`) are reso
       "break": true,
       "continue": true
     },
-    "force_statements_after_break_continue": true
+    "force_statements_after_break_continue": true,
+    "random_control_placement_probability": 0.15
   }
 }
 ```
@@ -89,6 +90,7 @@ Relative paths in a config (such as `tools.vsc` and `test.failure_dir`) are reso
 | `generation.tokens.break` | Allow `break` inside loops |
 | `generation.tokens.continue` | Allow `continue` inside loops |
 | `generation.force_statements_after_break_continue` | Force one or two sibling statements after a `break`/`continue` when budget permits, to exercise unreachable-code handling |
+| `generation.random_control_placement_probability` | Fraction of programs that allow `break`/`continue` at the first statement position in a block. The default `0.15` keeps fully random placement in a minority of programs; the others prefer ordinary code first |
 
 Tokens can be mixed to create targeted profiles. For example, to test loop-state handling without `if/else` branch `spill all`, edit `tokens` to:
 
@@ -113,3 +115,12 @@ python3 vsl_diff_fuzz.py --config vsl_fuzz_config_no_if_else.json
 ## Failure artifacts
 
 A failing case is saved under the configured failure directory with source, reference source, generated assembly if available, seed, and compile/run logs. The top-level master seed and per-case seed are printed so you can reproduce the run.
+
+### `break` / `continue` placement
+
+By default, each generated program chooses one of two styles using `generation.random_control_placement_probability`:
+
+- **Common style (85% by default):** `break` and `continue` are not eligible as the first sibling statement in a block. They can still appear later in the block, after other code.
+- **Fully random style (15% by default):** they remain eligible at any statement position, including the first one.
+
+The choice is made once per generated program, so a seed reproduces the same style. Set the probability to `0.0` to always prefer ordinary code before controls, or `1.0` to keep fully random placement for every program. A forced statement immediately after `break` / `continue` is generated as ordinary sibling code (not another sibling `break` / `continue`); nested blocks within that code may still contain controls.

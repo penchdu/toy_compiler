@@ -140,7 +140,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 {
 	X64mc inst;
 
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 	vector<X64mc> &x64mc_alloc = bb->x64mc_alloc_o0;
 
 	for (X64mc &mc_schedu : bb->x64mc_schedu)
@@ -239,7 +239,7 @@ int _asm_len = 0;
 static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 {
 //	LOG("scp: %s", scp->name.c_str());
-	BasicBlock *bb = (BasicBlock*) scp->basic_block;
+	BasicBlock *bb = scp->basic_block;
 	if ((bb->entry_label != 0 /*&& (bb->x64mc_alloc_o0.size() || bb->x64mc_alloc_wave.size())*/)
 		&& bb->entry_label->name != "test")
 		PRINT_ASM_HEAD("\n\n%s:", bb->entry_label->name.c_str());

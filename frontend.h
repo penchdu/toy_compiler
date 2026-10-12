@@ -291,6 +291,7 @@ enum VrUsage
 
 struct VrToPr;
 struct PrToVr;
+struct BasicBlock;
 
 struct Scope
 {
@@ -330,11 +331,11 @@ public:
 	vector<Scope*> break_list;
 	bool bb_terminated;
 
-	vector<VrToPr> *scp_vr_state;
-	vector<PrToVr> *scp_pr_state;
+	vector<VrToPr> *scp_vr_state = 0;
+	vector<PrToVr> *scp_pr_state = 0;
 
 	vector<Tac> tac;
-	void *basic_block = 0;
+	BasicBlock *basic_block = 0;
 
 	// for function
 	Scope *return_label = 0;

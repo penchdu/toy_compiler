@@ -23,6 +23,7 @@
       "break": true,
       "continue": true
     },
-    "force_statements_after_break_continue": true
+    "force_statements_after_break_continue": true,
+    "random_control_placement_probability": 0.25
   }
 }
