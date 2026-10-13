@@ -96,9 +96,48 @@ class ProgramGenerator:
         return f"({a} + {b}) / 2{tail}"
 
     def condition(self) -> str:
+        """
+        Generate conditions that exercise both:
+          1) comparison AST nodes: if (a > b)
+          2) implicit boolean conversion: if (a), if (a+b)
+
+        This is important because the VSC parser converts non-comparison
+        conditions into (0 == expr) in cond_to_negative().
+        """
+        mode = self.rng.randrange(6)
+
         a = self.choose_data()
         b = self.choose_data()
-        return f"{a} > {b}"
+
+        # if (a)
+        if mode == 0:
+            return f"{a}"
+
+        # if (a +/- constant)
+        if mode == 1:
+            offset = self.rng.randint(-3, 3)
+            if offset >= 0:
+                return f"{a} + {offset}"
+            return f"{a} - {-offset}"
+
+        # if (a op b)
+        if mode == 2:
+            op = self.rng.choice([">", "<", ">=", "<=", "==", "!="])
+            return f"{a} {op} {b}"
+
+        # if ((a))
+        if mode == 3:
+            return f"({a})"
+
+        # if ((a op b))
+        if mode == 4:
+            op = self.rng.choice(["+", "-", "*"])
+            return f"({a} {op} {b})"
+
+        # nested condition: if ((a+b) op c)
+        c = self.choose_data()
+        op = self.rng.choice([">", "<", "==", "!="])
+        return f"(({a} + {b}) {op} {c})"
 
     def new_counter(self) -> str:
         name = f"c{self.next_counter}"
@@ -299,7 +338,17 @@ class ProgramGenerator:
         # directly in that body, even if this loop itself sits inside an if.
         body = self.block(depth + 1, level + 1, loop_depth + 1, branch_depth=0)
         out.append(f"{pad}{counter} = {trips + 1};")
-        out.append(f"{pad}while (({counter} = {counter} - 1) > 0)")
+
+        # Also stress while-condition implicit boolean conversion.
+        while_mode = self.rng.randrange(3)
+        if while_mode == 0:
+            loop_cond = f"(({counter} = {counter} - 1))"
+        elif while_mode == 1:
+            loop_cond = f"(({counter} = {counter} - 1) != 0)"
+        else:
+            loop_cond = f"(({counter} = {counter} - 1) > 0)"
+
+        out.append(f"{pad}while {loop_cond}")
         out.append(f"{pad}{{")
         out.extend(body)
         out.append(f"{pad}}}")

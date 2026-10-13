@@ -127,7 +127,7 @@ Current merge algorithm is too simple. an improve is: consider future VR use aft
 
 
 - `=`  `*`  `/`  `(`  `)`  `{`  `}`  `;`  `<`  `<=`  `>`  `>=`  `==`  `!=`
-- `+` (binary minus only)
+- `+` (binary add only)
 - `-` (binary minus only)
 - `int` `return` `if` `else` `while` `continue` `break`
 
