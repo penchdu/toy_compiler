@@ -259,7 +259,7 @@ struct BasicBlock {
 	vector<int> vr_unique;
 
 //	Scope *exit_jmp = 0;
-	Scope *jmp_to = 0;
+//	Scope *jmp_to = 0;
 	MachineCodeStamp jmp_mc_stamp = MC_INVALID;
 
 	//

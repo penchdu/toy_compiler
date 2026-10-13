@@ -98,8 +98,6 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 	return -1;
 }
 
-extern bool enable_bb_terminate;
-
 static bool gen_tac(Scope *scp)
 {
 //	LOG("scp %s", scp->name.c_str());
@@ -116,11 +114,11 @@ static bool gen_tac(Scope *scp)
 	for (Scope *p : scp->clds)
 	{
 		bb_terminated = gen_tac(p);
-		if (enable_bb_terminate && bb_terminated)
+		if (bb_terminated)
 			break;
 	}
 
-	if (enable_bb_terminate && bb_terminated && scp->sem_stamp == SEM_INVALID)
+	if (bb_terminated && scp->sem_stamp == SEM_INVALID)
 	{
 		//scp->jmp_in.size() == 0
 //			scp->sem_stamp != SEM_COND_JMP

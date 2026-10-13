@@ -150,12 +150,11 @@ static void gen_mc(Scope *scp)
 	    || scp->sem_stamp == SEM_IF_cond
 	    || scp->sem_stamp == SEM_IF_then
 	    || scp->sem_stamp == SEM_IF_else
-	    || scp->sem_stamp == SEM_WHILE
 	    || scp->sem_stamp == SEM_WHILE_COND
 	    || scp->sem_stamp == SEM_WHILE_BODY
 	    || scp->sem_stamp == SEM_CONTINUE
 	    || scp->sem_stamp == SEM_BREAK
-	    || scp->sem_stamp == SEM_LABEL
+	    || (scp->sem_stamp == SEM_UNNAMED_SCOPE && scp->tac.size())
 	    || scp->jmp_in.size() > 0
 	    || scp->asts.size() > 0)
 	{
@@ -197,8 +196,8 @@ static void gen_mc(Scope *scp)
 		}
 	}
 
-	if (scp->jmp_out != 0)	// || scp->sem == SEM_COND_JMP || scp->sem == SEM_JMP)
-		bb->jmp_to = scp->jmp_out;
+//	if (scp->jmp_out != 0)	// || scp->sem == SEM_COND_JMP || scp->sem == SEM_JMP)
+//		bb->jmp_to = scp->jmp_out;
 //
 	if (scp->jmp_out)
 	{
@@ -211,13 +210,10 @@ static void gen_mc(Scope *scp)
 			Ast *cond = scp->asts[0];
 			bb->jmp_mc_stamp = op2jmp_mc[cond->op];
 		}
-		else if (stamp == SEM_LABEL || stamp == SEM_CONTINUE || stamp == SEM_BREAK)
+		else if (stamp == SEM_UNNAMED_SCOPE
+			|| stamp == SEM_CONTINUE
+			|| stamp == SEM_BREAK)
 		{
-			bb->jmp_mc_stamp = MC_JMP;
-		}
-		else if (stamp == SEM_SAVE_RET_VALUE)
-		{
-			ERR();
 			bb->jmp_mc_stamp = MC_JMP;
 		}
 		else

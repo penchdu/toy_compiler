@@ -30,3 +30,4 @@ test/1.cpp
 test/2.cpp
 test/test_result/
 test/python_random_test/fuzz_failures
+.gcc_ref/

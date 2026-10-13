@@ -57,7 +57,7 @@ Scope* new_virtual_scope_and_drop_in()
 	PARSER_LOG();
 //	Token tk = tokens.peek();
 	Scope * scp = new_cld_scp(true);
-	scp->sem_stamp = SEM_LABEL;
+	scp->sem_stamp = SEM_UNNAMED_SCOPE;
 	scp->name = ".L_" + scp->name;
 	return scp;
 }
@@ -165,11 +165,10 @@ static int case_tk_func()
 }
 void case_tk_return()
 {
+	PARSER_LOG("%s", tk.src.c_str());
 	Token tk = tokens.get();
 	if (!in_func_define)
 		ERR("%s not in func", tk.src.c_str());
-
-	PARSER_LOG("%s", tk.src.c_str());
 
 	Scope *func = current_scope_pointer;
 	while (func && func->sem_stamp != SEM_FUNC_DEFINE)
@@ -178,17 +177,17 @@ void case_tk_return()
 	if (!func)
 		ERR();
 
+	Ast *p = new_ast_node(tk);
+
 	Ast *expr = parse_expr(TK_SEMICOLON);
 	if(!expr)
 		ERR("only support return int");
 //	current_scope_pointer->asts.push_back(expr);
-	Ast *p = new_ast_node(tk);
 //	p->home_scp = func;		// Ast(return) not create a vr. let home_scp = func;
 	p->left = expr;
 	current_scope_pointer->asts.push_back(p);
 
-	Scope *jmp = new_scope_and_drop_in();
-	jmp->sem_stamp = SEM_LABEL;
+	Scope *jmp = new_virtual_scope_and_drop_in();
 	jmp->name = ".L_" + jmp->name + "_jmp_to_ret";
 	jmp->jmp_out = func->return_label;
 	exit_current_scope();
@@ -466,7 +465,7 @@ void case_tk_right_brace(bool eat)
 
 	Scope *scp = current_scope_pointer;
 	Scope *tail = new_virtual_scope_and_drop_in();
-	tail->sem_stamp = SEM_LABEL;
+	tail->sem_stamp = SEM_UNNAMED_SCOPE;
 //	tail->name += "_b" + to_string(scp->id) + "_tail";
 	exit_current_scope();
 
@@ -491,7 +490,7 @@ void case_tk_right_brace(bool eat)
 	))
 	{
 		new_virtual_scope_and_drop_in();
-		tail->sem_stamp = SEM_LABEL;
+		tail->sem_stamp = SEM_UNNAMED_SCOPE;
 	}
 
 	PARSER_LOG();

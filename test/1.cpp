@@ -1,39 +1,29 @@
-
 int test()
 {
-	int i = 5;
 	int a = 0;
-	int b = 1;
-	int c = 2;
+	int b = 0;
+	int c = 0;
 
-	while ((i = i - 1) > 0)
+	if (a < 10)
 	{
-		a = a + i;
+		a = a + 1;
+		c = 1;
+		c = a + 1;
 
-		if (i == 3)
-		{
-			b = b + a;
-			continue;
-			a = 100;
-		}
-		else
-		{
-			c = c + i;
-		}
-
-		if (i == 2)
-		{
-			b = b + 10;
-			break;
-			c = 200;
-		}
-		else
-		{
-			a = a + c;
-		}
-
-		c = c + 1;
+		int d = 1;
+		int f = 2;
+		c = d + f;
+	}
+	else
+	{
+		b = 2;
 	}
 
-	return a + b + c + i;
+	while(0)
+	{
+
+	}
+
+	c = b + a;
+	return c;
 }

@@ -47,7 +47,7 @@ static Scope* cond_to_negative()
 	exit_current_scope();
 	return cond;
 }
-static Scope* body_of_if__while(enum Semantic sem_stamp = SEM_LABEL)
+static Scope* body_of_if__while(enum Semantic sem_stamp = SEM_UNNAMED_SCOPE)
 {
 	Scope *branch = 0;
 	Token tk = tokens.peek();
@@ -81,7 +81,7 @@ static Scope* new_jmp_tail_for_cond_imp()
 //	        || (tail->is_virtual && tail->parent == cond->parent));
 
 	Scope *tail = new_virtual_scope_and_drop_in();
-	tail->sem_stamp = SEM_LABEL;
+	tail->sem_stamp = SEM_UNNAMED_SCOPE;
 
 //	 exit_current_scope();
 //	 new_virtual_scope_and_drop_in();
@@ -99,7 +99,7 @@ Scope* get_inner_tail_of_scope(Scope *scope)
 	assert(scope->clds.size());
 	Scope *inner_tail = scope->clds.back();	// then_branch.cld.back()
 	assert(inner_tail->is_virtual);
-	assert(inner_tail->sem_stamp == SEM_LABEL);
+	assert(inner_tail->sem_stamp == SEM_UNNAMED_SCOPE);
 	assert(inner_tail->asts.size() == 0);
 	assert(inner_tail->clds.size() == 0);
 	return inner_tail;
@@ -130,7 +130,7 @@ void case_tk_if()
 	// then branch
 	Scope *then_branch = body_of_if__while();
 	then_branch->sem_stamp = SEM_IF_then;
-	then_branch->name += "_if"  + to_string(if_scp->id) + "_then";	// + to_string(cond->id);
+	then_branch->name += "_if"  + to_string(if_scp->id) + "_then" + to_string(then_branch->id);
 
 	// else branch
 	Scope *else_branch = 0;
@@ -149,27 +149,29 @@ void case_tk_if()
 		exit_current_scope();
 	}
 	else_branch->sem_stamp = SEM_IF_else;
-	else_branch->name += "_if" + to_string(if_scp->id) + "_else";
+	else_branch->name += "_if" + to_string(if_scp->id) + "_else" + to_string(else_branch->id);
 	cond->jmp_out = else_branch;
 	else_branch->jmp_in.push_back(cond);
 
 	// end work
-	Scope *tail = new_jmp_tail_for_cond_imp();
-	tail->name += "_if" + to_string(if_scp->id) + "_tail";
+	Scope *if_tail = new_jmp_tail_for_cond_imp();
+	if_tail->name += "_if" + to_string(if_scp->id) + "_tail";
 
 //	cond->jmp_out = tail;
 //	tail->jmp_in.push_back(cond);
 
-	Scope *then_branch_inner_tail = get_inner_tail_of_scope(then_branch);
-	then_branch_inner_tail->jmp_out = tail;
-	tail->jmp_in.push_back(then_branch_inner_tail);
+	Scope *then_tail = get_inner_tail_of_scope(then_branch);
+	then_tail->name += "_then" + to_string(then_branch->id) + "_tail";
+	then_tail->jmp_out = if_tail;
+	if_tail->jmp_in.push_back(then_tail);
 
 	// set jmp_out != 0, so will not be deleted
-	Scope *else_branch_inner_tail = get_inner_tail_of_scope(else_branch);
-	else_branch_inner_tail->jmp_out = tail;
-	tail->jmp_in.push_back(else_branch_inner_tail);
+	Scope *else_tail = get_inner_tail_of_scope(else_branch);
+	else_tail->name += "_else" + to_string(else_branch->id) + "_tail";
+	else_tail->jmp_out = if_tail;
+	if_tail->jmp_in.push_back(else_tail);
 
-	rm_duplicant_jmp_in(tail);
+	rm_duplicant_jmp_in(if_tail);
 
 	//exit if_scp
 	assert(current_scope_pointer == if_scp || current_scope_pointer->parent == if_scp);
@@ -258,10 +260,11 @@ void case_tk_while()
 	return;
 }
 
-bool enable_bb_terminate = 1;
 void make_bb_terminate()
 {
 	// bb_terminate can eliminate some dead code, and dead jmp-label
+	const bool enable_bb_terminate = 1;
+
 	if (!enable_bb_terminate)
 		return;
 
