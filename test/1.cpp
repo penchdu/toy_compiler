@@ -1,54 +1,39 @@
 
-
 int test()
 {
-	int a = 1;
-	int b = 200;
-	int sum = 0;
-	int i = 0;
+	int i = 5;
+	int a = 0;
+	int b = 1;
+	int c = 2;
 
-	if (a < b)
+	while ((i = i - 1) > 0)
 	{
-		int a = 10;
-		int e = 5;
-		while (i < 120)
+		a = a + i;
+
+		if (i == 3)
 		{
-			if (a < 50)
-			{
-				e = e + 6;
-				break;
-
-				e = e + 7;
-			}
-
-			if (b > 0)
-			{
-				i = i + 1;
-				continue;
-
-				i = i + 2;
-			}
-
-			sum = sum + a + e;
-			i = i + 1;
+			b = b + a;
+			continue;
+			a = 100;
 		}
+		else
+		{
+			c = c + i;
+		}
+
+		if (i == 2)
+		{
+			b = b + 10;
+			break;
+			c = 200;
+		}
+		else
+		{
+			a = a + c;
+		}
+
+		c = c + 1;
 	}
 
-	sum = sum + a;
-
-	while (i < 100)
-	{
-		int e = 12;
-		while (i < 10)
-		{
-			int a = 1;
-			a = a + e;
-			if (i > 5)
-				break;
-			i = i + a;
-		}
-		i = i + 1;
-		sum = sum + i;
-	}
-	return sum;
+	return a + b + c + i;
 }

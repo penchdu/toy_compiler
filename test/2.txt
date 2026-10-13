@@ -1,5 +1,41 @@
 
 
+int test()
+{
+	int a = 1;
+	int b = 200;
+	int e = 5;
+	int sum = 0;
+	int i = 0;
+
+	while ((i = i + 1) < 120)
+	{
+		while ((a = a + 1) < 60)
+		{
+			if (a < 50)
+			{
+				e = e + 6;
+				continue;
+
+				e = e + 7;
+			}
+			else
+			{
+				e = e + 8;
+				continue;
+
+				e = e + 9;
+			}
+
+			sum = sum + a;
+		}
+
+		sum = sum + a + e + i;
+	}
+
+	sum = sum + a + e;
+	return sum;
+}
 
 
 

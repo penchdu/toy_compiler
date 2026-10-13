@@ -30,7 +30,7 @@ static void get_future_use_vr(Scope *scp, std::set<int> &vrs)
 		get_future_use_vr(p, vrs);
 }
 
-static void pre_then_work(Scope *else_branch)
+static void then_pre_work(Scope *else_branch)
 {
 	for (int vr = 0; vr < else_branch->outer_symb_read.size(); vr++)
 	{
@@ -41,7 +41,7 @@ static void pre_then_work(Scope *else_branch)
 		symb->use_cnt -= cnt;
 	}
 }
-static void after_then_work(Scope *else_branch)
+static void then_end_work(Scope *else_branch)
 {
 	for (int vr = 0; vr < else_branch->outer_symb_read.size(); vr++)
 	{
@@ -70,7 +70,7 @@ void ra_wave_if(Scope *if_scp)
 	vector<PrToVr> after_cond_pr_state = pr_state;
 
 	// then
-	pre_then_work(else_branch);
+	then_pre_work(else_branch);
 	ra_wave_scope(then_branch);
 
 	int after_then_swap_pr = get_swap_pr(then_branch->basic_block);
@@ -79,7 +79,7 @@ void ra_wave_if(Scope *if_scp)
 	vector<VrToPr> after_then_vr_state = vr_state;
 	vector<PrToVr> after_then_pr_state = pr_state;
 
-	after_then_work(else_branch);
+	then_end_work(else_branch);
 	vr_state = after_cond_vr_state;
 	pr_state = after_cond_pr_state;
 

@@ -78,7 +78,7 @@ int wave_get_pr(BasicBlock *bb, int mc_idx)
 		    || vr == mc.s2)
 			continue;
 
-		// if a vr did not appear in current bb, it's score.size() is 0
+		// if a vr did not appear in bb, it's score.size() is 0
 		float score;
 		if (bb_vr_wave[vr].score.empty())
 			score = 0.0;
@@ -324,8 +324,8 @@ void ra_wave_regular_scope(Scope *scp)
 	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
 	{
 		const X64mc &mc = bb->x64mc_schedu[i];
-		ra_wave__mc(bb, mc, i);
 
+		ra_wave__mc(bb, mc, i);
 		update_mc_consume_cnt(scp, mc);
 
 		check_dead_vr(scp, bb->x64mc_alloc_wave, mc.dst);
