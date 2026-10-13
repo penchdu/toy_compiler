@@ -74,7 +74,7 @@ static Scope* body_of_if__while(enum Semantic sem_stamp = SEM_UNNAMED_SCOPE)
 	branch->name = ".L_" + branch->name;
 	return branch;
 }
-static Scope* new_jmp_tail_for_cond_imp()
+static Scope* new_jmp_tail_for_cond_jmp()
 {
 //	Scope *tail = current_scope_pointer;
 //	assert((!tail->is_virtual && tail == cond->parent)
@@ -154,7 +154,7 @@ void case_tk_if()
 	else_branch->jmp_in.push_back(cond);
 
 	// end work
-	Scope *if_tail = new_jmp_tail_for_cond_imp();
+	Scope *if_tail = new_jmp_tail_for_cond_jmp();
 	if_tail->name += "_if" + to_string(if_scp->id) + "_tail";
 
 //	cond->jmp_out = tail;
@@ -227,7 +227,7 @@ void case_tk_while()
 	while_cond->jmp_in.push_back(while_body_inner_tail);
 
 	// end work
-	Scope *tail = new_jmp_tail_for_cond_imp();
+	Scope *tail = new_jmp_tail_for_cond_jmp();
 	tail->name += "_while" + to_string(while_scp->id) + "_tail";
 
 	while_cond->jmp_out = tail;
@@ -237,12 +237,14 @@ void case_tk_while()
 	for (Scope *p : while_body->continue_list)
 	{
 		p->jmp_out = while_cond;
+		while_cond->jmp_in.push_back(p);
 		p->name += "_while" + to_string(while_scp->id)+ "_continue";
 	}
 
 	for (Scope *p : while_body->break_list)
 	{
 		p->jmp_out = tail;
+		tail->jmp_in.push_back(p);
 		p->name += "_while" + to_string(while_scp->id)+ "_break";
 	}
 
@@ -313,4 +315,3 @@ void case_tk_break()
 {
 	Scope *scp = case_tk_continue_break(SEM_BREAK);
 }
-
