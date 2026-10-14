@@ -159,10 +159,10 @@ void dump_vr_state(const vector<VrToPr> &vr_state, const string &tag)
 void while_recover_pr(
     const vector<VrToPr> &before_vr2pr,
     const vector<PrToVr> &before_pr2vr,
+    int swap_pr,
     vector<VrToPr> &now_vr2pr,
     vector<PrToVr> &now_pr2vr,
-    Scope *scp_to_gen_mc,
-    int swap_pr)
+    Scope *scp_to_gen_mc)
 {
 	BasicBlock *bb = scp_to_gen_mc->basic_block;
 	vector<X64mc> &x64mcs = bb->x64mc_alloc_wave;
@@ -475,8 +475,8 @@ void st_additional_dirty(Scope *cond,
 void ra_wave__continue_break(Scope *cond,
     vector<VrToPr> &cond_vr_state,
     vector<PrToVr> &cond_pr_state,
-    Scope *source,
-    int swap_pr)
+    int swap_pr,
+    Scope *source)
 {
 	//	LOG("scp %s", scp->name.c_str());
 	assert(source->scp_vr_state != nullptr);
@@ -493,10 +493,10 @@ void ra_wave__continue_break(Scope *cond,
 	while_recover_pr(
 		cond_vr_state,
 		cond_pr_state,
+		swap_pr,
 	    source_vr_state,
 	    source_pr_state,
-	    source,
-	    swap_pr);
+	    source);
 
 	dump_vr_state(source_vr_state, "after source swaped " + to_string(source->id));
 	printf("\n");
@@ -588,10 +588,10 @@ void ra_wave_while(Scope *while_scp)
 	while_recover_pr(
 	    pre_cond_vr_state,
 	    pre_cond_pr_state,
+	    pre_cond_swap_pr,
 	    after_body_vr_state,
 	    after_body_pr_state,
-	    get_inner_tail_of_scope(body),
-	    pre_cond_swap_pr);
+	    get_inner_tail_of_scope(body));
 
 	dump_vr_state(after_body_vr_state, "after body swaped " + to_string(while_scp->id));
 	dump_vr_state(vr_state, "vr_state " + to_string(while_scp->id));
@@ -608,8 +608,8 @@ void ra_wave_while(Scope *while_scp)
 		ra_wave__continue_break(cond,
 		    pre_cond_vr_state,
 		    pre_cond_pr_state,
-		    p,
-		    pre_cond_swap_pr);
+		    pre_cond_swap_pr,
+		    p);
 	}
 
 	for (Scope *p : body->break_list)
@@ -617,8 +617,8 @@ void ra_wave_while(Scope *while_scp)
 		ra_wave__continue_break(cond,
 		    after_cond_vr_state,
 		    after_cond_pr_state,
-		    p,
-		    after_cond_swap_pr);
+		    after_cond_swap_pr,
+		    p);
 	}
 
 	while__end_work(while_scp);

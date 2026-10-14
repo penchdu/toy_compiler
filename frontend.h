@@ -21,6 +21,7 @@
 #include <map>
 #include <list>
 #include <set>
+#include <unordered_set>
 #include <stack>
 #include <algorithm>
 #include <cmath>
@@ -308,6 +309,7 @@ public:
 	Symbol *fake_outer_symb = 0;
 
 	Scope *parent;
+	int idx;
 	vector<Scope*> clds;
 	bool is_virtual;
 
@@ -316,6 +318,8 @@ public:
 //	Scope *jmp_else = 0;
 	vector<Scope*> jmp_in;
 	Scope *jmp_out = 0;
+	Scope *fallthrough = 0;
+	int visitor = 0;
 //	vector<int> outer_symb_used;
 
 	vector<int> outer_symb_read;
@@ -355,6 +359,7 @@ public:
 
 		real_parent->clds.push_back(p);
 		p->parent = real_parent;
+		p->idx = real_parent->clds.size() - 1;
 		return p;
 	}
 };

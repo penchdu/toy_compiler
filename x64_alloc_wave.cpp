@@ -10,16 +10,16 @@
 #include "basic_block.h"
 #include <cmath>
 
-void spill_vr(vector<VrToPr> &vr_state, vector<PrToVr> &pr_state, int vr,
-    vector<X64mc> &x64mc_alloc, const string &tag)
+void spill_vr(vector<VrToPr> &vrst, vector<PrToVr> &prst, int vr,
+    vector<X64mc> &mcs, const string &tag)
 {
-	int &pr = vr_state[vr].pr;
-	int &u = vr_state[vr].u;
-	bool &dirty = vr_state[vr].dirty;
+	int &pr = vrst[vr].pr;
+	int &u = vrst[vr].u;
+	bool &dirty = vrst[vr].dirty;
 
 	assert(pr != X64PR_MAX);
 	assert(u != VR_USAGE_INVALID);
-	assert(pr_state[pr].vr == vr);
+	assert(prst[pr].vr == vr);
 
 	Ast *p = vr_declare_manager.declare_at[vr];
 
@@ -27,7 +27,7 @@ void spill_vr(vector<VrToPr> &vr_state, vector<PrToVr> &pr_state, int vr,
 	X64mc mc(MC_victim, vr);
 	mc.pr1 = (int) pr;
 	mc.ori_sem = string("victim ") + pr_name[pr] + tag;
-	x64mc_alloc.push_back(mc);
+	mcs.push_back(mc);
 
 	if (/*p->sem_stamp != SEM_CONST_NUM &&*/ dirty
 		&& p->symb->consume_cnt < p->symb->use_cnt)
@@ -35,10 +35,10 @@ void spill_vr(vector<VrToPr> &vr_state, vector<PrToVr> &pr_state, int vr,
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;
 		mc.ori_sem = "spill" + tag;
-		x64mc_alloc.push_back(mc);
+		mcs.push_back(mc);
 	}
 
-	pr_state[pr].vr = INVALID_VR;
+	prst[pr].vr = INVALID_VR;
 	pr = X64PR_MAX;
 	u = VR_USAGE_INVALID;
 	dirty = false;
@@ -97,10 +97,7 @@ int wave_get_pr(BasicBlock *bb, int mc_idx)
 	spill_vr(vr_state, pr_state, min_score_vr, bb->x64mc_alloc_wave);
 	return pr;
 }
-static void make_dirty(int vr)
-{
-	vr_state[vr].dirty = 1;
-}
+
 static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 {
 	/*
@@ -261,7 +258,7 @@ void check_pr_vr_consistency()
 
 void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 {
-	vector<X64mc> &x64mc_alloc = bb->x64mc_alloc_wave;
+	vector<X64mc> &mcs = bb->x64mc_alloc_wave;
 	X64mc mc = schedued;
 	MachineCodeStamp mc_stamp = mc.mc_stamp;
 
@@ -269,7 +266,7 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 	{
 	case MC_LI:
 		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
-		x64mc_alloc.push_back(mc);
+		mcs.push_back(mc);
 		vr_state[mc.s1].dirty = 0;
 		break;
 
@@ -279,7 +276,7 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 
 		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
 		mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
-		x64mc_alloc.push_back(mc);
+		mcs.push_back(mc);
 		break;
 
 	case MC_ADD:
@@ -289,7 +286,7 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 
 		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ_WRITE, i);
 		mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
-		x64mc_alloc.push_back(mc);
+		mcs.push_back(mc);
 		break;
 
 	case MC_CMP_E:
@@ -302,12 +299,12 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
 		mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
 
-		x64mc_alloc.push_back(mc);
+		mcs.push_back(mc);
 		break;
 
 	case MC_SAVE_RET:
 		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
-		x64mc_alloc.push_back(mc);
+		mcs.push_back(mc);
 		break;
 
 	default:

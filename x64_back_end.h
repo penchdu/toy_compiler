@@ -253,7 +253,7 @@ struct X64mc {
 
 
 struct BasicBlock {
-	Scope *entry_label = 0;
+	bool is_entry_label = 0;
 	vector<X64mc> x64mc;
 	vector<X64mc> x64mc_schedu;
 	vector<int> vr_unique;
@@ -322,10 +322,10 @@ int get_swap_pr(BasicBlock *bb);
 void while_recover_pr(
     const vector<VrToPr> &before_vr2pr,
     const vector<PrToVr> &before_pr2vr,
+    int swap_pr,
     vector<VrToPr> &now_vr2pr,
     vector<PrToVr> &now_pr2vr,
-    Scope *scp_to_gen_mc,
-    int swap_pr);
+    Scope *scp_to_gen_mc);
 
 void ra_wave_while(Scope *scp);
 void ra_wave_continue_break_save_vr_state(Scope *scp);

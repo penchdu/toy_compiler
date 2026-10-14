@@ -242,6 +242,11 @@ class ProgramGenerator:
         if can_recurse and self.tokens["while"]:
             kinds.append("while")
             weights.append(2)
+        # Pure lexical scope block: no branch, no loop, only tests scope
+        # enter/exit and register-state inheritance across nested {} blocks.
+        if can_recurse:
+            kinds.append("block")
+            weights.append(1)
 
         if loop_depth > 0 and allow_control:
             # Control statements are independently configurable and do not
@@ -298,6 +303,15 @@ class ProgramGenerator:
         if kind == "assign":
             target = self.choose_data()
             out.append(f"{pad}{target} = {self.expr()};")
+            return out
+
+        if kind == "block":
+            # A standalone lexical block is intentionally different from if/while
+            # bodies. It creates a new source scope without creating CFG edges.
+            body = self.block(depth + 1, level + 1, loop_depth, branch_depth)
+            out.append(f"{pad}{{")
+            out.extend(body)
+            out.append(f"{pad}}}")
             return out
 
         if kind == "if":

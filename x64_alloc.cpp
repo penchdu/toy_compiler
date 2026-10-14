@@ -240,9 +240,13 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 {
 //	LOG("scp: %s", scp->name.c_str());
 	BasicBlock *bb = scp->basic_block;
-	if ((bb->entry_label != 0 /*&& (bb->x64mc_alloc_o0.size() || bb->x64mc_alloc_wave.size())*/)
-		&& bb->entry_label->name != "test")
-		PRINT_ASM_HEAD("\n\n%s:", bb->entry_label->name.c_str());
+	if ((
+		bb->is_entry_label
+		|| bb->x64mc_alloc_o0.size()
+		|| bb->x64mc_alloc_wave.size()
+		)
+		&& scp->name != "test")
+		PRINT_ASM_HEAD("\n\n%s:", scp->name.c_str());
 
 	vector<X64mc> *mc_list;
 	if (asm_file == "a0.s")

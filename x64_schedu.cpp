@@ -383,8 +383,8 @@ static void mc_schdu(Scope *scp)
 
 	if (ready.size() == 0)
 	{
-		if (bb->entry_label)
-			LOG("bb %s == 0", bb->entry_label->name.c_str());
+		if (bb->is_entry_label)
+			LOG("bb %s == 0", scp->name.c_str());
 		if (x64mc.size() || scp->tac.size())
 			ERR();
 	}

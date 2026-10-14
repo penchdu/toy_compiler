@@ -158,7 +158,7 @@ static void gen_mc(Scope *scp)
 	    || scp->jmp_in.size() > 0
 	    || scp->asts.size() > 0)
 	{
-		bb->entry_label = scp;
+		bb->is_entry_label = true;
 	}
 
 	for (Tac &ttac : scp->tac)
@@ -238,8 +238,8 @@ void dump_mc(Scope *scp, string mc_list_name)
 {
 	BasicBlock *bb = scp->basic_block;
 
-	if (bb->entry_label != 0)
-		PRINT_ASM_HEAD("\n%s:", bb->entry_label->name.c_str());
+	if (bb->is_entry_label != 0)
+		PRINT_ASM_HEAD("\n%s:", scp->name.c_str());
 
 	vector<X64mc> *mc_list;
 	if (mc_list_name == "x64mc")

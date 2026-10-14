@@ -181,11 +181,6 @@ static void dump_tac(Scope *scp)
 }
 void gen_three_address_code()
 {
-//	BasicBlock bb;
-//	bb.entry_label = &file_scp;
-//	basic_blocks.push_back(bb);
-//	gen_tac(&file_scp);
-
 	gen_tac(&file_scp);
 	dump_ast();
 
