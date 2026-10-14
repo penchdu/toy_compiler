@@ -97,7 +97,7 @@ Things seems easier from now, the complex control-flow problem of `while` and `i
 
 Current merge algorithm is too simple. an improve is: consider future VR use after if-scope, reduce reg-spill.
 
-
+20k+ random case passed.
 
 
 ## Project Status
@@ -325,9 +325,41 @@ $./test/run_test.sh
 ```c
 
 $make
-$./test/python_random_test/python_random_test.sh 100
+$./test/python_random_test/python_random_test.sh 2000
 
 ```
+
+output:
+
+```c
+
+Random seed: 1791997507512941761
+Cases: 2000
+Config: vsc/test/python_random_test/vsl_fuzz_config.json
+Random seed: 1791997507512941761
+Cases: 2000; variables: 2..100; max depth: 30; budget: 320
+Enabled tokens: if, else, while, break, continue
+Force statements after break/continue: True
+Fully random control-placement probability: 25% per program
+
+...
+...
+...
+
+===== Differential test summary =====
+total: 2000
+generated break statements: 39010
+generated continue statements: 38787
+direct loop-body break statements: 12006
+direct loop-body continue statements: 11858
+statements forced after break/continue: 76588
+programs using fully random control placement: 495/2000
+block-start controls: break=10327, continue=10280
+pass: 2000
+No differences or compile failures found.
+
+```
+
 
 
 ## Single Test

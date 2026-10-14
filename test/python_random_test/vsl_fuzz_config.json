@@ -13,7 +13,7 @@
   },
   "generation": {
     "vars_min": 2,
-    "vars_max": 10,
+    "vars_max": 100,
     "max_depth": 30,
     "statement_budget": 320,
     "tokens": {

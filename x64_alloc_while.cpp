@@ -532,14 +532,19 @@ void ra_wave_while(Scope *while_scp)
 	int pre_cond_swap_pr = get_swap_pr(while_scp->basic_block);
 	assert(pre_cond_swap_pr != X64PR_MAX);
 
-// try alloc cond write
+
 //	for(int vr : scp->outer_symb_write)
 //	{
 //		for(int pr : )
 //	}
-// try alloc body write
-// try alloc cond read
-// try alloc body read
+/*
+ * pre alloc pr to reduce spill
+ * spill unnecessary pr
+ * try alloc cond write
+ * try alloc body write
+ * try alloc cond read
+ * try alloc body read
+*/
 // select cond pr
 //	spill_vr(bb->x64mc_alloc_wave, swap_vr);
 
