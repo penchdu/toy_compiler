@@ -151,7 +151,16 @@ void ra_wave_if(Scope *if_scp)
 	}
 
 	vector<int> future_vr;
+#if 0
 	get_future_use_vr(if_scp->parent, if_scp->idx + 1, future_vr, if_scp->id);
+#else
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	{
+		if(after_then_vr_state[vr].pr != X64PR_MAX
+			&& vr_state[vr].pr != X64PR_MAX)
+			future_vr.push_back(vr);
+	}
+#endif
 
 //	 not really good, because while and if have branch
 
