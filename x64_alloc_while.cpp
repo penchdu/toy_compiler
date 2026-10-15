@@ -173,8 +173,7 @@ void recover_pr_state(
 		if (before_vr_state[vr].pr == X64PR_MAX && now_vr_state[vr].pr != X64PR_MAX)
 		{
 //			LOG("scp %s, recover spill %s=%%%d-%s", scp->name.c_str(),
-//			    vr_name(vr),
-//			    vr, pr_name[pr]);
+//			    vr_name(vr), vr, pr_name[pr]);
 			spill_vr(now_vr_state, now_pr_state, vr, mcs, " while recover");
 			spilled++;
 		}
