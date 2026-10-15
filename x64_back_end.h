@@ -319,7 +319,7 @@ void ra_wave_scope(Scope *scp);
 void while__pre_work(Scope *scp);
 void while__end_work(Scope *scp);
 int get_swap_pr(BasicBlock *bb);
-void while_recover_pr(
+void recover_pr_state(
     const vector<VrToPr> &before_vr2pr,
     const vector<PrToVr> &before_pr2vr,
     int swap_pr,

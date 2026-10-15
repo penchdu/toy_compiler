@@ -35,14 +35,14 @@ void init_wave(BasicBlock *bb)
 		bb_vr_wave[vr].appear_cnt.resize(mc_list_size, 0);
 	}
 
-	for (int inst_idx = 0; inst_idx < mc_list_size; inst_idx++)
+	for (int mc_idx = 0; mc_idx < mc_list_size; mc_idx++)
 	{
-		X64mc &mc = bb->x64mc_schedu[inst_idx];
+		X64mc &mc = bb->x64mc_schedu[mc_idx];
 		for (int i = 0; i < 3; i++)
 		{
 			int vr = mc.vr_list[i];
 			if (vr >= 0)
-				bb_vr_wave[vr].appear_cnt[inst_idx]++;
+				bb_vr_wave[vr].appear_cnt[mc_idx]++;
 		}
 	}
 }

@@ -13,9 +13,9 @@
   },
   "generation": {
     "vars_min": 2,
-    "vars_max": 100,
-    "max_depth": 30,
-    "statement_budget": 320,
+    "vars_max": 20,
+    "max_depth": 20,
+    "statement_budget": 100,
     "tokens": {
       "if": true,
       "else": true,
