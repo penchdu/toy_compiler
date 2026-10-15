@@ -55,7 +55,18 @@ void spill_all_pr(BasicBlock *bb)
 		}
 	}
 }
-static vector<int> x64pr_state(X64PR_MAX, INVALID_VR);
+
+int get_free_pr_num(const vector<PrState> &prst, int reserved_pr)
+{
+	int free_pr = 0;
+	for (int pr = R10D; pr < X64PR_MAX; pr++)
+	{
+		int vr = prst[pr].vr;
+		if (vr == INVALID_VR && pr != reserved_pr)
+			free_pr++;
+	}
+	return free_pr;
+}
 
 int wave_get_pr(BasicBlock *bb, int mc_idx)
 {
@@ -203,7 +214,7 @@ void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr)
 
 static void check_bb_use_cnt(Scope *scp, int target_symb_stamp = SYMB_ALL)
 {
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		Ast *declare_at = vr_declare_manager.declare_at[vr];
 		Symbol *symb = declare_at->symb;
@@ -241,7 +252,7 @@ void check_pr_vr_consistency()
 			    pr, vr, declare ? declare->tk.src.c_str() : "?", vr, vr_state[vr].pr);
 		}
 	}
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		int pr = vr_state[vr].pr;
 		if (pr == X64PR_MAX)
@@ -339,7 +350,7 @@ void ra_wave_scope(Scope *scp)
 {
 	//	LOG("scp %s", scp->name.c_str());
 	scp->consume_cnt_in_bb.clear();
-	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
+	scp->consume_cnt_in_bb.resize(vr_size);
 	BasicBlock *bb = scp->basic_block;
 	bb->x64mc_alloc_wave.clear();
 
@@ -362,10 +373,10 @@ void x64_reg_alloc_wave()
 	LOG("\n======================== wave ========================\n");
 
 	clear_all_vr_consume_cnt(&file_scp);
-	bb_vr_wave.resize(vr_declare_manager.size());
+	bb_vr_wave.resize(vr_size);
 
 	vr_state.clear();
-	vr_state.resize(vr_declare_manager.size(), {X64PR_MAX, VR_USAGE_INVALID});
+	vr_state.resize(vr_size, {X64PR_MAX, VR_USAGE_INVALID});
 	pr_state.clear();
 	pr_state.resize(X64PR_MAX, {INVALID_VR});
 

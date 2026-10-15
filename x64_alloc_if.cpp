@@ -70,7 +70,7 @@ void ra_wave_if(Scope *if_scp)
 
 	int after_then_pr = 0;
 	int after_else_pr = 0;
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		if (after_then_vr_state[vr].pr != X64PR_MAX)
 			after_then_pr++;
@@ -102,7 +102,7 @@ void ra_wave_if(Scope *if_scp)
 		    get_inner_tail_of_scope(then_branch));
 	}
 
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		if (after_then_vr_state[vr].pr != X64PR_MAX)
 			vr_state[vr].dirty |= after_then_vr_state[vr].dirty;
@@ -216,9 +216,9 @@ void ra_wave_if(Scope *if_scp)
 //
 //// future pr use
 //	if_tail_vr.clear();
-//	if_tail_vr.resize(vr_declare_manager.size(), 0);
+//	if_tail_vr.resize(vr_size, 0);
 //
-//	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+//	for (int vr = 0; vr < vr_size; vr++)
 //	{
 //		if (after_then_vr_state[vr].pr != X64PR_MAX)
 //			if_tail_vr[vr]++;
@@ -230,7 +230,7 @@ void ra_wave_if(Scope *if_scp)
 //#if 0
 //	get_future_use_vr(if_scp->parent, if_scp->idx + 1, future_vr, if_scp->id);
 //#else
-//	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+//	for (int vr = 0; vr < vr_size; vr++)
 //	{
 //		if (after_then_vr_state[vr].pr != X64PR_MAX
 //		    && vr_state[vr].pr != X64PR_MAX)
@@ -316,7 +316,7 @@ void ra_wave_if(Scope *if_scp)
 ////		    after_else_swap_pr);
 ////	}
 ////
-//	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+//	for (int vr = 0; vr < vr_size; vr++)
 //	{
 //		if (after_then_vr_state[vr].pr != X64PR_MAX)
 //			vr_state[vr].dirty |= after_then_vr_state[vr].dirty;

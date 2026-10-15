@@ -40,9 +40,9 @@ void create_dependcy_WAR(int a, vector<int> &_prev_read)
 void gen_use_def_chain(vector<X64mc> &x64mc)
 {
 	prev_write.clear();
-	prev_write.resize(vr_declare_manager.size(), -1);
+	prev_write.resize(vr_size, -1);
 	prev_read.clear();
-	prev_read.resize(vr_declare_manager.size());
+	prev_read.resize(vr_size);
 
 	mcs_predecessor.clear();
 	mcs_predecessor.resize(x64mc.size());

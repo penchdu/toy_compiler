@@ -389,7 +389,7 @@ static void dump_asm(const string &asm_file)
 
 void x64_reg_alloc()
 {
-	vr_state.resize(vr_declare_manager.size());
+	vr_state.resize(vr_size);
 
 	x64_reg_alloc_o0(&file_scp);
 	dump_asm("a0.s");

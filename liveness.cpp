@@ -173,8 +173,8 @@ static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 static void _gen_liveness(Scope *scp)
 {
 	BasicBlock *bb = scp->basic_block;
-	scp->use_cnt_in_bb.resize(vr_declare_manager.size());
-	scp->appear_cnt_in_bb.resize(vr_declare_manager.size());
+	scp->use_cnt_in_bb.resize(vr_size);
+	scp->appear_cnt_in_bb.resize(vr_size);
 
 	for (auto &mc : bb->x64mc)
 	{
@@ -258,8 +258,8 @@ static void _check_while_used_outer_symb(int vr, int usage)
 static void check_while_used_outer_symb(Scope *scp)
 {
 	BasicBlock *bb = scp->basic_block;
-	scp->use_cnt_in_bb.resize(vr_declare_manager.size());
-	scp->appear_cnt_in_bb.resize(vr_declare_manager.size());
+	scp->use_cnt_in_bb.resize(vr_size);
+	scp->appear_cnt_in_bb.resize(vr_size);
 
 	for (auto &mc : bb->x64mc)
 	{
@@ -327,8 +327,8 @@ static void find_while_used_outer_symb(Scope *scp)
 
 		assert(scp->outer_symb_read.size() == 0);
 		assert(scp->outer_symb_write.size() == 0);
-		scp->outer_symb_read.resize(vr_declare_manager.size());
-		scp->outer_symb_write.resize(vr_declare_manager.size());
+		scp->outer_symb_read.resize(vr_size);
+		scp->outer_symb_write.resize(vr_size);
 	}
 
 	if (while_use_outer_symb.size() > 0)

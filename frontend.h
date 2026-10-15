@@ -399,7 +399,7 @@ struct VirtualRegDeclareManager
 };
 extern VirtualRegDeclareManager vr_declare_manager;
 #define vr_name(vr) vr_declare_manager.declare_at[vr]->symb->unique_name.c_str()
-
+#define vr_size vr_declare_manager.size()
 
 #if 0
 #define PARSER_LOG(fmt, ...) do{ \

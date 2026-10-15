@@ -376,7 +376,7 @@ static void mc_schdu(Scope *scp)
 	vector<X64mc> &x64mc_schedu = bb->x64mc_schedu;
 
 	scp->consume_cnt_in_bb.clear();
-	scp->consume_cnt_in_bb.resize(vr_declare_manager.size());
+	scp->consume_cnt_in_bb.resize(vr_size);
 
 	int cycle = 0;
 	init_ready_queue(x64mc);
@@ -438,7 +438,7 @@ static void mc_schdu(Scope *scp)
 	if (x64mc_schedu.size() != x64mc.size())
 		ERR("%lu %lu", x64mc.size(), x64mc_schedu.size());
 
-	for (int i = 0; i < vr_declare_manager.size(); i++)
+	for (int i = 0; i < vr_size; i++)
 	{
 		int use = scp->use_cnt_in_bb[i];
 		int consume = scp->consume_cnt_in_bb[i];

@@ -140,14 +140,14 @@ void while__end_work(Scope *scp)
 void dump_vr_state(const vector<VrState> &vr_state, const string &tag)
 {
 	printf("===== %s\n", tag.c_str());
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		int pr = vr_state[vr].pr;
 		if (pr != X64PR_MAX)
 			printf("%s=%%%d %s  ", vr_name(vr), vr, pr_name[pr]);
 	}
 	printf("\n	dirty: ");
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		int pr = vr_state[vr].pr;
 		if (pr != X64PR_MAX)
@@ -168,7 +168,7 @@ void recover_pr_state(
 	X64mc mc;
 
 	int spilled = 0;
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		if (before_vr_state[vr].pr == X64PR_MAX && now_vr_state[vr].pr != X64PR_MAX)
 		{
@@ -336,7 +336,7 @@ int find_additional_dirty(const vector<VrState> &state_a,
     vector<bool> &addtional_dirty)
 {
 	int dirty_cnt = 0;
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		if (state_b[vr].pr != X64PR_MAX
 		    && !state_a[vr].dirty
@@ -437,7 +437,7 @@ void st_additional_dirty_in_tail(Scope *scp,
 	 needs to spill it — cond guarantees the memory value is correct.
 	 *
 	 */
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		if (!addtional_dirty[vr])
 			continue;
@@ -455,7 +455,7 @@ void st_additional_dirty(Scope *cond,
     Scope *body_tail__continue__break,
     const vector<VrState> &body_tail__continue__break_vr_state)
 {
-	vector<bool> additional_dirty(vr_declare_manager.size(), 0);
+	vector<bool> additional_dirty(vr_size, 0);
 
 	int dirty_cnt = find_additional_dirty(cond_vr_state, body_tail__continue__break_vr_state, additional_dirty);
 
@@ -567,9 +567,9 @@ void while_move_victim_to_pre_cond(
 	Scope *cond = while_scp->clds[0];
 	Scope *body = while_scp->clds[1];
 
-	vector<int> vr_reference(vr_declare_manager.size(), 0);
-	vector<int> vr_victim(vr_declare_manager.size(), 0);
-	vector<int> vr_ld(vr_declare_manager.size(), 0);
+	vector<int> vr_reference(vr_size, 0);
+	vector<int> vr_victim(vr_size, 0);
+	vector<int> vr_ld(vr_size, 0);
 
 	move_victim_to_pre_cond(
 	    while_scp,
@@ -580,7 +580,7 @@ void while_move_victim_to_pre_cond(
 	    vr_victim);
 
 	vr_victim.clear();
-	vr_victim.resize(vr_declare_manager.size(), 0);
+	vr_victim.resize(vr_size, 0);
 
 	move_victim_to_pre_cond(
 	    while_scp,
@@ -595,7 +595,7 @@ void while_move_victim_to_pre_cond(
 	 * and in_cond and after_cond and have no op in in_cond
 	 *
 	 */
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		if (vr_victim[vr] > 0 && after_cond_vr_state[vr].pr != X64PR_MAX)
 		{
@@ -607,10 +607,6 @@ void while_move_victim_to_pre_cond(
 			after_cond_pr_state[pr].vr = INVALID_VR;
 		}
 	}
-
-	vr_state = after_cond_vr_state;
-	pr_state = after_cond_pr_state;
-
 }
 void move_ld_to_pre_cond(
     Scope *while_scp,
@@ -618,13 +614,12 @@ void move_ld_to_pre_cond(
     vector<VrState> &pre_cond_vr_state,
     vector<PrState> &pre_cond_pr_state,
     vector<int> &vr_reference,
+    vector<int> &pr_reference,
     vector<int> &vr_ld,
     int reserved_pr)
 {
 	auto &mcs_while = while_scp->basic_block->x64mc_alloc_wave;
 	auto &mcs = cond_or_body->basic_block->x64mc_alloc_wave;
-
-	vector<int> pr_reference(X64PR_MAX, 0);
 
 	for (int i = 0; i < mcs.size(); i++)
 	{
@@ -635,37 +630,10 @@ void move_ld_to_pre_cond(
 			int vr = mc.s1;
 			int pr = mc.pr1;
 
-			int free_pr = 0;
-			for (int pr = R10D; pr < X64PR_MAX; pr++)
-			{
-				int vr = pre_cond_pr_state[pr].vr;
-				if (vr == INVALID_VR && pr != reserved_pr)
-					free_pr++;
-			}
-
-			LOG("%d, pr_reference[%s]=%d, pre_cond_pr_state[%s].vr=%%%d, free_pr=%d",
-			    pr != reserved_pr,
-			    pr_name[pr], pr_reference[pr],
-			    pr_name[pr], pre_cond_pr_state[pr].vr,
-			    free_pr);
-
 			if (pr != reserved_pr
 			    && pr_reference[pr] == 0
 			    && pre_cond_pr_state[pr].vr == INVALID_VR)
 			{
-				bool ok = 1;
-//				for (int j = 0; j < i; j++)
-//				{
-//					auto &m = mcs[j];
-//					if (m.pr1 == pr || m.pr2 == pr || m.pr_dst == pr)
-//					{
-//						ok = 0;
-//						break;
-//					}
-//				}
-//
-//				if (ok)
-//				{
 				pre_cond_vr_state[vr].pr = pr;
 				pre_cond_vr_state[vr].u = VR_USAGE_READ;
 				pre_cond_vr_state[vr].dirty = 0;
@@ -674,13 +642,14 @@ void move_ld_to_pre_cond(
 				mcs_while.push_back(mc);
 				vr_ld[mc.s1]++;
 				mc.stamp = MC_INVALID;
-//				}
-//				else
-//				{
-////					ERR("ok %d", ok);
-//				}
 
-				LOG("ok %d", ok);
+				int free_pr = get_free_pr_num(pre_cond_pr_state, reserved_pr);
+				LOG("ok");
+				LOG("%d, pr_reference[%s]=%d, pre_cond_pr_state[%s].vr=%%%d, free_pr=%d",
+				    pr != reserved_pr,
+				    pr_name[pr], pr_reference[pr],
+				    pr_name[pr], pre_cond_pr_state[pr].vr,
+				    free_pr);
 			}
 		}
 
@@ -718,9 +687,9 @@ void while_move_ld_to_pre_cond(
 	Scope *cond = while_scp->clds[0];
 	Scope *body = while_scp->clds[1];
 
-	vector<int> vr_reference(vr_declare_manager.size(), 0);
-	vector<int> vr_victim(vr_declare_manager.size(), 0);
-	vector<int> vr_ld(vr_declare_manager.size(), 0);
+	vector<int> vr_reference(vr_size, 0);
+	vector<int> pr_reference(X64PR_MAX, 0);
+	vector<int> vr_ld(vr_size, 0);
 
 	move_ld_to_pre_cond(
 	    while_scp,
@@ -728,21 +697,44 @@ void while_move_ld_to_pre_cond(
 	    pre_cond_vr_state,
 	    pre_cond_pr_state,
 	    vr_reference,
+	    pr_reference,
 	    vr_ld,
-	    //	    after_cond_vr_state,
-//	    after_cond_pr_state,
 	    pre_cond_reserved_pr);
 
-//	move_ld_to_pre_cond(
-//		while_scp,
-//		body,
-//	    pre_cond_vr_state,
-//	    pre_cond_pr_state,
-//	    vr_reference,
-//	    vr_ld,
-////	    after_cond_vr_state,
-////	    after_cond_pr_state,
-//	    pre_cond_reserved_pr);
+	vr_ld.clear();
+	vr_ld.resize(vr_size, 0);
+
+	move_ld_to_pre_cond(
+	    while_scp,
+	    body,
+	    pre_cond_vr_state,
+	    pre_cond_pr_state,
+	    vr_reference,
+	    pr_reference,
+	    vr_ld,
+	    pre_cond_reserved_pr);
+
+	/*
+	 * if move_ld_to_pre_cond happened in body, vr have no pr in pre_cond
+	 * and cond and after_cond, and have no op in cond
+	 *
+	 */
+	for (int vr = 0; vr < vr_size; vr++)
+	{
+		if (vr_ld[vr] > 0)
+		{
+			int pr = pre_cond_vr_state[vr].pr;
+
+			assert(after_cond_vr_state[vr].pr == X64PR_MAX);
+			assert(after_cond_pr_state[pr].vr == INVALID_VR);
+
+			after_cond_vr_state[vr].pr = pr;
+			after_cond_vr_state[vr].u = VR_USAGE_READ;
+			after_cond_vr_state[vr].dirty = 0;
+
+			after_cond_pr_state[pr].vr = vr;
+		}
+	}
 }
 
 void ra_wave_while(Scope *while_scp)
@@ -789,8 +781,8 @@ void ra_wave_while(Scope *while_scp)
 // while cond
 //	Scope *cond = while_scp->clds[0];
 //	Scope *body = while_scp->clds[1];
-//	cond->addtional_symb_usage.resize(vr_declare_manager.size(), VR_USAGE_INVALID);
-//	for (int i = 0; i < vr_declare_manager.size(); i++)
+//	cond->addtional_symb_usage.resize(vr_size, VR_USAGE_INVALID);
+//	for (int i = 0; i < vr_size; i++)
 //	{
 //		if (cond->outer_symb_read[i] > 0 && body->outer_symb_write[i] > 0)
 //			cond->addtional_symb_usage[i] |= VR_USAGE_WRITE;
@@ -833,6 +825,9 @@ void ra_wave_while(Scope *while_scp)
 	    after_cond_vr_state,
 	    after_cond_pr_state,
 	    pre_cond_reserved_pr);
+
+	vr_state = after_cond_vr_state;
+	pr_state = after_cond_pr_state;
 
 	////////////////////////////////////////////////////////////
 	printf("\n============== while %d ==============\n", while_scp->id);

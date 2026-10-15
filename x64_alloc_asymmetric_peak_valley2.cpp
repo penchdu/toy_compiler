@@ -372,7 +372,7 @@ void ra_wave_if(Scope *if_scp)
 	vector<VrToPr> tmp_vr_state = vr_state;
 	vector<PrToVr> tmp_pr_state = pr_state;
 	vr_state.clear();
-	vr_state.resize(vr_declare_manager.size(), {X64PR_MAX, VR_USAGE_INVALID});
+	vr_state.resize(vr_size, {X64PR_MAX, VR_USAGE_INVALID});
 	pr_state.clear();
 	pr_state.resize(X64PR_MAX, {INVALID_VR});
 
@@ -385,7 +385,7 @@ void ra_wave_if(Scope *if_scp)
 //	 not really good, because while and if have branch
 
 	printf("\n================== if%d target_vr_state ==================\n", if_scp->id);
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		if(target_vr_state[vr].pr != X64PR_MAX)
 			printf("  %s=%%%d", vr_name(vr), vr);
@@ -449,7 +449,7 @@ void ra_wave_if(Scope *if_scp)
 		    after_else_swap_pr);
 	}
 
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		if (after_then_vr_state[vr].pr != X64PR_MAX)
 			vr_state[vr].dirty |= after_then_vr_state[vr].dirty;
@@ -601,9 +601,9 @@ void ra_wave_if(Scope *if_scp)
 
 // future pr use
 	if_tail_vr.clear();
-	if_tail_vr.resize(vr_declare_manager.size(), 0);
+	if_tail_vr.resize(vr_size, 0);
 
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		if(after_then_vr_state[vr].pr != X64PR_MAX)
 			if_tail_vr[vr]++;
@@ -693,7 +693,7 @@ void ra_wave_if(Scope *if_scp)
 //		    after_else_swap_pr);
 //	}
 //
-	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	for (int vr = 0; vr < vr_size; vr++)
 	{
 		if (after_then_vr_state[vr].pr != X64PR_MAX)
 			vr_state[vr].dirty |= after_then_vr_state[vr].dirty;

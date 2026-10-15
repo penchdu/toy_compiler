@@ -310,6 +310,8 @@ void dump_vr_state(const vector<VrState> &vp, const string &tag);
 void check_pr_vr_consistency();
 void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr);
 void init_wave(BasicBlock *bb);
+
+int get_free_pr_num(const vector<PrState> &prst, int reserved_pr = X64PR_MAX);
 int wave_get_pr(BasicBlock *bb, int mc_idx);
 void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i);
 void x64_reg_alloc_wave();
