@@ -130,7 +130,7 @@ void case_tk_if()
 	// then branch
 	Scope *then_branch = body_of_if__while();
 	then_branch->sem_stamp = SEM_IF_then;
-	then_branch->name += "_if"  + to_string(if_scp->id) + "_then" + to_string(then_branch->id);
+	then_branch->name += "_if"  + to_string(if_scp->id) + "_then"; // + to_string(then_branch->id);
 
 	// else branch
 	Scope *else_branch = 0;
@@ -149,7 +149,7 @@ void case_tk_if()
 		exit_current_scope();
 	}
 	else_branch->sem_stamp = SEM_IF_else;
-	else_branch->name += "_if" + to_string(if_scp->id) + "_else" + to_string(else_branch->id);
+	else_branch->name += "_if" + to_string(if_scp->id) + "_else"; // + to_string(else_branch->id);
 	cond->jmp_out = else_branch;
 	else_branch->jmp_in.push_back(cond);
 

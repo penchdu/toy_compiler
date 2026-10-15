@@ -311,12 +311,12 @@ tracking much more reliable.
 
 
 
-## Auto Test
+## Basic Test
 
 ```c
 
 $make
-$./test/run_test.sh
+$./test/basic_test.sh
 
 ```
 
@@ -325,7 +325,7 @@ $./test/run_test.sh
 ```c
 
 $make
-$./test/python_random_test/python_random_test.sh 2000
+$./test/random_test/random_test.sh 2000
 
 ```
 
@@ -342,7 +342,6 @@ Enabled tokens: if, else, while, break, continue
 Force statements after break/continue: True
 Fully random control-placement probability: 25% per program
 
-...
 ...
 ...
 
