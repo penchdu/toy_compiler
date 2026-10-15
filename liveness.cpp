@@ -82,7 +82,7 @@ void update_vr_consume_cnt(Scope *scp, int vr, int update_value, int usage)
 }
 void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value)
 {
-	MachineCodeStamp mc_stamp = mc.mc_stamp;
+	MachineCodeStamp mc_stamp = mc.stamp;
 
 	switch (mc_stamp)
 	{
@@ -178,7 +178,7 @@ static void _gen_liveness(Scope *scp)
 
 	for (auto &mc : bb->x64mc)
 	{
-		MachineCodeStamp mc_stamp = mc.mc_stamp;
+		MachineCodeStamp mc_stamp = mc.stamp;
 
 		switch (mc_stamp)
 		{
@@ -263,7 +263,7 @@ static void check_while_used_outer_symb(Scope *scp)
 
 	for (auto &mc : bb->x64mc)
 	{
-		MachineCodeStamp mc_stamp = mc.mc_stamp;
+		MachineCodeStamp mc_stamp = mc.stamp;
 
 		switch (mc_stamp)
 		{

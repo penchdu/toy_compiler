@@ -53,7 +53,7 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 
 	for (int idx = 0; idx < x64mc.size(); idx++)
 	{
-		MachineCodeStamp mc_stamp = x64mc[idx].mc_stamp;
+		MachineCodeStamp mc_stamp = x64mc[idx].stamp;
 		int s1 = x64mc[idx].s1;
 		int s2 = x64mc[idx].s2;
 		int dst = x64mc[idx].dst;
@@ -132,7 +132,7 @@ static void print_mc_err(int a, int b, const X64mc &mc)
 	int dst = mc.dst;
 	int s1 = mc.s1;
 	int s2 = mc.s2;
-	MachineCodeStamp stamp = mc.mc_stamp;
+	MachineCodeStamp stamp = mc.stamp;
 
 	printf("%d %d, %s %s(%%%d) %s(%%%d) %s(%%%d) \n", a, b,
 		mc_info[stamp].mc_code.c_str(),

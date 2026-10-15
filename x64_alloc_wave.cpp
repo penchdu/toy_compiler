@@ -10,7 +10,7 @@
 #include "basic_block.h"
 #include <cmath>
 
-void spill_vr(vector<VrToPr> &vrst, vector<PrToVr> &prst, int vr,
+void spill_vr(vector<VrState> &vrst, vector<PrState> &prst, int vr,
     vector<X64mc> &mcs, const string &tag)
 {
 	int &pr = vrst[vr].pr;
@@ -260,7 +260,7 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 {
 	vector<X64mc> &mcs = bb->x64mc_alloc_wave;
 	X64mc mc = schedued;
-	MachineCodeStamp mc_stamp = mc.mc_stamp;
+	MachineCodeStamp mc_stamp = mc.stamp;
 
 	switch (mc_stamp)
 	{

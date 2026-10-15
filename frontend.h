@@ -290,8 +290,8 @@ enum VrUsage
 	VR_USAGE_INVALID = 0,
 };
 
-struct VrToPr;
-struct PrToVr;
+struct VrState;
+struct PrState;
 struct BasicBlock;
 
 struct Scope
@@ -335,8 +335,8 @@ public:
 	vector<Scope*> break_list;
 	bool bb_terminated;
 
-	vector<VrToPr> *scp_vr_state = 0;
-	vector<PrToVr> *scp_pr_state = 0;
+	vector<VrState> *scp_vr_state = 0;
+	vector<PrState> *scp_pr_state = 0;
 
 	vector<Tac> tac;
 	BasicBlock *basic_block = 0;

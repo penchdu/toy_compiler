@@ -251,7 +251,7 @@ void dump_mc(Scope *scp, string mc_list_name)
 
 	for (auto &mc : *mc_list)
 	{
-		MachineCodeStamp mc_stamp = mc.mc_stamp;
+		MachineCodeStamp mc_stamp = mc.stamp;
 		MachineCodeStamp set_mc;
 
 		switch (mc_stamp)

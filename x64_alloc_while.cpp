@@ -9,7 +9,7 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-int get_swap_pr(BasicBlock *bb)
+int get_reserved_pr(BasicBlock *bb)
 {
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
@@ -137,7 +137,7 @@ void while__end_work(Scope *scp)
 			check_dead_vr(scp, mcs, vr);
 	}
 }
-void dump_vr_state(const vector<VrToPr> &vr_state, const string &tag)
+void dump_vr_state(const vector<VrState> &vr_state, const string &tag)
 {
 	printf("===== %s\n", tag.c_str());
 	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
@@ -157,11 +157,11 @@ void dump_vr_state(const vector<VrToPr> &vr_state, const string &tag)
 }
 
 void recover_pr_state(
-    const vector<VrToPr> &before_vr_state,
-    const vector<PrToVr> &before_pr_state,
+    const vector<VrState> &before_vr_state,
+    const vector<PrState> &before_pr_state,
     int swap_pr,
-    vector<VrToPr> &now_vr_state,
-    vector<PrToVr> &now_pr_state,
+    vector<VrState> &now_vr_state,
+    vector<PrState> &now_pr_state,
     Scope *tail_scope_to_gen_mc)
 {
 	vector<X64mc> &mcs = tail_scope_to_gen_mc->basic_block->x64mc_alloc_wave;
@@ -323,16 +323,16 @@ void ra_wave_continue_break_save_vr_state(Scope *scp)
 {
 //	LOG("%s", scp->name.c_str());
 
-	scp->scp_vr_state = new vector<VrToPr>;
-	scp->scp_pr_state = new vector<PrToVr>;
-	vector<VrToPr> &scp_vr_state = *scp->scp_vr_state;
-	vector<PrToVr> &scp_pr_state = *scp->scp_pr_state;
+	scp->scp_vr_state = new vector<VrState>;
+	scp->scp_pr_state = new vector<PrState>;
+	vector<VrState> &scp_vr_state = *scp->scp_vr_state;
+	vector<PrState> &scp_pr_state = *scp->scp_pr_state;
 	scp_vr_state = vr_state;
 	scp_pr_state = pr_state;
 }
 
-int find_additional_dirty(const vector<VrToPr> &state_a,
-    const vector<VrToPr> &state_b,
+int find_additional_dirty(const vector<VrState> &state_a,
+    const vector<VrState> &state_b,
     vector<bool> &addtional_dirty)
 {
 	int dirty_cnt = 0;
@@ -358,7 +358,7 @@ void st_additional_dirty_in_cond(Scope *cond, vector<bool> &additional_dirty, in
 
 	for (int i = 0; i < mcs.size(); i++)
 	{
-		if (mcs[i].mc_stamp != MC_victim)
+		if (mcs[i].stamp != MC_victim)
 			continue;
 
 		int vr = mcs[i].s1;
@@ -391,7 +391,7 @@ void st_additional_dirty_in_cond(Scope *cond, vector<bool> &additional_dirty, in
 		 */
 
 		if (i + 1 < mcs.size()
-		    && mcs[i + 1].mc_stamp == MC_ST
+		    && mcs[i + 1].stamp == MC_ST
 		    && mcs[i + 1].s1 == vr)
 		{
 			//already have st
@@ -415,7 +415,7 @@ void st_additional_dirty_in_cond(Scope *cond, vector<bool> &additional_dirty, in
 	LOG("%s, meet %d, fix %d", cond->name.c_str(), meet, fix);
 }
 void st_additional_dirty_in_tail(Scope *scp,
-    const vector<VrToPr> &state,
+    const vector<VrState> &state,
     const vector<bool> &addtional_dirty)
 {
 	/*
@@ -451,9 +451,9 @@ void st_additional_dirty_in_tail(Scope *scp,
 	}
 }
 void st_additional_dirty(Scope *cond,
-    const vector<VrToPr> &cond_vr_state,
+    const vector<VrState> &cond_vr_state,
     Scope *body_tail__continue__break,
-    const vector<VrToPr> &body_tail__continue__break_vr_state)
+    const vector<VrState> &body_tail__continue__break_vr_state)
 {
 	vector<bool> additional_dirty(vr_declare_manager.size(), 0);
 
@@ -470,8 +470,8 @@ void st_additional_dirty(Scope *cond,
 }
 
 void ra_wave__continue_break(Scope *cond,
-    vector<VrToPr> &cond_vr_state,
-    vector<PrToVr> &cond_pr_state,
+    vector<VrState> &cond_vr_state,
+    vector<PrState> &cond_pr_state,
     int swap_pr,
     Scope *source)
 {
@@ -488,9 +488,9 @@ void ra_wave__continue_break(Scope *cond,
 	dump_vr_state(source_vr_state, "source " + to_string(source->id));
 
 	recover_pr_state(
-		cond_vr_state,
-		cond_pr_state,
-		swap_pr,
+	    cond_vr_state,
+	    cond_pr_state,
+	    swap_pr,
 	    source_vr_state,
 	    source_pr_state,
 	    source);
@@ -503,6 +503,248 @@ void ra_wave__continue_break(Scope *cond,
 	else
 		st_additional_dirty(cond, cond_vr_state, source, source_vr_state);
 }
+
+void move_victim_to_pre_cond(
+    Scope *while_scp,
+    Scope *cond_or_body,
+    vector<VrState> &pre_cond_vr_state,
+    vector<PrState> &pre_cond_pr_state,
+    vector<int> &vr_referenced,
+    vector<int> &vr_victim)
+{
+	auto &mcs_while = while_scp->basic_block->x64mc_alloc_wave;
+	auto &mcs = cond_or_body->basic_block->x64mc_alloc_wave;
+
+	for (int i = 0; i < mcs.size(); i++)
+	{
+		auto &mc = mcs[i];
+
+		if (mc.stamp == MC_victim && vr_referenced[mc.s1] == 0)
+		{
+			int vr = mc.s1;
+			assert(mc.pr1 == pre_cond_vr_state[vr].pr);
+
+			spill_vr(pre_cond_vr_state,
+			    pre_cond_pr_state,
+			    vr, mcs_while, " while mv victim");
+
+			vr_victim[vr]++;
+			mc.stamp = MC_INVALID;
+
+			if (i + 1 < mcs.size()
+			    && mcs[i + 1].stamp == MC_ST
+			    && mcs[i + 1].s1 == mc.s1)
+			{
+				mcs[i + 1].stamp = MC_INVALID;
+			}
+
+			LOG("%s=%%%d", vr_name(vr), vr);
+		}
+
+		if (mc.s1 >= 0)
+			vr_referenced[mc.s1]++;
+		if (mc.s2 >= 0)
+			vr_referenced[mc.s2]++;
+		if (mc.dst >= 0)
+			vr_referenced[mc.dst]++;
+	}
+
+	for (int i = 0; i < mcs.size();)
+	{
+		if (mcs[i].stamp == MC_INVALID)
+			mcs.erase(mcs.begin() + i);
+		else
+			i++;
+	}
+}
+void while_move_victim_to_pre_cond(
+    Scope *while_scp,
+    vector<VrState> &pre_cond_vr_state,
+    vector<PrState> &pre_cond_pr_state,
+    vector<VrState> &after_cond_vr_state,
+    vector<PrState> &after_cond_pr_state)
+{
+	Scope *cond = while_scp->clds[0];
+	Scope *body = while_scp->clds[1];
+
+	vector<int> vr_reference(vr_declare_manager.size(), 0);
+	vector<int> vr_victim(vr_declare_manager.size(), 0);
+	vector<int> vr_ld(vr_declare_manager.size(), 0);
+
+	move_victim_to_pre_cond(
+	    while_scp,
+	    cond,
+	    pre_cond_vr_state,
+	    pre_cond_pr_state,
+	    vr_reference,
+	    vr_victim);
+
+	vr_victim.clear();
+	vr_victim.resize(vr_declare_manager.size(), 0);
+
+	move_victim_to_pre_cond(
+	    while_scp,
+	    body,
+	    pre_cond_vr_state,
+	    pre_cond_pr_state,
+	    vr_reference,
+	    vr_victim);
+
+	/*
+	 * if move_victim_to_pre_cond happened in body, vr have pr in pre_cond
+	 * and in_cond and after_cond and have no op in in_cond
+	 *
+	 */
+	for (int vr = 0; vr < vr_declare_manager.size(); vr++)
+	{
+		if (vr_victim[vr] > 0 && after_cond_vr_state[vr].pr != X64PR_MAX)
+		{
+			int pr = after_cond_vr_state[vr].pr;
+			after_cond_vr_state[vr].pr = X64PR_MAX;
+			after_cond_vr_state[vr].u = VR_USAGE_INVALID;
+			after_cond_vr_state[vr].dirty = 0;
+
+			after_cond_pr_state[pr].vr = INVALID_VR;
+		}
+	}
+
+	vr_state = after_cond_vr_state;
+	pr_state = after_cond_pr_state;
+
+}
+void move_ld_to_pre_cond(
+    Scope *while_scp,
+    Scope *cond_or_body,
+    vector<VrState> &pre_cond_vr_state,
+    vector<PrState> &pre_cond_pr_state,
+    vector<int> &vr_reference,
+    vector<int> &vr_ld,
+    int reserved_pr)
+{
+	auto &mcs_while = while_scp->basic_block->x64mc_alloc_wave;
+	auto &mcs = cond_or_body->basic_block->x64mc_alloc_wave;
+
+	vector<int> pr_reference(X64PR_MAX, 0);
+
+	for (int i = 0; i < mcs.size(); i++)
+	{
+		auto &mc = mcs[i];
+
+		if (mc.stamp == MC_LD && vr_reference[mc.s1] == 0)
+		{
+			int vr = mc.s1;
+			int pr = mc.pr1;
+
+			int free_pr = 0;
+			for (int pr = R10D; pr < X64PR_MAX; pr++)
+			{
+				int vr = pre_cond_pr_state[pr].vr;
+				if (vr == INVALID_VR && pr != reserved_pr)
+					free_pr++;
+			}
+
+			LOG("%d, pr_reference[%s]=%d, pre_cond_pr_state[%s].vr=%%%d, free_pr=%d",
+			    pr != reserved_pr,
+			    pr_name[pr], pr_reference[pr],
+			    pr_name[pr], pre_cond_pr_state[pr].vr,
+			    free_pr);
+
+			if (pr != reserved_pr
+			    && pr_reference[pr] == 0
+			    && pre_cond_pr_state[pr].vr == INVALID_VR)
+			{
+				bool ok = 1;
+//				for (int j = 0; j < i; j++)
+//				{
+//					auto &m = mcs[j];
+//					if (m.pr1 == pr || m.pr2 == pr || m.pr_dst == pr)
+//					{
+//						ok = 0;
+//						break;
+//					}
+//				}
+//
+//				if (ok)
+//				{
+				pre_cond_vr_state[vr].pr = pr;
+				pre_cond_vr_state[vr].u = VR_USAGE_READ;
+				pre_cond_vr_state[vr].dirty = 0;
+				pre_cond_pr_state[pr].vr = vr;
+
+				mcs_while.push_back(mc);
+				vr_ld[mc.s1]++;
+				mc.stamp = MC_INVALID;
+//				}
+//				else
+//				{
+////					ERR("ok %d", ok);
+//				}
+
+				LOG("ok %d", ok);
+			}
+		}
+
+		if (mc.s1 >= 0)
+			vr_reference[mc.s1]++;
+		if (mc.s2 >= 0)
+			vr_reference[mc.s2]++;
+		if (mc.dst >= 0)
+			vr_reference[mc.dst]++;
+
+		if (mc.pr1 != X64PR_MAX)
+			pr_reference[mc.pr1]++;
+		if (mc.pr2 != X64PR_MAX)
+			pr_reference[mc.pr2]++;
+		if (mc.pr_dst != X64PR_MAX)
+			pr_reference[mc.pr_dst]++;
+	}
+
+	for (int i = 0; i < mcs.size();)
+	{
+		if (mcs[i].stamp == MC_INVALID)
+			mcs.erase(mcs.begin() + i);
+		else
+			i++;
+	}
+}
+void while_move_ld_to_pre_cond(
+    Scope *while_scp,
+    vector<VrState> &pre_cond_vr_state,
+    vector<PrState> &pre_cond_pr_state,
+    vector<VrState> &after_cond_vr_state,
+    vector<PrState> &after_cond_pr_state,
+    int pre_cond_reserved_pr)
+{
+	Scope *cond = while_scp->clds[0];
+	Scope *body = while_scp->clds[1];
+
+	vector<int> vr_reference(vr_declare_manager.size(), 0);
+	vector<int> vr_victim(vr_declare_manager.size(), 0);
+	vector<int> vr_ld(vr_declare_manager.size(), 0);
+
+	move_ld_to_pre_cond(
+	    while_scp,
+	    cond,
+	    pre_cond_vr_state,
+	    pre_cond_pr_state,
+	    vr_reference,
+	    vr_ld,
+	    //	    after_cond_vr_state,
+//	    after_cond_pr_state,
+	    pre_cond_reserved_pr);
+
+//	move_ld_to_pre_cond(
+//		while_scp,
+//		body,
+//	    pre_cond_vr_state,
+//	    pre_cond_pr_state,
+//	    vr_reference,
+//	    vr_ld,
+////	    after_cond_vr_state,
+////	    after_cond_pr_state,
+//	    pre_cond_reserved_pr);
+}
+
 void ra_wave_while(Scope *while_scp)
 {
 	//	LOG("scp %s", scp->name.c_str());
@@ -526,25 +768,23 @@ void ra_wave_while(Scope *while_scp)
 	 *
 	 */
 
-	int pre_cond_swap_pr = get_swap_pr(while_scp->basic_block);
-	assert(pre_cond_swap_pr != X64PR_MAX);
-
+	int pre_cond_reserved_pr = get_reserved_pr(while_scp->basic_block);
+	assert(pre_cond_reserved_pr != X64PR_MAX);
 
 //	for(int vr : scp->outer_symb_write)
 //	{
 //		for(int pr : )
 //	}
-/*
- * pre alloc pr to reduce spill
- * spill unnecessary pr
- * try alloc cond write
- * try alloc body write
- * try alloc cond read
- * try alloc body read
-*/
+	/*
+	 * pre alloc pr to reduce spill
+	 * spill unnecessary pr
+	 * try alloc cond write
+	 * try alloc body write
+	 * try alloc cond read
+	 * try alloc body read
+	 */
 // select cond pr
 //	spill_vr(bb->x64mc_alloc_wave, swap_vr);
-
 ////////////////////////////////////////////////////////////
 // while cond
 //	Scope *cond = while_scp->clds[0];
@@ -555,31 +795,44 @@ void ra_wave_while(Scope *while_scp)
 //		if (cond->outer_symb_read[i] > 0 && body->outer_symb_write[i] > 0)
 //			cond->addtional_symb_usage[i] |= VR_USAGE_WRITE;
 //	}
-	cond->scp_vr_state = new vector<VrToPr>;
-	cond->scp_pr_state = new vector<PrToVr>;
-	vector<VrToPr> &pre_cond_vr_state = *cond->scp_vr_state;
-	vector<PrToVr> &pre_cond_pr_state = *cond->scp_pr_state;
+	cond->scp_vr_state = new vector<VrState>;
+	cond->scp_pr_state = new vector<PrState>;
+	vector<VrState> &pre_cond_vr_state = *cond->scp_vr_state;
+	vector<PrState> &pre_cond_pr_state = *cond->scp_pr_state;
 	pre_cond_vr_state = vr_state;
 	pre_cond_pr_state = pr_state;
 
 	ra_wave_scope(cond);
 
-	int after_cond_swap_pr = get_swap_pr(cond->basic_block);	// while_scp->basic_block ?
+	int after_cond_swap_pr = get_reserved_pr(cond->basic_block);	// while_scp->basic_block ?
 	assert(after_cond_swap_pr != X64PR_MAX);
 
-	vector<VrToPr> after_cond_vr_state = vr_state;
-	vector<PrToVr> after_cond_pr_state = pr_state;
+	vector<VrState> after_cond_vr_state = vr_state;
+	vector<PrState> after_cond_pr_state = pr_state;
 
 	////////////////////////////////////////////////////////////
 	// while body
 	ra_wave_scope(body);
 
-	vector<VrToPr> after_body_vr_state = vr_state;
-	vector<PrToVr> after_body_pr_state = pr_state;
+	vector<VrState> after_body_vr_state = vr_state;
+	vector<PrState> after_body_pr_state = pr_state;
 
 	////////////////////////////////////////////////////////////
-	vr_state = after_cond_vr_state;
-	pr_state = after_cond_pr_state;
+
+	while_move_victim_to_pre_cond(
+	    while_scp,
+	    pre_cond_vr_state,
+	    pre_cond_pr_state,
+	    after_cond_vr_state,
+	    after_cond_pr_state);
+
+	while_move_ld_to_pre_cond(
+	    while_scp,
+	    pre_cond_vr_state,
+	    pre_cond_pr_state,
+	    after_cond_vr_state,
+	    after_cond_pr_state,
+	    pre_cond_reserved_pr);
 
 	////////////////////////////////////////////////////////////
 	printf("\n============== while %d ==============\n", while_scp->id);
@@ -590,7 +843,7 @@ void ra_wave_while(Scope *while_scp)
 	recover_pr_state(
 	    pre_cond_vr_state,
 	    pre_cond_pr_state,
-	    pre_cond_swap_pr,
+	    pre_cond_reserved_pr,
 	    after_body_vr_state,
 	    after_body_pr_state,
 	    get_inner_tail_of_scope(body));
@@ -610,7 +863,7 @@ void ra_wave_while(Scope *while_scp)
 		ra_wave__continue_break(cond,
 		    pre_cond_vr_state,
 		    pre_cond_pr_state,
-		    pre_cond_swap_pr,
+		    pre_cond_reserved_pr,
 		    p);
 	}
 

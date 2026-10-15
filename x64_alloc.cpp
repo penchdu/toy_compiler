@@ -51,8 +51,8 @@ const char* pr_name_byte(int pr)
 
 extern Mc2mc fake_cmp_mc_to_real_mc[];
 
-vector<VrToPr> vr_state;
-vector<PrToVr> pr_state(X64PR_MAX, {INVALID_VR});
+vector<VrState> vr_state;
+vector<PrState> pr_state(X64PR_MAX, {INVALID_VR});
 
 static X64pr get_pr()
 {
@@ -146,7 +146,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 	for (X64mc &mc_schedu : bb->x64mc_schedu)
 	{
 		X64mc mc = mc_schedu;
-		MachineCodeStamp mc_stamp = mc.mc_stamp;
+		MachineCodeStamp mc_stamp = mc.stamp;
 
 		switch (mc_stamp)
 		{
@@ -259,11 +259,11 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 	for (X64mc &r : *mc_list)
 	{
 		X64mc mc = r;
-		MachineCodeStamp mc_stamp = mc.mc_stamp;
+		MachineCodeStamp stamp = mc.stamp;
 		MachineCodeStamp cmp_mc;
 		MachineCodeStamp set_mc;
 
-		switch (mc_stamp)
+		switch (stamp)
 		{
 		case MC_LD:
 			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_name[mc.pr1], mc.of1);
@@ -310,11 +310,11 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			case MC_CMP_G:
 			case MC_CMP_GE:
 
-			cmp_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_cmp;
+			cmp_mc = fake_cmp_mc_to_real_mc[stamp].mc_cmp;
 			PRINT_ASM("%s %s, %s", mc_info[cmp_mc].mc_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2]);
 			PRINT_ASM_sem
 
-			set_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_set;
+			set_mc = fake_cmp_mc_to_real_mc[stamp].mc_set;
 			PRINT_ASM("%s %s", mc_info[set_mc].mc_code.c_str(), pr_name_byte(mc.pr_dst));
 			PRINT_ASM_sem
 			PRINT_ASM("movzx %s, %s", pr_name[mc.pr_dst], pr_name_byte(mc.pr_dst));
@@ -333,7 +333,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			break;
 
 		default:
-			ERR("%d", mc_stamp);
+			ERR("%d", stamp);
 			break;
 		}
 	}

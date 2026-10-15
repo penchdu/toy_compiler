@@ -87,7 +87,7 @@ enum X64pr {
 extern const char *pr_name[];
 const char* pr_name_byte(int pr);
 
-struct VrToPr
+struct VrState
 {
 	int pr = X64PR_MAX;
 	int u = VR_USAGE_INVALID;
@@ -95,15 +95,15 @@ struct VrToPr
 	int expected_usage = VR_USAGE_INVALID;
 	int score = 0;
 };
-extern vector<VrToPr> vr_state;
+extern vector<VrState> vr_state;
 
 constexpr int INVALID_VR = -1;
-struct PrToVr
+struct PrState
 {
 	int vr = INVALID_VR;
 //	int u = VR_USEAGE_INVALID;
 };
-extern vector<PrToVr> pr_state;
+extern vector<PrState> pr_state;
 
 struct McDepend {
 	vector<int> mcs;
@@ -170,7 +170,7 @@ static int mcidx = 0;
 struct X64mc {
 	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s1, int tac_s2)
 	{
-		mc_stamp = _mc_stamp;
+		stamp = _mc_stamp;
 		dst = tac_dst;
 		s1 = tac_s1;
 		s2 = tac_s2;
@@ -185,7 +185,7 @@ struct X64mc {
 	}
 	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s2)
 	{
-		mc_stamp = _mc_stamp;
+		stamp = _mc_stamp;
 		s1 = tac_dst;
 		s2 = tac_s2;
 
@@ -198,7 +198,7 @@ struct X64mc {
 	}
 	X64mc(MachineCodeStamp _mc_stamp, int tac_s1)
 	{
-		mc_stamp = _mc_stamp;
+		stamp = _mc_stamp;
 		s1 = tac_s1;
 		of1 = vr_declare_manager.get_vr_off(tac_s1);
 
@@ -208,23 +208,23 @@ struct X64mc {
 	}
 	X64mc(MachineCodeStamp _mc_stamp)
 	{
-		mc_stamp = _mc_stamp;
+		stamp = _mc_stamp;
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		idx = mcidx++;
 	}
 	X64mc()
 	{
-		mc_stamp = MC_INVALID;
+		stamp = MC_INVALID;
 	}
 
-	MachineCodeStamp mc_stamp = MC_INVALID;
+	MachineCodeStamp stamp = MC_INVALID;
 
 	union {
 		struct {
-			int dst = -1;
-			int s1 = -1;
-			int s2 = -1;
+			int dst = INVALID_VR;
+			int s1 = INVALID_VR;
+			int s2 = INVALID_VR;
 		};
 		int vr_list[3];
 	};
@@ -236,9 +236,9 @@ struct X64mc {
 //	VrUsage s2_usage;
 
 	// alloced for vr
-	int pr_dst = -1;
-	int pr1 = -1;	//todo rename
-	int pr2 = -1;
+	int pr_dst = X64PR_MAX;
+	int pr1 = X64PR_MAX;	//todo rename
+	int pr2 = X64PR_MAX;
 
 	int const_num = 0;
 
@@ -301,12 +301,12 @@ void clear_all_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 
-void spill_vr(vector<VrToPr> &vr_to_pr, vector<PrToVr> &pr_to_vr,
+void spill_vr(vector<VrState> &vr_to_pr, vector<PrState> &pr_to_vr,
 	int vr, vector<X64mc> &x64mc_alloc, const string &tag = "");
 void spill_all_pr(BasicBlock *bb);
 void x64_reg_alloc();
 
-void dump_vr_state(const vector<VrToPr> &vp, const string &tag);
+void dump_vr_state(const vector<VrState> &vp, const string &tag);
 void check_pr_vr_consistency();
 void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr);
 void init_wave(BasicBlock *bb);
@@ -318,13 +318,13 @@ void ra_wave_scope(Scope *scp);
 
 void while__pre_work(Scope *scp);
 void while__end_work(Scope *scp);
-int get_swap_pr(BasicBlock *bb);
+int get_reserved_pr(BasicBlock *bb);
 void recover_pr_state(
-    const vector<VrToPr> &before_vr2pr,
-    const vector<PrToVr> &before_pr2vr,
+    const vector<VrState> &before_vr2pr,
+    const vector<PrState> &before_pr2vr,
     int swap_pr,
-    vector<VrToPr> &now_vr2pr,
-    vector<PrToVr> &now_pr2vr,
+    vector<VrState> &now_vr2pr,
+    vector<PrState> &now_pr2vr,
     Scope *scp_to_gen_mc);
 
 void ra_wave_while(Scope *scp);

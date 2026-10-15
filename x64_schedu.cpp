@@ -155,7 +155,7 @@ void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx)
 	int dst = mc.dst;
 	int s1 = mc.s1;
 	int s2 = mc.s2;
-	MachineCodeStamp stamp = mc.mc_stamp;
+	MachineCodeStamp stamp = mc.stamp;
 
 	ERR("%s, scp %s, %d, %s %s(%%%d) %s(%%%d) %s(%%%d)",
 	    prefix ? prefix : "",
@@ -188,7 +188,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 	for (int i = 0; i < ready.size(); i++)
 	{
 		int k = ready[i].idx_in_mc_list;
-		ready[i].can_use_alu = has_function_unit(x64mc[k].mc_stamp);
+		ready[i].can_use_alu = has_function_unit(x64mc[k].stamp);
 		if (ready[i].can_use_alu)
 		{
 			idx_emit = i;
@@ -220,7 +220,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 			continue;
 
 		int mc_idx = r.idx_in_mc_list;
-		MachineCodeStamp mc_stamp = x64mc[mc_idx].mc_stamp;
+		MachineCodeStamp mc_stamp = x64mc[mc_idx].stamp;
 		float consume_transient_score = 1.0;
 
 		if (mc_stamp != MC_LI && mc_stamp != MC_ASSIGN)
@@ -281,7 +281,7 @@ end:
 		return -1;
 
 	int mc_idx = ready[idx_emit].idx_in_mc_list;
-	bool r = get_function_unit(x64mc[mc_idx].mc_stamp);
+	bool r = get_function_unit(x64mc[mc_idx].stamp);
 	assert(r);
 
 #if 0
@@ -399,7 +399,7 @@ static void mc_schdu(Scope *scp)
 
 			if (cycle >= x64mc[mc_idx].start_cycle + x64mc[mc_idx].latency)
 			{
-				free_function_unit(x64mc[mc_idx].mc_stamp);
+				free_function_unit(x64mc[mc_idx].stamp);
 				update_mc_consume_cnt(scp, x64mc[mc_idx]);
 				finish_mc__update_ready_queue2(scp, x64mc, mc_idx);
 
@@ -429,7 +429,7 @@ static void mc_schdu(Scope *scp)
 			assert(x64mc[mc].start_cycle >= 0);
 			if (x64mc[mc].latency <= 0)
 			{
-				ERR("%d, %s", x64mc[mc].mc_stamp, x64mc[mc].asm_code.c_str());
+				ERR("%d, %s", x64mc[mc].stamp, x64mc[mc].asm_code.c_str());
 			}
 		}
 		cycle++;
