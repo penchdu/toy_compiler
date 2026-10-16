@@ -161,26 +161,26 @@ static void gen_mc(Scope *scp)
 		bb->is_entry_label = true;
 	}
 
-	for (Tac &ttac : scp->tac)
+	for (Tac &code : scp->tac)
 	{
-		Semantic sem = ttac.ast->sem_stamp;
+		Semantic sem = code.ast->sem_stamp;
 		if (sem == SEM_OPERATOR)
 		{
-			gen_op_mc(bb->x64mc, ttac);
+			gen_op_mc(bb->x64mc, code);
 			continue;
 		}
 
 		switch (sem)
 		{
 		case SEM_CONST_NUM:
-			mc = X64mc(MC_LI, ttac.dst);
-			mc.const_num = ttac.const_num_value;
+			mc = X64mc(MC_LI, code.dst);
+			mc.const_num = code.const_num_value;
 			mc.ori_sem = "li";
 			bb->x64mc.push_back(mc);
 			break;
 
 		case SEM_SAVE_RET_VALUE:
-			mc = X64mc(MC_SAVE_RET, ttac.s1);
+			mc = X64mc(MC_SAVE_RET, code.s1);
 			mc.ori_sem = "save_ret";
 			bb->x64mc.push_back(mc);
 			break;
@@ -251,10 +251,10 @@ void dump_mc(Scope *scp, string mc_list_name)
 
 	for (auto &mc : *mc_list)
 	{
-		MachineCodeStamp mc_stamp = mc.stamp;
+		MachineCodeStamp stamp = mc.stamp;
 		MachineCodeStamp set_mc;
 
-		switch (mc_stamp)
+		switch (stamp)
 		{
 		case MC_LI:
 			PRINT_ASM("%s %%%d, num %d", mc.asm_code.c_str(), mc.s1, mc.const_num);
@@ -308,7 +308,7 @@ void dump_mc(Scope *scp, string mc_list_name)
 			break;
 
 		default:
-			ERR("%d \n", mc_stamp);
+			ERR("%d \n", stamp);
 			break;
 		}
 	}

@@ -110,7 +110,7 @@ Current merge algorithm is too simple. an improve is: consider future VR use aft
 - [x] Symbol table
 - [ ] Liveness analysis
 - [ ] SSA
-- [ ] base optimize
+- [ ] basic optimize
 - [x] basic Semantic analysis
 - [x] Three-address IR
 - [x] x64 Inst-select
@@ -118,7 +118,7 @@ Current merge algorithm is too simple. an improve is: consider future VR use aft
 - [ ] x64 Inst-schedule (global, use score)
 - [x] x64 -O0 reg-alloc	(spill/reload)
 - [x] x64 -O1 reg-alloc (BasicBlock-level Wavefront)
-- [x] x64 -O1 reg-alloc local register state reconciliation on control-flow edges
+- [x] x64 -O1 reg-alloc (local register state reconciliation on control-flow edges)
 - [ ] x64 -O1 reg-alloc (global Wavefront)
 - [x] x64 asm
 

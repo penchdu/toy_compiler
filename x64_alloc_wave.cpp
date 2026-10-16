@@ -26,7 +26,7 @@ void spill_vr(vector<VrState> &vrst, vector<PrState> &prst, int vr,
 	// MC_victim
 	X64mc mc(MC_victim, vr);
 	mc.pr1 = (int) pr;
-	mc.ori_sem = string("victim ") + pr_name[pr] + " " + tag;
+	mc.ori_sem = string("victim ") + pr_name[pr] + tag;
 	mcs.push_back(mc);
 
 	if (/*p->sem_stamp != SEM_CONST_NUM &&*/ dirty
@@ -34,7 +34,7 @@ void spill_vr(vector<VrState> &vrst, vector<PrState> &prst, int vr,
 	{
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;
-		mc.ori_sem = string("spill ") + pr_name[pr] + " " + tag;
+		mc.ori_sem = string("spill ") + pr_name[pr] + tag;
 		mcs.push_back(mc);
 	}
 

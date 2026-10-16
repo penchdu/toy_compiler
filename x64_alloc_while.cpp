@@ -526,7 +526,7 @@ void move_victim_to_pre_cond(
 
 			spill_vr(pre_cond_vr_state,
 			    pre_cond_pr_state,
-			    vr, mcs_while, " while mv victim");
+			    vr, mcs_while, " ,move from b" + to_string(cond_or_body->id) + ",");
 
 			vr_victim[vr]++;
 			mc.stamp = MC_INVALID;
