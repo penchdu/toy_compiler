@@ -296,7 +296,7 @@ void clear_all_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 
-const char* pr_name(int pr);
+const char* pr_name(int pr, int vr);
 void spill_vr(vector<VrState> &vr_to_pr, vector<PrState> &pr_to_vr,
 	int vr, vector<X64mc> &x64mc_alloc, const string &tag = "");
 void spill_all_pr(BasicBlock *bb);

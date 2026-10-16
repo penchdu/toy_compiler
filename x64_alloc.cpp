@@ -55,16 +55,15 @@ vector<PrState> pr_state(X64PR_MAX, {INVALID_VR});
 const int X64PR_CONST = X64PR_MAX + 1;
 extern Mc2mc fake_cmp_mc_to_real_mc[];
 
-const char* pr_name(int pr)
-{
-	assert(pr != X64PR_MAX && pr != X64PR_CONST && "invalid pr");
-	return physic_reg_name[pr];
-}
-static string pr_str(int pr, int vr)
+const char* pr_name(int pr, int vr)
 {
 	if (pr == X64PR_CONST)
-		return to_string(vr_declare_manager.declare_at[vr]->const_value);
-	assert(pr != X64PR_MAX && "invalid pr");
+	{
+		string s;
+		s = to_string(vr_declare_manager.declare_at[vr]->const_value);
+		return s.c_str();
+	}
+	assert(pr != X64PR_MAX && pr != X64PR_CONST);
 	return physic_reg_name[pr];
 }
 static int get_pr()
@@ -340,44 +339,43 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		switch (stamp)
 		{
 		case MC_LI:
-			PRINT_ASM("%s %s, %d", mc.asm_code.c_str(), pr_str(mc.pr1, mc.s1).c_str(), mc.const_num);
+			PRINT_ASM("%s %s, %d", mc.asm_code.c_str(), pr_name(mc.pr1, mc.s1), mc.const_num);
 			PRINT_ASM_sem
 			break;
 
 		case MC_LD:
-			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_str(mc.pr1, mc.s1).c_str(), mc.of1);
+			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_name(mc.pr1, mc.s1), mc.of1);
 			PRINT_ASM_sem
 			break;
 
 		case MC_victim:
-			//			PRINT_ASM("#%s %%%d, %s", mc.asm_code.c_str(), mc.s1, get_pr_name(mc.pr1));
 			PRINT_ASM("");
 			PRINT_ASM_sem
 			break;
 
 		case MC_ST:
-			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc.asm_code.c_str(), mc.of1, pr_str(mc.pr1, mc.s1).c_str());
+			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc.asm_code.c_str(), mc.of1, pr_name(mc.pr1, mc.s1));
 			PRINT_ASM_sem
 			break;
 
 		case MC_ASSIGN:
-			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_str(mc.pr_dst, mc.dst).c_str(), pr_str(mc.pr1, mc.s1).c_str());
+			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name(mc.pr_dst, mc.dst), pr_name(mc.pr1, mc.s1));
 			PRINT_ASM_sem
 			break;
 
 		case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
-			PRINT_ASM("%s %s, %s \n", mc_info[MC_ASSIGN].mc_code.c_str(), pr_str(mc.pr_dst, mc.dst).c_str(), pr_str(mc.pr1, mc.s1).c_str());
-			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_str(mc.pr_dst, mc.dst).c_str(), pr_str(mc.pr2, mc.s2).c_str());
+			PRINT_ASM("%s %s, %s \n", mc_info[MC_ASSIGN].mc_code.c_str(), pr_name(mc.pr_dst, mc.dst), pr_name(mc.pr1, mc.s1));
+			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name(mc.pr_dst, mc.dst), pr_name(mc.pr2, mc.s2));
 			PRINT_ASM_sem
 			break;
 
 		case MC_DIV:
-			PRINT_ASM("mov eax, %s \n", pr_str(mc.pr1, mc.s1).c_str());
+			PRINT_ASM("mov eax, %s \n", pr_name(mc.pr1, mc.s1));
 			PRINT_ASM("cdq \n");
-			PRINT_ASM("idiv %s \n", pr_str(mc.pr2, mc.s2).c_str());
-			PRINT_ASM("mov %s, eax", pr_str(mc.pr_dst, mc.dst).c_str());
+			PRINT_ASM("idiv %s \n", pr_name(mc.pr2, mc.s2));
+			PRINT_ASM("mov %s, eax", pr_name(mc.pr_dst, mc.dst));
 			PRINT_ASM_sem
 			break;
 
@@ -389,7 +387,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			case MC_CMP_GE:
 
 			cmp_mc = fake_cmp_mc_to_real_mc[stamp].mc_cmp;
-			PRINT_ASM("%s %s, %s", mc_info[cmp_mc].mc_code.c_str(), pr_str(mc.pr1, mc.s1).c_str(), pr_str(mc.pr2, mc.s2).c_str());
+			PRINT_ASM("%s %s, %s", mc_info[cmp_mc].mc_code.c_str(), pr_name(mc.pr1, mc.s1), pr_name(mc.pr2, mc.s2));
 			PRINT_ASM_sem
 
 			set_mc = fake_cmp_mc_to_real_mc[stamp].mc_set;
@@ -400,7 +398,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			break;
 
 		case MC_CMP_TEST:
-			PRINT_ASM("test %s, %s", pr_str(mc.pr1, mc.s1).c_str(), pr_str(mc.pr1, mc.s1).c_str());
+			PRINT_ASM("test %s, %s", pr_name(mc.pr1, mc.s1), pr_name(mc.pr1, mc.s1));
 			PRINT_ASM_sem
 
 			set_mc = fake_cmp_mc_to_real_mc[stamp].mc_set;
@@ -412,13 +410,13 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 
 		case MC_SAVE_RET:
 			PRINT_ASM("#---------------- print ret ----------------# \n");
-			PRINT_ASM("mov esi, %s \n", pr_str(mc.pr1, mc.s1).c_str());
+			PRINT_ASM("mov esi, %s \n", pr_name(mc.pr1, mc.s1));
 			PRINT_ASM("lea rdi, [rip + fmt] \n");
 			PRINT_ASM("mov eax, 0 \n");
 			PRINT_ASM("call printf@PLT \n");
 			PRINT_ASM("#------------------------------------------# \n");
 
-			PRINT_ASM("mov eax, %s \n", pr_str(mc.pr1, mc.s1).c_str());
+			PRINT_ASM("mov eax, %s \n", pr_name(mc.pr1, mc.s1));
 			break;
 
 		default:
