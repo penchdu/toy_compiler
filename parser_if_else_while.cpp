@@ -29,6 +29,19 @@ static Scope* cond_to_negative()
 	if (!p)
 		ERR();
 
+	// put non-const_num to left
+	if( p->op >= OP_CMP_E && p->op <= OP_CMP_GE
+		&& p->left->sem_stamp == SEM_CONST_NUM
+		&& p->right->sem_stamp != SEM_CONST_NUM)
+	{
+		Ast *left = p->left;
+		Ast *right = p->right;
+		p->left = right;
+		p->right = left;
+
+		p->op = cmp_op_to_negative[p->op];
+	}
+
 	// assume just one op, no "&&", "||"
 	if (p->op >= OP_CMP_E && p->op <= OP_CMP_GE)
 	{
@@ -36,11 +49,9 @@ static Scope* cond_to_negative()
 	}
 	else
 	{
-		Ast *eq = new_ast_node({"==", TK_CMP_E});
-		Ast *zero = new_ast_node({"0", TK_CONST_NUM});
-		eq->left = zero;
-		eq->right = p;
-		p = eq;
+		Ast *test = new_ast_node({"==", TK_CMP_TEST});
+		test->left = p;
+		p = test;
 	}
 
 	current_scope_pointer->asts.push_back(p);

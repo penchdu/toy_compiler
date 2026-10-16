@@ -14,7 +14,7 @@ extern int print_test();
 int main(int argc, char **argv)
 {
 	const char *file = 0;
-	if(argc == 1)
+	if (argc == 1)
 		file = "./test/1.cpp";
 	else
 		file = argv[1];
@@ -31,8 +31,8 @@ int main(int argc, char **argv)
 	mc_schedule();
 	x64_reg_alloc();		// create a.s in current location
 
-
-	if(argc == 1){
+	if (argc == 1)
+	{
 		system("gcc a0.s -o a0");
 		system("./a0");
 		system("gcc a1.s -o a1");

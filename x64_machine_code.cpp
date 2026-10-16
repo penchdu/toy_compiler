@@ -332,7 +332,7 @@ void dump_mc(Scope *scp, string mc_list_name)
 			PRINT_MORE
 			break;
 
-		case MC_LI:
+//		case MC_LI:
 			//			PRINT_ASM("%s %%%d, num %d", mc.asm_code.c_str(), mc.s1, mc.const_num);
 //			PRINT_MORE
 //			break;

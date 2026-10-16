@@ -111,7 +111,7 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 			prev_read[s1].push_back(idx);
 			break;
 
-		case MC_LI:
+//		case MC_LI:
 //			create_dependcy_WAW(idx, prev_write[s1]);
 //			create_dependcy_WAR(idx, prev_read[s1]);
 //			prev_write[s1] = idx;

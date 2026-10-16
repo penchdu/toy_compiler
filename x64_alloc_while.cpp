@@ -143,14 +143,14 @@ void dump_vr_state(const vector<VrState> &vr_state, const string &tag)
 	for (int vr = 0; vr < vr_size; vr++)
 	{
 		int pr = vr_state[vr].pr;
-		if (pr != X64PR_MAX)
+		if (pr < X64PR_MAX)
 			printf("%s=%%%d %s  ", vr_name(vr), vr, pr_name(pr));
 	}
 	printf("\n	dirty: ");
 	for (int vr = 0; vr < vr_size; vr++)
 	{
 		int pr = vr_state[vr].pr;
-		if (pr != X64PR_MAX)
+		if (pr < X64PR_MAX)
 			printf("	%%%d %d", vr, vr_state[vr].dirty);
 	}
 	printf("\n");
@@ -170,7 +170,7 @@ void recover_pr_state(
 	int spilled = 0;
 	for (int vr = 0; vr < vr_size; vr++)
 	{
-		if (before_vr_state[vr].pr == X64PR_MAX && now_vr_state[vr].pr != X64PR_MAX)
+		if (before_vr_state[vr].pr == X64PR_MAX && now_vr_state[vr].pr < X64PR_MAX)
 		{
 //			LOG("scp %s, recover spill %s=%%%d-%s", scp->name.c_str(),
 //			    vr_name(vr), vr, get_pr_name(pr));
@@ -198,8 +198,8 @@ void recover_pr_state(
 		const string &name = vr_name(vr);
 
 		mc = X64mc(MC_ASSIGN);
-		mc.pr1 = free_pr;
-		mc.pr2 = swap_pr;
+		mc.pr_dst = free_pr;
+		mc.pr1 = swap_pr;
 		mc.ori_sem = "while swap_pr, assign " + name + "=%" + to_string(vr);
 		mcs.push_back(mc);
 
@@ -215,7 +215,7 @@ void recover_pr_state(
 	{
 		int A = before_vr_state[vr].pr;
 
-		if (A == X64PR_MAX)
+		if (A >= X64PR_MAX)
 			continue;
 
 		int B = now_vr_state[vr].pr;
@@ -238,20 +238,20 @@ void recover_pr_state(
 				auto &now_A_vr_struct = now_vr_state[now_A_vr];
 
 				mc = X64mc(MC_ASSIGN);
-				mc.pr1 = swap_pr;
-				mc.pr2 = A;
-				mc.ori_sem = "while 1, assign " + name + "=%" + to_string(vr);
-				mcs.push_back(mc);
-
-				mc = X64mc(MC_ASSIGN);
+				mc.pr_dst = swap_pr;
 				mc.pr1 = A;
-				mc.pr2 = B;
 				mc.ori_sem = "while 1, assign " + name + "=%" + to_string(vr);
 				mcs.push_back(mc);
 
 				mc = X64mc(MC_ASSIGN);
+				mc.pr_dst = A;
 				mc.pr1 = B;
-				mc.pr2 = swap_pr;
+				mc.ori_sem = "while 1, assign " + name + "=%" + to_string(vr);
+				mcs.push_back(mc);
+
+				mc = X64mc(MC_ASSIGN);
+				mc.pr_dst = B;
+				mc.pr1 = swap_pr;
 				mc.ori_sem = "while 1, assign " + name + "=%" + to_string(vr);
 				mcs.push_back(mc);
 
@@ -261,8 +261,8 @@ void recover_pr_state(
 			else	//  (now_A is free && B == PR)
 			{
 				mc = X64mc(MC_ASSIGN);
-				mc.pr1 = A;
-				mc.pr2 = B;
+				mc.pr_dst = A;
+				mc.pr1 = B;
 				mc.ori_sem = "while 2, assign " + name + "=%" + to_string(vr);
 				mcs.push_back(mc);
 
@@ -293,8 +293,8 @@ void recover_pr_state(
 				auto &now_A_vr_struct = now_vr_state[now_A_vr];
 
 				mc = X64mc(MC_ASSIGN);
-				mc.pr1 = free_pr;
-				mc.pr2 = A;
+				mc.pr_dst = free_pr;
+				mc.pr1 = A;
 				mc.ori_sem = "while 3, assign " + name + "=%" + to_string(vr)
 				    + ", move %s" + to_string(now_A_vr);
 				mcs.push_back(mc);
@@ -339,7 +339,7 @@ int find_additional_dirty(const vector<VrState> &state_a,
 	int dirty_cnt = 0;
 	for (int vr = 0; vr < vr_size; vr++)
 	{
-		if (state_b[vr].pr != X64PR_MAX
+		if (state_b[vr].pr < X64PR_MAX
 		    && !state_a[vr].dirty
 		    && state_b[vr].dirty)
 		{
@@ -598,7 +598,7 @@ void while_move_victim_to_pre_cond(
 	 */
 	for (int vr = 0; vr < vr_size; vr++)
 	{
-		if (vr_victim[vr] > 0 && after_cond_vr_state[vr].pr != X64PR_MAX)
+		if (vr_victim[vr] > 0 && after_cond_vr_state[vr].pr < X64PR_MAX)
 		{
 			int pr = after_cond_vr_state[vr].pr;
 			after_cond_vr_state[vr].pr = X64PR_MAX;
@@ -661,11 +661,11 @@ void move_ld_to_pre_cond(
 		if (mc.dst >= 0)
 			vr_reference[mc.dst]++;
 
-		if (mc.pr1 != X64PR_MAX)
+		if (mc.pr1 < X64PR_MAX)
 			pr_reference[mc.pr1]++;
-		if (mc.pr2 != X64PR_MAX)
+		if (mc.pr2 < X64PR_MAX)
 			pr_reference[mc.pr2]++;
-		if (mc.pr_dst != X64PR_MAX)
+		if (mc.pr_dst < X64PR_MAX)
 			pr_reference[mc.pr_dst]++;
 	}
 
@@ -874,4 +874,3 @@ void ra_wave_while(Scope *while_scp)
 
 	while__end_work(while_scp);
 }
-

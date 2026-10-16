@@ -86,9 +86,6 @@ void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value)
 
 	switch (mc_stamp)
 	{
-	case MC_LI:
-		break;
-
 	case MC_LD:
 		break;
 
@@ -215,7 +212,7 @@ static void _gen_liveness(Scope *scp)
 			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
 			break;
 
-		case MC_LI:
+//		case MC_LI:
 			//			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_WRITE);
 //			break;
 		default:
@@ -295,7 +292,7 @@ static void check_while_used_outer_symb(Scope *scp)
 			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ);
 			break;
 
-		case MC_LI:
+//		case MC_LI:
 			default:
 			ERR("%d \n", mc_stamp);
 			break;

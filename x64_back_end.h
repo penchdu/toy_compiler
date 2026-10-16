@@ -74,7 +74,7 @@ enum X64PhysicReg {
 };
 
 struct X64Pr{
-	int idx;
+	int pr;
 	string name;
 	int value;
 };
@@ -131,12 +131,16 @@ enum MachineCodeStamp {
 	MC_CMP_G,
 	MC_CMP_GE,
 
+	MC_CMP_TEST,
+
 	MC_SET_E,
 	MC_SET_NE,
 	MC_SET_L,
 	MC_SET_LE,
 	MC_SET_G,
 	MC_SET_GE,
+
+	MC_SET_TEST,
 
 	MC_JMP,
 	MC_JE,
@@ -301,6 +305,7 @@ const char* pr_name(int pr);
 void spill_vr(vector<VrState> &vr_to_pr, vector<PrState> &pr_to_vr,
 	int vr, vector<X64mc> &x64mc_alloc, const string &tag = "");
 void spill_all_pr(BasicBlock *bb);
+
 void x64_reg_alloc();
 
 void dump_vr_state(const vector<VrState> &vp, const string &tag);

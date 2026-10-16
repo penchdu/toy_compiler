@@ -72,9 +72,9 @@ void ra_wave_if(Scope *if_scp)
 	int after_else_pr = 0;
 	for (int vr = 0; vr < vr_size; vr++)
 	{
-		if (after_then_vr_state[vr].pr != X64PR_MAX)
+		if (after_then_vr_state[vr].pr < X64PR_MAX)
 			after_then_pr++;
-		if (vr_state[vr].pr != X64PR_MAX)
+		if (vr_state[vr].pr < X64PR_MAX)
 			after_else_pr++;
 	}
 
@@ -104,7 +104,7 @@ void ra_wave_if(Scope *if_scp)
 
 	for (int vr = 0; vr < vr_size; vr++)
 	{
-		if (after_then_vr_state[vr].pr != X64PR_MAX)
+		if (after_then_vr_state[vr].pr < X64PR_MAX)
 			vr_state[vr].dirty |= after_then_vr_state[vr].dirty;
 	}
 }
