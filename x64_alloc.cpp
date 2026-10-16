@@ -233,6 +233,18 @@ static void x64_reg_alloc_o0(Scope *scp)
 			spill_pr(mcs, mc.s1, mc.s2);
 			break;
 
+		case MC_CMP_TEST:
+			mc.pr_dst = get_pr__load_vr(mcs, mc.dst, VR_USAGE_WRITE);
+
+			if(vr_declare_manager.declare_at[mc.s1]->sem_stamp == SEM_CONST_NUM)
+				mc.pr1 = load_immediate(mcs, mc.s1);
+			else
+				mc.pr1 = get_pr__load_vr(mcs, mc.s1, VR_USAGE_READ);
+
+			mcs.push_back(mc);
+			spill_pr(mcs, mc.dst, mc.s1);
+			break;
+
 		case MC_SAVE_RET:
 			mc.pr1 = get_pr__load_vr(mcs, mc.s1, VR_USAGE_READ);
 			mcs.push_back(mc);
@@ -371,6 +383,17 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 
 			cmp_mc = fake_cmp_mc_to_real_mc[stamp].mc_cmp;
 			PRINT_ASM("%s %s, %s", mc_info[cmp_mc].mc_code.c_str(), pr_name(mc.pr1), pr_name(mc.pr2));
+			PRINT_ASM_sem
+
+			set_mc = fake_cmp_mc_to_real_mc[stamp].mc_set;
+			PRINT_ASM("%s %s", mc_info[set_mc].mc_code.c_str(), pr_name_byte(mc.pr_dst));
+			PRINT_ASM_sem
+			PRINT_ASM("movzx %s, %s", physic_reg_name[mc.pr_dst], pr_name_byte(mc.pr_dst));
+			PRINT_ASM_sem
+			break;
+
+		case MC_CMP_TEST:
+			PRINT_ASM("test %s, %s", pr_name(mc.pr1), pr_name(mc.pr1));
 			PRINT_ASM_sem
 
 			set_mc = fake_cmp_mc_to_real_mc[stamp].mc_set;

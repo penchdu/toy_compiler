@@ -51,6 +51,12 @@ static int case_sem_op(Ast *p)
 	    || ty == SEM_OPERATOR
 	    || ty == SEM_FUNC_CALL);
 
+	if (p->op == OP_CMP_TEST)
+	{
+		assert(!p->right);
+		return 0;
+	}
+
 	assert(p->right);
 	ty = p->right->sem_stamp;
 	assert(ty == SEM_VAR
@@ -194,7 +200,8 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 	}
 
 	trace_ast_up_down__named_variable_declare(p->left);
-	trace_ast_up_down__named_variable_declare(p->right);
+	if (p->right)
+		trace_ast_up_down__named_variable_declare(p->right);
 	return 0;
 }
 static void sem_analysis_named_var(Scope *scp)
@@ -250,6 +257,12 @@ static int case_op(Ast *p)
 		return p->vr;
 
 // todo gen a assign inst
+	case OP_CMP_TEST:
+		p->type = p->left->type;
+		p->vr = vr_declare_manager.new_vr(p);
+		new_private_transient_symb(p);
+		return p->vr;
+
 	case OP_ADD:
 		case OP_SUB:
 		case OP_MUL:
@@ -365,4 +378,3 @@ void sem_analysis()
 	sem_analysis_gen_vr(&file_scp);
 //	dump_ast();
 }
-

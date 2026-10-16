@@ -30,12 +30,16 @@ const McInfo mc_info[MC_INVALID + 1] = {
     [MC_CMP_G] = {1, "cmpg"},
     [MC_CMP_GE] = {1, "cmpge"},
 
+    [MC_CMP_TEST] = {1, "test"},
+
     [MC_SET_E] = {1, "sete"},
     [MC_SET_NE] = {1, "setne"},
     [MC_SET_L] = {1, "setl"},
     [MC_SET_LE] = {1, "setle"},
     [MC_SET_G] = {1, "setg"},
     [MC_SET_GE] = {1, "setge"},
+
+    [MC_SET_TEST] = {1, "sete"},
 
     [MC_JMP] = {0, "jmp"},
     [MC_JE] = {0, "je"},
@@ -61,6 +65,7 @@ MachineCodeStamp op_to_mc[] = {
     [OP_CMP_LE] = MC_CMP_LE,
     [OP_CMP_G] = MC_CMP_G,
     [OP_CMP_GE] = MC_CMP_GE,
+    [OP_CMP_TEST] = MC_CMP_TEST,
 
     [OP_ALL] = MC_INVALID,
 };
@@ -71,6 +76,7 @@ MachineCodeStamp op2jmp_mc[] = {
     [OP_CMP_LE] = MC_JLE,
     [OP_CMP_G] = MC_JG,
     [OP_CMP_GE] = MC_JGE,
+    [OP_CMP_TEST] = MC_JE,
 };
 
 Mc2mc fake_cmp_mc_to_real_mc[] = {
@@ -80,6 +86,7 @@ Mc2mc fake_cmp_mc_to_real_mc[] = {
     [MC_CMP_LE] = {MC_CMP, MC_SET_LE},
     [MC_CMP_G] = {MC_CMP, MC_SET_G},
     [MC_CMP_GE] = {MC_CMP, MC_SET_GE},
+    [MC_CMP_TEST] = {MC_CMP_TEST, MC_SET_TEST},
 };
 
 static void gen_op_add_sub_mul_div_mc(vector<X64mc> &x64mc, MachineCodeStamp mc, const string &ori_sem,
@@ -132,6 +139,13 @@ static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 		gen_op_cmp_mc(x64mc, mc_stamp, mc_info[mc_stamp].mc_code, tac.dst, tac.s1, tac.s2);
 		break;
 
+	case OP_CMP_TEST:
+		mc_stamp = op_to_mc[op];
+		mc = X64mc(mc_stamp, tac.dst, tac.s1);
+		mc.ori_sem = mc_info[mc_stamp].mc_code;
+		x64mc.push_back(mc);
+		break;
+	
 	case OP_ADD:
 		case OP_SUB:
 		case OP_MUL:
@@ -324,6 +338,11 @@ void dump_mc(Scope *scp, string mc_list_name)
 
 //			set_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_set;
 //			PRINT_ASM("%s %%%d", mc_info[set_mc].mc_code.c_str(), mc.dst);
+			PRINT_MORE
+			break;
+
+		case MC_CMP_TEST:
+			PRINT_ASM("%%%d = %s %%%d", mc.dst, mc.asm_code.c_str(), mc.s1);
 			PRINT_MORE
 			break;
 

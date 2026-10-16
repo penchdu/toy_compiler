@@ -347,6 +347,17 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 		mcs.push_back(mc);
 		break;
 
+	case MC_CMP_TEST:
+		mc.pr_dst = get_pr__load_vr(bb, mc.dst, VR_USAGE_WRITE, i);
+
+		if(vr_declare_manager.declare_at[mc.s1]->sem_stamp == SEM_CONST_NUM)
+			mc.pr1 = load_immediate(bb, mc.s1, i);
+		else
+			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
+
+		mcs.push_back(mc);
+		break;
+
 	case MC_SAVE_RET:
 		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
 		mcs.push_back(mc);

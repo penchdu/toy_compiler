@@ -14,6 +14,7 @@ const char *TokenStamp_string[TK_EOF + 1] = {
 	[TK_CMP_LE] = "TK_CMP_LE",
 	[TK_CMP_GT] = "TK_CMP_GT",
 	[TK_CMP_GE] = "TK_CMP_GE",
+	[TK_CMP_TEST] = "TK_CMP_TEST",
 
 	[TK_LOGIC_AND] = "TK_LOGIC_AND",
 	[TK_OP_ALL] = "TK_OP_ALL",
@@ -55,6 +56,8 @@ const char *Operator_string[OP_ALL + 1] = {
 	[OP_CMP_LE] = "OP_CMP_LE",
 	[OP_CMP_G] = "OP_CMP_G",
 	[OP_CMP_GE] = "OP_CMP_GE",
+
+	[OP_CMP_TEST] = "OP_CMP_TEST",
 
 	[OP_LOGIC_AND] = "OP_LOGIC_AND",
 	[OP_LOGIC_OR] = "OP_LOGIC_OR",
