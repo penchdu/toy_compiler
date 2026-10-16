@@ -73,12 +73,7 @@ enum X64PhysicReg {
 	X64PR_MAX,
 };
 
-struct X64Pr{
-	int pr;
-	string name;
-	int value;
-};
-extern vector<X64Pr> x64pr;
+extern const int X64PR_CONST;
 
 extern const char *physic_reg_name[];
 const char* pr_name_byte(int pr);

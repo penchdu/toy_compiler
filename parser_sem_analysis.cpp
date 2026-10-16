@@ -200,8 +200,7 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 	}
 
 	trace_ast_up_down__named_variable_declare(p->left);
-	if (p->right)
-		trace_ast_up_down__named_variable_declare(p->right);
+	trace_ast_up_down__named_variable_declare(p->right);
 	return 0;
 }
 static void sem_analysis_named_var(Scope *scp)
@@ -378,3 +377,4 @@ void sem_analysis()
 	sem_analysis_gen_vr(&file_scp);
 //	dump_ast();
 }
+

@@ -645,6 +645,7 @@ spill every register use
 ```
 
 
+
 #========== a1.s ==========#
 .intel_syntax noprefix
 .extern printf
@@ -659,69 +660,47 @@ main:
 	mov rbp, rsp 
 	sub rsp, 128 
 
-	mov r10d, 5                            #li 5=%0, =%-1,  cyc 0
-	mov r11d, 0                            #li 0=%2, =%-1,  cyc 0
-	mov r12d, r10d                         #assign i=%1, 5=%0,  cyc 1
-	                                       #victim r10d  check_dead_vr 5=%0, =%-1,  cyc -1
-	mov r10d, r11d                         #assign a=%3, 0=%2,  cyc 1
-	                                       #victim r11d  check_dead_vr 0=%2, =%-1,  cyc -1
-	mov r11d, 1                            #li 1=%4, =%-1,  cyc 2
-	mov r13d, 2                            #li 2=%6, =%-1,  cyc 2
-	mov r14d, r11d                         #assign b=%5, 1=%4,  cyc 3
-	                                       #victim r11d  check_dead_vr 1=%4, =%-1,  cyc -1
-	mov r11d, r13d                         #assign c=%7, 2=%6,  cyc 3
-	                                       #victim r13d  check_dead_vr 2=%6, =%-1,  cyc -1
-
-
-.L_b2_while:
-	                                       #victim r10d  while mv victim a=%3, =%-1,  cyc -1
-	mov dword ptr [rbp - 16], r10d         #spill r10d  while mv victim a=%3, =%-1,  cyc -1
+	mov r10d, 5                            #assign 5=%0, =%-1,  cyc 0
+	mov r11d, 0                            #assign 0=%2, =%-1,  cyc 0
+	mov r12d, 1                            #assign 1=%4, =%-1,  cyc 1
+	mov r13d, 2                            #assign 2=%6, =%-1,  cyc 1
 
 
 .L_b3_while2_cond:
-	mov r13d, 1                            #li 1=%9, =%-1,  cyc 0
-	mov r15d, 0                            #li 0=%8, =%-1,  cyc 0
-	mov r10d, r12d                         #sub -=%10, i=%1,  cyc 1
-	sub r10d, r13d                         #sub -=%10, 1=%9,  cyc 2
-	                                       #victim r13d  check_dead_vr 1=%9, =%-1,  cyc -1
-	mov r12d, r10d                         #assign i=%1, -=%10,  cyc 3
-	                                       #victim r10d  check_dead_vr -=%10, =%-1,  cyc -1
-	cmp r12d, r15d                         #cmple i=%1, 0=%8,  cyc 4
-	setle r10b                             #cmple i=%1, 0=%8,  cyc 4
-	movzx r10d, r10b                       #cmple i=%1, 0=%8,  cyc 4
-	                                       #victim r10d  check_dead_vr >=%11, =%-1,  cyc -1
-	                                       #victim r15d  check_dead_vr 0=%8, =%-1,  cyc -1
+	mov r14d, r10d 
+	sub r14d, 1                            #sub i=%1, 1=%9,  cyc 0
+	mov r10d, r14d                         #assign -=%10, =%-1,  cyc 1
+	                                       #victim r14d check_dead_vr -=%10, =%-1,  cyc -1
+	cmp r10d, 0                            #cmple i=%1, 0=%8,  cyc 2
+	setle r14b                             #cmple i=%1, 0=%8,  cyc 2
+	movzx r14d, r14b                       #cmple i=%1, 0=%8,  cyc 2
+	                                       #victim r14d check_dead_vr >=%11, =%-1,  cyc -1
 	jle .L_b30_while2_tail 
 
 
 .L_b4_while2_body:
-	mov r13d, dword ptr [rbp - 16]         #ld a=%3, =%-1,  cyc -1
-	mov r10d, r13d                         #add +=%12, a=%3,  cyc 0
-	add r10d, r12d                         #add +=%12, i=%1,  cyc 1
-	mov r13d, r10d                         #assign a=%3, +=%12,  cyc 2
-	                                       #victim r10d  check_dead_vr +=%12, =%-1,  cyc -1
+	mov r14d, r11d 
+	add r14d, r10d                         #add a=%3, i=%1,  cyc 0
+	mov r11d, r14d                         #assign +=%12, =%-1,  cyc 1
+	                                       #victim r14d check_dead_vr +=%12, =%-1,  cyc -1
 
 
 .L_b6_if5_cond:
-	mov r10d, 3                            #li 3=%13, =%-1,  cyc 0
-	cmp r12d, r10d                         #cmpne i=%1, 3=%13,  cyc 1
-	setne r15b                             #cmpne i=%1, 3=%13,  cyc 1
-	movzx r15d, r15b                       #cmpne i=%1, 3=%13,  cyc 1
-	                                       #victim r15d  check_dead_vr ===%14, =%-1,  cyc -1
-	                                       #victim r10d  check_dead_vr 3=%13, =%-1,  cyc -1
+	cmp r10d, 3                            #cmpne i=%1, 3=%13,  cyc 0
+	setne r14b                             #cmpne i=%1, 3=%13,  cyc 0
+	movzx r14d, r14b                       #cmpne i=%1, 3=%13,  cyc 0
+	                                       #victim r14d check_dead_vr ===%14, =%-1,  cyc -1
 	jne .L_b12_if5_else 
 
 
 .L_b7_if5_then:
-	mov r10d, r14d                         #add +=%15, b=%5,  cyc 0
-	add r10d, r13d                         #add +=%15, a=%3,  cyc 1
-	mov r14d, r10d                         #assign b=%5, +=%15,  cyc 2
-	                                       #victim r10d  check_dead_vr +=%15, =%-1,  cyc -1
+	mov r14d, r12d 
+	add r14d, r11d                         #add b=%5, a=%3,  cyc 0
+	mov r12d, r14d                         #assign +=%15, =%-1,  cyc 1
+	                                       #victim r14d check_dead_vr +=%15, =%-1,  cyc -1
 
 
 .L_b8_while2_continue:
-	                                       #victim r13d  while recover a=%3, =%-1,  cyc -1
-	mov dword ptr [rbp - 16], r13d         #spill r13d  while recover a=%3, =%-1,  cyc -1
 	jmp .L_b3_while2_cond 
 
 
@@ -730,10 +709,10 @@ main:
 
 
 .L_b12_if5_else:
-	mov r10d, r11d                         #add +=%17, c=%7,  cyc 0
-	add r10d, r12d                         #add +=%17, i=%1,  cyc 1
-	mov r11d, r10d                         #assign c=%7, +=%17,  cyc 2
-	                                       #victim r10d  check_dead_vr +=%17, =%-1,  cyc -1
+	mov r14d, r13d 
+	add r14d, r10d                         #add c=%7, i=%1,  cyc 0
+	mov r13d, r14d                         #assign +=%17, =%-1,  cyc 1
+	                                       #victim r14d check_dead_vr +=%17, =%-1,  cyc -1
 	jmp .L_b14_if5_tail 
 
 
@@ -741,27 +720,21 @@ main:
 
 
 .L_b17_if16_cond:
-	mov r10d, 2                            #li 2=%18, =%-1,  cyc 0
-	cmp r12d, r10d                         #cmpne i=%1, 2=%18,  cyc 1
-	setne r15b                             #cmpne i=%1, 2=%18,  cyc 1
-	movzx r15d, r15b                       #cmpne i=%1, 2=%18,  cyc 1
-	                                       #victim r15d  check_dead_vr ===%19, =%-1,  cyc -1
-	                                       #victim r10d  check_dead_vr 2=%18, =%-1,  cyc -1
+	cmp r10d, 2                            #cmpne i=%1, 2=%18,  cyc 0
+	setne r14b                             #cmpne i=%1, 2=%18,  cyc 0
+	movzx r14d, r14b                       #cmpne i=%1, 2=%18,  cyc 0
+	                                       #victim r14d check_dead_vr ===%19, =%-1,  cyc -1
 	jne .L_b23_if16_else 
 
 
 .L_b18_if16_then:
-	mov r10d, 10                           #li 10=%20, =%-1,  cyc 0
-	mov r15d, r14d                         #add +=%21, b=%5,  cyc 0
-	add r15d, r10d                         #add +=%21, 10=%20,  cyc 1
-	                                       #victim r10d  check_dead_vr 10=%20, =%-1,  cyc -1
-	mov r14d, r15d                         #assign b=%5, +=%21,  cyc 2
-	                                       #victim r15d  check_dead_vr +=%21, =%-1,  cyc -1
+	mov r14d, r12d 
+	add r14d, 10                           #add b=%5, 10=%20,  cyc 0
+	mov r12d, r14d                         #assign +=%21, =%-1,  cyc 1
+	                                       #victim r14d check_dead_vr +=%21, =%-1,  cyc -1
 
 
 .L_b19_while2_break:
-	                                       #victim r13d  while recover a=%3, =%-1,  cyc -1
-	mov dword ptr [rbp - 16], r13d         #spill r13d  while recover a=%3, =%-1,  cyc -1
 	jmp .L_b30_while2_tail 
 
 
@@ -770,10 +743,10 @@ main:
 
 
 .L_b23_if16_else:
-	mov r10d, r13d                         #add +=%23, a=%3,  cyc 0
-	add r10d, r11d                         #add +=%23, c=%7,  cyc 1
-	mov r13d, r10d                         #assign a=%3, +=%23,  cyc 2
-	                                       #victim r10d  check_dead_vr +=%23, =%-1,  cyc -1
+	mov r14d, r11d 
+	add r14d, r13d                         #add a=%3, c=%7,  cyc 0
+	mov r11d, r14d                         #assign +=%23, =%-1,  cyc 1
+	                                       #victim r14d check_dead_vr +=%23, =%-1,  cyc -1
 	jmp .L_b26_if16_tail 
 
 
@@ -781,17 +754,10 @@ main:
 
 
 .L_b27:
-	mov r10d, 1                            #li 1=%24, =%-1,  cyc 0
-	mov r15d, r11d                         #add +=%25, c=%7,  cyc 0
-	add r15d, r10d                         #add +=%25, 1=%24,  cyc 1
-	                                       #victim r10d  check_dead_vr 1=%24, =%-1,  cyc -1
-	mov r11d, r15d                         #assign c=%7, +=%25,  cyc 2
-	                                       #victim r15d  check_dead_vr +=%25, =%-1,  cyc -1
-
-
-.L_b28_while2_body_tail:
-	                                       #victim r13d  while recover a=%3, =%-1,  cyc -1
-	mov dword ptr [rbp - 16], r13d         #spill r13d  while recover a=%3, =%-1,  cyc -1
+	mov r14d, r13d 
+	add r14d, 1                            #add c=%7, 1=%24,  cyc 0
+	mov r13d, r14d                         #assign +=%25, =%-1,  cyc 1
+	                                       #victim r14d check_dead_vr +=%25, =%-1,  cyc -1
 	jmp .L_b3_while2_cond 
 
 
@@ -799,27 +765,26 @@ main:
 
 
 .L_b31:
-	mov r13d, dword ptr [rbp - 16]         #ld a=%3, =%-1,  cyc -1
-	mov r10d, r13d                         #add +=%26, a=%3,  cyc 0
-	                                       #victim r13d  check_dead_vr a=%3, =%-1,  cyc -1
-	add r10d, r14d                         #add +=%26, b=%5,  cyc 1
-	                                       #victim r14d  check_dead_vr b=%5, =%-1,  cyc -1
-	mov r13d, r10d                         #add +=%27, +=%26,  cyc 2
-	                                       #victim r10d  check_dead_vr +=%26, =%-1,  cyc -1
-	add r13d, r11d                         #add +=%27, c=%7,  cyc 3
-	                                       #victim r11d  check_dead_vr c=%7, =%-1,  cyc -1
-	mov r10d, r13d                         #add +=%28, +=%27,  cyc 4
-	                                       #victim r13d  check_dead_vr +=%27, =%-1,  cyc -1
-	add r10d, r12d                         #add +=%28, i=%1,  cyc 5
-	                                       #victim r12d  check_dead_vr i=%1, =%-1,  cyc -1
+	mov r14d, r11d 
+	add r14d, r12d                         #add a=%3, b=%5,  cyc 0
+	                                       #victim r11d check_dead_vr a=%3, =%-1,  cyc -1
+	                                       #victim r12d check_dead_vr b=%5, =%-1,  cyc -1
+	mov r11d, r14d 
+	add r11d, r13d                         #add +=%26, c=%7,  cyc 1
+	                                       #victim r14d check_dead_vr +=%26, =%-1,  cyc -1
+	                                       #victim r13d check_dead_vr c=%7, =%-1,  cyc -1
+	mov r12d, r11d 
+	add r12d, r10d                         #add +=%27, i=%1,  cyc 2
+	                                       #victim r11d check_dead_vr +=%27, =%-1,  cyc -1
+	                                       #victim r10d check_dead_vr i=%1, =%-1,  cyc -1
 	#---------------- print ret ----------------# 
-	mov esi, r10d 
+	mov esi, r12d 
 	lea rdi, [rip + fmt] 
 	mov eax, 0 
 	call printf@PLT 
 	#------------------------------------------# 
-	mov eax, r10d 
-	                                       #victim r10d  check_dead_vr +=%28, =%-1,  cyc -1
+	mov eax, r12d 
+	                                       #victim r12d check_dead_vr +=%28, =%-1,  cyc -1
 	jmp .L_return 
 
 
@@ -829,7 +794,6 @@ main:
 	ret 
 
 .section .note.GNU-stack,"",@progbits
-
 
 
 

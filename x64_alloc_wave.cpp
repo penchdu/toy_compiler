@@ -17,16 +17,16 @@ void spill_vr(vector<VrState> &vr_st, vector<PrState> &pr_st, int vr,
 	int &u = vr_st[vr].u;
 	bool &dirty = vr_st[vr].dirty;
 
-	if(pr == X64PR_MAX || u == VR_USAGE_INVALID || pr_st[pr].vr != vr)
-		LOG("pr=%d, u=%d, pr_st[%d].vr=%d != %d", pr, u, pr, pr_st[pr].vr, vr);
-
 	Ast *p = vr_declare_manager.declare_at[vr];
 	if (p->sem_stamp == SEM_CONST_NUM && pr > X64PR_MAX)
 	{
-		LOG("vr=%%%d, pr=%d", vr, vr_state[vr].pr);
+//		LOG("vr=%%%d, pr=%d", vr, vr_state[vr].pr);
 		assert(vr_state[vr].pr > X64PR_MAX);
 		return;
 	}
+
+	if(pr == X64PR_MAX || u == VR_USAGE_INVALID || pr_st[pr].vr != vr)
+		ERR("pr=%d, u=%d, pr_st[%d].vr=%d != %d", pr, u, pr, pr_st[pr].vr, vr);
 
 	assert(pr != X64PR_MAX);
 	assert(u != VR_USAGE_INVALID);
@@ -124,15 +124,14 @@ static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx,
 	Ast *p = vr_declare_manager.declare_at[vr];
 	if (!immediate_force_alloc && p->sem_stamp == SEM_CONST_NUM)
 	{
-		X64Pr pr;
-		pr.pr = x64pr.size();
-		pr.name = to_string(p->const_value);
-
-		x64pr.push_back(pr);
-
-		vr_state[vr].pr = pr.pr;
+		vr_state[vr].pr = X64PR_CONST;
 		vr_state[vr].u = VR_USAGE_READ;
-		return pr.pr;
+		return X64PR_CONST;
+	}
+
+	if (immediate_force_alloc && p->sem_stamp == SEM_CONST_NUM && vr_state[vr].pr == X64PR_CONST)
+	{
+		vr_state[vr].pr = X64PR_MAX;
 	}
 
 	/*
@@ -328,7 +327,6 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 	case MC_ADD:
 		case MC_SUB:
 		case MC_IMUL:
-		case MC_DIV:
 
 	case MC_CMP_E:
 		case MC_CMP_NE:
@@ -344,6 +342,18 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
 
 		mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
+		mcs.push_back(mc);
+		break;
+
+	case MC_DIV:
+		mc.pr_dst = get_pr__load_vr(bb, mc.dst, VR_USAGE_WRITE, i);
+
+		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
+
+		if(vr_declare_manager.declare_at[mc.s2]->sem_stamp == SEM_CONST_NUM)
+			mc.pr2 = load_immediate(bb, mc.s2, i);
+		else
+			mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
 		mcs.push_back(mc);
 		break;
 
