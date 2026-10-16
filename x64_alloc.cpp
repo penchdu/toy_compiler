@@ -9,8 +9,8 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-const char *pr_name[] = {
-//    [R8D] = "r8d",
+const char *physic_reg_name[] = {
+    //    [R8D] = "r8d",
 //    [R9D] = "r9d",
     [R10D] = "r10d",
     [R11D] = "r11d",
@@ -49,18 +49,24 @@ const char* pr_name_byte(int pr)
 	return 0;
 }
 
+vector<X64Pr> x64pr;
+
 extern Mc2mc fake_cmp_mc_to_real_mc[];
 
 vector<VrState> vr_state;
 vector<PrState> pr_state(X64PR_MAX, {INVALID_VR});
 
-static X64pr get_pr()
+const char* pr_name(int pr)
+{
+	return x64pr[pr].name.c_str();
+}
+static int get_pr()
 {
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
 		if (pr_state[i].vr == INVALID_VR)
 		{
-			return (X64pr) i;
+			return i;
 		}
 	}
 
@@ -71,6 +77,17 @@ static X64pr get_pr()
 //X64pr (*ptr_get_pr)();
 static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 {
+	Ast *p = vr_declare_manager.declare_at[vr];
+	if (p->sem_stamp == SEM_CONST_NUM)
+	{
+		X64Pr pr;
+		pr.idx = x64pr.size();
+		pr.name = to_string(p->const_value);
+
+		x64pr.push_back(pr);
+		return pr.idx;
+	}
+
 	/*
 	 * todo
 	 * mc_assign %1, %1
@@ -105,6 +122,10 @@ static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u)
 
 static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 {
+	Ast *p = vr_declare_manager.declare_at[vr];
+	if (p->sem_stamp == SEM_CONST_NUM)
+		return;
+
 	int pr = vr_state[vr].pr;
 	int u = vr_state[vr].u;
 
@@ -150,32 +171,20 @@ static void x64_reg_alloc_o0(Scope *scp)
 
 		switch (mc_stamp)
 		{
-		case MC_LI:
-			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_WRITE);
-			x64mc_alloc.push_back(mc);
-			spill_pr(x64mc_alloc, mc.s1);
-			break;
-
 		case MC_ASSIGN:
-//			if (mc.s1 == mc.s2)
+			//			if (mc.s1 == mc.s2)
 //				break;
 
-			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_WRITE);
-			mc.pr2 = get_pr__load_vr(x64mc_alloc, mc.s2, VR_USAGE_READ);
+			mc.pr_dst = get_pr__load_vr(x64mc_alloc, mc.dst, VR_USAGE_WRITE);
+			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_READ);
 			x64mc_alloc.push_back(mc);
-			spill_pr(x64mc_alloc, mc.s1, mc.s2);
+			spill_pr(x64mc_alloc, mc.dst, mc.s1);
 			break;
 
 		case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
 			case MC_DIV:
-
-			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_READ_WRITE);
-			mc.pr2 = get_pr__load_vr(x64mc_alloc, mc.s2, VR_USAGE_READ);
-			x64mc_alloc.push_back(mc);
-			spill_pr(x64mc_alloc, mc.s1, mc.s2);
-			break;
 
 		case MC_CMP_E:
 			case MC_CMP_NE:
@@ -198,8 +207,13 @@ static void x64_reg_alloc_o0(Scope *scp)
 			spill_pr(x64mc_alloc, mc.s1);
 			break;
 
+		case MC_LI:
+			//			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_WRITE);
+//			x64mc_alloc.push_back(mc);
+//			spill_pr(x64mc_alloc, mc.s1);
+//			break;
 		case MC_victim:
-		default:
+			default:
 			ERR("%d \n", mc_stamp);
 			break;
 		}
@@ -224,8 +238,7 @@ int align16(int &n)
 //	dump_mc(&file_scp);
 //}
 
-
-int _asm_len = 0;
+static int _asm_len = 0;
 #define PRINT_ASM_HEAD(fmt, ...) fprintf(fp, fmt "\n", ##__VA_ARGS__)
 #define PRINT_ASM(fmt, ...) _asm_len = 8 + fprintf(fp, "\t" fmt , ##__VA_ARGS__)
 #define PRINT_ASM_sem	fprintf(fp, "%*s#%s %s=%%%d, %s=%%%d,  cyc %d", \
@@ -241,11 +254,11 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 //	LOG("scp: %s", scp->name.c_str());
 	BasicBlock *bb = scp->basic_block;
 	if ((
-		bb->is_entry_label
-		|| bb->x64mc_alloc_o0.size()
-		|| bb->x64mc_alloc_wave.size()
-		)
-		&& scp->name != "test")
+	    bb->is_entry_label
+	        || bb->x64mc_alloc_o0.size()
+	        || bb->x64mc_alloc_wave.size()
+	    )
+	    && scp->name != "test")
 		PRINT_ASM_HEAD("\n\n%s:", scp->name.c_str());
 
 	vector<X64mc> *mc_list;
@@ -266,40 +279,49 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		switch (stamp)
 		{
 		case MC_LD:
-			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_name[mc.pr1], mc.of1);
+			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_name(mc.pr1), mc.of1);
 			PRINT_ASM_sem
 			break;
 
 		case MC_victim:
-//			PRINT_ASM("#%s %%%d, %s", mc.asm_code.c_str(), mc.s1, pr_name[mc.pr1]);
+			//			PRINT_ASM("#%s %%%d, %s", mc.asm_code.c_str(), mc.s1, get_pr_name(mc.pr1));
 			PRINT_ASM("");
 			PRINT_ASM_sem
 			break;
 
 		case MC_ST:
-			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc.asm_code.c_str(), mc.of1, pr_name[mc.pr1]);
-			PRINT_ASM_sem
-			break;
-
-		case MC_LI:
-			PRINT_ASM("%s %s, %d", mc.asm_code.c_str(), pr_name[mc.pr1], mc.const_num);
+			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc.asm_code.c_str(), mc.of1, pr_name(mc.pr1));
 			PRINT_ASM_sem
 			break;
 
 		case MC_ASSIGN:
-			case MC_ADD:
+			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name(mc.pr_dst), pr_name(mc.pr1));
+			PRINT_ASM_sem
+			break;
+
+		case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
-			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2]);
+			PRINT_ASM("%s %s, %s \n", mc_info[MC_ASSIGN].mc_code.c_str(), pr_name(mc.pr_dst), pr_name(mc.pr1));
+			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name(mc.pr_dst), pr_name(mc.pr2));
 			PRINT_ASM_sem
 			break;
 
 		case MC_DIV:
-			PRINT_ASM("mov eax, %s \n", pr_name[mc.pr1]);
-
+			PRINT_ASM("mov eax, %s \n", pr_name(mc.pr1));
 			PRINT_ASM("cdq \n");
-			PRINT_ASM("idiv %s \n", pr_name[mc.pr2]);
-			PRINT_ASM("mov %s, eax", pr_name[mc.pr1]);
+
+			if(mc.pr2 >= X64PR_MAX)
+			{
+				PRINT_ASM("mov dword ptr [rbp - %d], %s \n", mc.of2, pr_name(mc.pr2));
+				PRINT_ASM("idiv dword ptr [rbp - %d] \n", mc.of2);
+			}
+			else
+			{
+				PRINT_ASM("idiv %s \n", pr_name(mc.pr2));
+			}
+
+			PRINT_ASM("mov %s, eax", pr_name(mc.pr_dst));
 			PRINT_ASM_sem
 			break;
 
@@ -311,27 +333,31 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			case MC_CMP_GE:
 
 			cmp_mc = fake_cmp_mc_to_real_mc[stamp].mc_cmp;
-			PRINT_ASM("%s %s, %s", mc_info[cmp_mc].mc_code.c_str(), pr_name[mc.pr1], pr_name[mc.pr2]);
+			PRINT_ASM("%s %s, %s", mc_info[cmp_mc].mc_code.c_str(), pr_name(mc.pr1), pr_name(mc.pr2));
 			PRINT_ASM_sem
 
 			set_mc = fake_cmp_mc_to_real_mc[stamp].mc_set;
 			PRINT_ASM("%s %s", mc_info[set_mc].mc_code.c_str(), pr_name_byte(mc.pr_dst));
 			PRINT_ASM_sem
-			PRINT_ASM("movzx %s, %s", pr_name[mc.pr_dst], pr_name_byte(mc.pr_dst));
+			PRINT_ASM("movzx %s, %s", physic_reg_name[mc.pr_dst], pr_name_byte(mc.pr_dst));
 			PRINT_ASM_sem
 			break;
 
 		case MC_SAVE_RET:
 			PRINT_ASM("#---------------- print ret ----------------# \n");
-			PRINT_ASM("mov esi, %s \n", pr_name[mc.pr1]);
+			PRINT_ASM("mov esi, %s \n", pr_name(mc.pr1));
 			PRINT_ASM("lea rdi, [rip + fmt] \n");
 			PRINT_ASM("mov eax, 0 \n");
 			PRINT_ASM("call printf@PLT \n");
 			PRINT_ASM("#------------------------------------------# \n");
 
-			PRINT_ASM("mov eax, %s \n", pr_name[mc.pr1]);
+			PRINT_ASM("mov eax, %s \n", pr_name(mc.pr1));
 			break;
 
+		case MC_LI:
+			//			PRINT_ASM("%s %s, %d", mc.asm_code.c_str(), get_pr_name(mc.pr1), mc.const_num);
+//			PRINT_ASM_sem
+//			break;
 		default:
 			ERR("%d", stamp);
 			break;
@@ -389,6 +415,12 @@ static void dump_asm(const string &asm_file)
 
 void x64_reg_alloc()
 {
+	x64pr.resize(X64PR_MAX + 1);
+
+	for (int i = 0; i < X64PR_MAX; i++)
+		x64pr[i].name = physic_reg_name[i];
+	x64pr[X64PR_MAX].name = "X64PR_MAX";
+
 	vr_state.resize(vr_size);
 
 	x64_reg_alloc_o0(&file_scp);

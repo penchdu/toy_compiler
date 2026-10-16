@@ -13,6 +13,10 @@
 void spill_vr(vector<VrState> &vrst, vector<PrState> &prst, int vr,
     vector<X64mc> &mcs, const string &tag)
 {
+	Ast *p = vr_declare_manager.declare_at[vr];
+	if (p->sem_stamp == SEM_CONST_NUM)
+		return;
+
 	int &pr = vrst[vr].pr;
 	int &u = vrst[vr].u;
 	bool &dirty = vrst[vr].dirty;
@@ -21,20 +25,18 @@ void spill_vr(vector<VrState> &vrst, vector<PrState> &prst, int vr,
 	assert(u != VR_USAGE_INVALID);
 	assert(prst[pr].vr == vr);
 
-	Ast *p = vr_declare_manager.declare_at[vr];
-
 	// MC_victim
 	X64mc mc(MC_victim, vr);
 	mc.pr1 = (int) pr;
-	mc.ori_sem = string("victim ") + pr_name[pr] + tag;
+	mc.ori_sem = string("victim ") + pr_name(pr) + tag;
 	mcs.push_back(mc);
 
-	if (/*p->sem_stamp != SEM_CONST_NUM &&*/ dirty
-		&& p->symb->consume_cnt < p->symb->use_cnt)
+	if (/*p->sem_stamp != SEM_CONST_NUM &&*/dirty
+	    && p->symb->consume_cnt < p->symb->use_cnt)
 	{
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;
-		mc.ori_sem = string("spill ") + pr_name[pr] + tag;
+		mc.ori_sem = string("spill ") + pr_name(pr) + tag;
 		mcs.push_back(mc);
 	}
 
@@ -111,6 +113,17 @@ int wave_get_pr(BasicBlock *bb, int mc_idx)
 
 static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx)
 {
+	Ast *p = vr_declare_manager.declare_at[vr];
+	if (p->sem_stamp == SEM_CONST_NUM)
+	{
+		X64Pr pr;
+		pr.idx = x64pr.size();
+		pr.name = to_string(p->const_value);
+
+		x64pr.push_back(pr);
+		return pr.idx;
+	}
+
 	/*
 	 * todo
 	 * mc_assign %1, %1
@@ -196,7 +209,7 @@ void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr)
 
 //		// last use in global
 //		int pr = vr2pr[vr].pr;
-////		LOG("%s clear %s %s", scp->name.c_str(), symb->src.c_str(), pr_name[pr]);
+////		LOG("%s clear %s %s", scp->name.c_str(), symb->src.c_str(), get_pr_name(pr));
 //
 //		vr2pr[vr].pr = X64PR_MAX;
 //		vr2pr[vr].u = VR_USAGE_INVALID;
@@ -275,18 +288,12 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 
 	switch (mc_stamp)
 	{
-	case MC_LI:
-		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
-		mcs.push_back(mc);
-		vr_state[mc.s1].dirty = 0;
-		break;
-
 	case MC_ASSIGN:
-		if (mc.s1 == mc.s2)
+		if (mc.dst == mc.s1)
 			break;
 
-		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
-		mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
+		mc.pr_dst = get_pr__load_vr(bb, mc.dst, VR_USAGE_WRITE, i);
+		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
 		mcs.push_back(mc);
 		break;
 
@@ -294,11 +301,6 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 		case MC_SUB:
 		case MC_IMUL:
 		case MC_DIV:
-
-		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ_WRITE, i);
-		mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
-		mcs.push_back(mc);
-		break;
 
 	case MC_CMP_E:
 		case MC_CMP_NE:
@@ -318,6 +320,11 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 		mcs.push_back(mc);
 		break;
 
+	case MC_LI:
+		//		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
+//		mcs.push_back(mc);
+//		vr_state[mc.s1].dirty = 0;
+//		break;
 	default:
 		ERR("%d \n", mc_stamp);
 		break;

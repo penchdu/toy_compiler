@@ -97,7 +97,7 @@ void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value)
 		break;
 
 	case MC_ASSIGN:
-		update_vr_consume_cnt(scp, mc.s2, update_value);
+		update_vr_consume_cnt(scp, mc.s1, update_value);
 		break;
 
 	case MC_ADD:
@@ -182,31 +182,23 @@ static void _gen_liveness(Scope *scp)
 
 		switch (mc_stamp)
 		{
-		case MC_LI:
-			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_WRITE);
-			break;
-
 		case MC_LD:
 			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_WRITE);
 			break;
 
 		case MC_ST:
 			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
-			PRINT_MORE
 			break;
 
 		case MC_ASSIGN:
-			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_WRITE);
-			gen_vr_use_cnt(scp, mc.s2, VR_USAGE_READ);
+			gen_vr_use_cnt(scp, mc.dst, VR_USAGE_WRITE);
+			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
 			break;
 
 		case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
 			case MC_DIV:
-			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ_WRITE);
-			gen_vr_use_cnt(scp, mc.s2, VR_USAGE_READ);
-			break;
 
 		case MC_CMP_E:
 			case MC_CMP_NE:
@@ -223,6 +215,9 @@ static void _gen_liveness(Scope *scp)
 			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
 			break;
 
+		case MC_LI:
+			//			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_WRITE);
+//			break;
 		default:
 			ERR("%d \n", mc_stamp);
 			break;
@@ -267,31 +262,23 @@ static void check_while_used_outer_symb(Scope *scp)
 
 		switch (mc_stamp)
 		{
-		case MC_LI:
-			_check_while_used_outer_symb(mc.s1, VR_USAGE_WRITE);
-			break;
-
 		case MC_LD:
 			_check_while_used_outer_symb(mc.s1, VR_USAGE_WRITE);
 			break;
 
 		case MC_ST:
 			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ);
-			PRINT_MORE
 			break;
 
 		case MC_ASSIGN:
-			_check_while_used_outer_symb(mc.s1, VR_USAGE_WRITE);
-			_check_while_used_outer_symb(mc.s2, VR_USAGE_READ);
+			_check_while_used_outer_symb(mc.dst, VR_USAGE_WRITE);
+			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ);
 			break;
 
 		case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
 			case MC_DIV:
-			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ_WRITE);
-			_check_while_used_outer_symb(mc.s2, VR_USAGE_READ);
-			break;
 
 		case MC_CMP_E:
 			case MC_CMP_NE:
@@ -308,7 +295,8 @@ static void check_while_used_outer_symb(Scope *scp)
 			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ);
 			break;
 
-		default:
+		case MC_LI:
+			default:
 			ERR("%d \n", mc_stamp);
 			break;
 		}
@@ -319,9 +307,9 @@ static void find_while_used_outer_symb(Scope *scp)
 	if (scp->sem_stamp == SEM_WHILE
 	    || scp->sem_stamp == SEM_WHILE_COND
 	    || scp->sem_stamp == SEM_WHILE_BODY
-		|| scp->sem_stamp == SEM_IF
-		|| scp->sem_stamp == SEM_IF_then
-		|| scp->sem_stamp == SEM_IF_else)
+	    || scp->sem_stamp == SEM_IF
+	    || scp->sem_stamp == SEM_IF_then
+	    || scp->sem_stamp == SEM_IF_else)
 	{
 		while_use_outer_symb.push_back({scp});
 

@@ -216,7 +216,7 @@ static void sem_analysis_named_var(Scope *scp)
 //	else
 //		p->symb->use_cnt++;
 //}
-static void new_private_transient_symb(Ast *p)
+static Symbol* new_private_transient_symb(Ast *p)
 {
 	Symbol *symb = new Symbol;
 	symb->type = p->type;
@@ -230,6 +230,8 @@ static void new_private_transient_symb(Ast *p)
 //	p->symb_stamp = SYMB_PRIVATE_transient;
 	p->symb = symb;
 	p->scope->symb_table->push_back(symb);
+
+	return symb;
 }
 
 static int case_op(Ast *p)
@@ -314,7 +316,8 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 
 	case SEM_CONST_NUM:
 		p->vr = vr_declare_manager.new_vr(p);
-		new_private_transient_symb(p);
+		p->symb = new_private_transient_symb(p);
+		p->symb->stamp = SYMB_CONST;
 		return p->vr;
 
 	case SEM_OPERATOR:

@@ -42,7 +42,6 @@ bool has_function_unit(MachineCodeStamp stamp)
 {
 	switch (stamp)
 	{
-	case MC_LI:
 		case MC_ASSIGN:
 		case MC_SAVE_RET:
 		case MC_ADD:
@@ -71,7 +70,6 @@ bool get_function_unit(MachineCodeStamp stamp)
 {
 	switch (stamp)
 	{
-	case MC_LI:
 		case MC_ASSIGN:
 		case MC_ADD:
 		case MC_SUB:
@@ -117,7 +115,6 @@ void free_function_unit(MachineCodeStamp stamp)
 {
 	switch (stamp)
 	{
-	case MC_LI:
 		case MC_ASSIGN:
 		case MC_ADD:
 		case MC_SUB:
@@ -223,7 +220,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		MachineCodeStamp mc_stamp = x64mc[mc_idx].stamp;
 		float consume_transient_score = 1.0;
 
-		if (mc_stamp != MC_LI && mc_stamp != MC_ASSIGN)
+		if (mc_stamp != MC_ASSIGN)
 		{
 			if (is_private_transient(scp, x64mc[mc_idx].s1))
 				r.score += consume_transient_score;
@@ -233,7 +230,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 			r.score += consume_transient_score;
 
 		float single_line_score = 1.0;
-		if (mc_stamp != MC_LI && mcs_successor[mc_idx].edges == 1)
+		if (mcs_successor[mc_idx].edges == 1)
 		{
 			int succ = mcs_successor[mc_idx].mcs[0];
 //			printf("succ %d\n", succ);

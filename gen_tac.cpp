@@ -32,25 +32,20 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 
 	int b = trace_ast_down_up_gen_3_address_code(tacs, p->right);
 	int a = trace_ast_down_up_gen_3_address_code(tacs, p->left);
-	Symbol *symb = 0;
 	Tac t;
 
 	switch (p->sem_stamp)
 	{
 	// leaf node
 	case SEM_VAR:
-		symb = p->symb;
-		assert(symb);
+		assert(p->symb);
 
 		// todo symb->vr to be defined in "new =" to gen ssa
-		return symb->vr;
+		return p->symb->vr;
 
 	case SEM_CONST_NUM:
-		t = Tac(p);
-		t.dst = p->vr;
-		t.const_num_value = p->const_value;
-		tacs.push_back(t);
-		return p->vr;
+		assert(p->symb);
+		return p->symb->vr;
 
 	case SEM_OPERATOR:
 		if (p->op == OP_ASSIGN)

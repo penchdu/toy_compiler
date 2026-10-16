@@ -144,7 +144,7 @@ void dump_vr_state(const vector<VrState> &vr_state, const string &tag)
 	{
 		int pr = vr_state[vr].pr;
 		if (pr != X64PR_MAX)
-			printf("%s=%%%d %s  ", vr_name(vr), vr, pr_name[pr]);
+			printf("%s=%%%d %s  ", vr_name(vr), vr, pr_name(pr));
 	}
 	printf("\n	dirty: ");
 	for (int vr = 0; vr < vr_size; vr++)
@@ -173,12 +173,13 @@ void recover_pr_state(
 		if (before_vr_state[vr].pr == X64PR_MAX && now_vr_state[vr].pr != X64PR_MAX)
 		{
 //			LOG("scp %s, recover spill %s=%%%d-%s", scp->name.c_str(),
-//			    vr_name(vr), vr, pr_name[pr]);
+//			    vr_name(vr), vr, get_pr_name(pr));
 			spill_vr(now_vr_state, now_pr_state, vr, mcs, " while recover");
 			spilled++;
 		}
 	}
-	LOG("scp %s spilled: %d, swap_pr=%d %s", tail_scope_to_gen_mc->name.c_str(), spilled, swap_pr, pr_name[swap_pr]);
+	LOG("scp %s spilled: %d, swap_pr=%d %s", tail_scope_to_gen_mc->name.c_str(),
+		spilled, swap_pr, pr_name(swap_pr));
 
 	if (now_pr_state[swap_pr].vr != INVALID_VR)
 	{
@@ -647,8 +648,8 @@ void move_ld_to_pre_cond(
 				LOG("ok");
 				LOG("%d, pr_reference[%s]=%d, pre_cond_pr_state[%s].vr=%%%d, free_pr=%d",
 				    pr != reserved_pr,
-				    pr_name[pr], pr_reference[pr],
-				    pr_name[pr], pre_cond_pr_state[pr].vr,
+				    pr_name(pr), pr_reference[pr],
+				    pr_name(pr), pre_cond_pr_state[pr].vr,
 				    free_pr);
 			}
 		}

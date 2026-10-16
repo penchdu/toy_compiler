@@ -60,36 +60,32 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 
 		switch (mc_stamp)
 		{
-		case MC_LI:
-			create_dependcy_WAW(idx, prev_write[s1]);
-			create_dependcy_WAR(idx, prev_read[s1]);
-			prev_write[s1] = idx;
-			prev_read[s1].clear();
-			break;
-
 		case MC_ASSIGN:
-			assert(s1 != s2);
-			create_dependcy_WAW(idx, prev_write[s1]);
-			create_dependcy_WAR(idx, prev_read[s1]);
-			prev_write[s1] = idx;
-			prev_read[s1].clear();
+			assert(dst != s1);
+			assert(dst >= 0);
+			assert(s1 >= 0);
+			assert(s2 < 0);
+			create_dependcy_WAW(idx, prev_write[dst]);
+			create_dependcy_WAR(idx, prev_read[dst]);
+			prev_write[dst] = idx;
+			prev_read[dst].clear();
 
-			create_dependcy_RAW(idx, prev_write[s2]);
-			prev_read[s2].push_back(idx);
+			create_dependcy_RAW(idx, prev_write[s1]);
+			prev_read[s1].push_back(idx);
 			break;
 
 		case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
 			case MC_DIV:
-			create_dependcy_RAW(idx, prev_write[s1]);
-			create_dependcy_WAR(idx, prev_read[s1]);
-			prev_write[s1] = idx;
-			prev_read[s1].clear();
-
-			create_dependcy_RAW(idx, prev_write[s2]);
-			prev_read[s2].push_back(idx);
-			break;
+//			create_dependcy_RAW(idx, prev_write[s1]);
+//			create_dependcy_WAR(idx, prev_read[s1]);
+//			prev_write[s1] = idx;
+//			prev_read[s1].clear();
+//
+//			create_dependcy_RAW(idx, prev_write[s2]);
+//			prev_read[s2].push_back(idx);
+//			break;
 
 		case MC_CMP_E:	// ???
 		case MC_CMP_NE:
@@ -115,6 +111,12 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 			prev_read[s1].push_back(idx);
 			break;
 
+		case MC_LI:
+//			create_dependcy_WAW(idx, prev_write[s1]);
+//			create_dependcy_WAR(idx, prev_read[s1]);
+//			prev_write[s1] = idx;
+//			prev_read[s1].clear();
+//			break;
 		default:
 			ERR("%d \n", mc_stamp);
 			break;

@@ -87,20 +87,24 @@ static void gen_op_add_sub_mul_div_mc(vector<X64mc> &x64mc, MachineCodeStamp mc,
 {
 	X64mc inst;
 
-	inst = X64mc(MC_ASSIGN, tac_dst, tac_s1);
-	inst.ori_sem = ori_sem;
-	x64mc.push_back(inst);
+//	inst = X64mc(MC_ASSIGN, tac_dst, tac_s1);
+//	inst.ori_sem = ori_sem;
+//	x64mc.push_back(inst);
+//
+//	inst = X64mc(mc, tac_dst, tac_s2);
+//	inst.ori_sem = ori_sem;
+//	x64mc.push_back(inst);
 
-	inst = X64mc(mc, tac_dst, tac_s2);
+	inst = X64mc(mc, tac_dst, tac_s1, tac_s2);
 	inst.ori_sem = ori_sem;
 	x64mc.push_back(inst);
 }
-static void gen_op_cmp_mc(vector<X64mc> &x64mc, MachineCodeStamp mc, const string &ori_sem,
+static void gen_op_cmp_mc(vector<X64mc> &x64mc, MachineCodeStamp stamp, const string &ori_sem,
     int tac_dst, int tac_s1, int tac_s2)
 {
 	X64mc inst;
 
-	inst = X64mc(mc, tac_dst, tac_s1, tac_s2);
+	inst = X64mc(stamp, tac_dst, tac_s1, tac_s2);
 	inst.ori_sem = ori_sem;
 	x64mc.push_back(inst);
 }
@@ -172,13 +176,6 @@ static void gen_mc(Scope *scp)
 
 		switch (sem)
 		{
-		case SEM_CONST_NUM:
-			mc = X64mc(MC_LI, code.dst);
-			mc.const_num = code.const_num_value;
-			mc.ori_sem = "li";
-			bb->x64mc.push_back(mc);
-			break;
-
 		case SEM_SAVE_RET_VALUE:
 			mc = X64mc(MC_SAVE_RET, code.s1);
 			mc.ori_sem = "save_ret";
@@ -190,6 +187,12 @@ static void gen_mc(Scope *scp)
 			ERR("todo sem_func* semty %d \n", sem);
 			break;
 
+		case SEM_CONST_NUM:
+//			mc = X64mc(MC_LI, code.dst);
+//			mc.const_num = code.const_num_value;
+//			mc.ori_sem = "li";
+//			bb->x64mc.push_back(mc);
+//			break;
 		default:
 			ERR("%d \n", sem);
 			break;
@@ -211,8 +214,8 @@ static void gen_mc(Scope *scp)
 			bb->jmp_mc_stamp = op2jmp_mc[cond->op];
 		}
 		else if (stamp == SEM_UNNAMED_SCOPE
-			|| stamp == SEM_CONTINUE
-			|| stamp == SEM_BREAK)
+		    || stamp == SEM_CONTINUE
+		    || stamp == SEM_BREAK)
 		{
 			bb->jmp_mc_stamp = MC_JMP;
 		}
@@ -231,8 +234,26 @@ static void gen_mc(Scope *scp)
 		gen_mc(p);
 }
 
+static int _asm_len = 0;
 #define PRINT_ASM_HEAD(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
-#define PRINT_ASM(fmt, ...) printf("\t" fmt , ##__VA_ARGS__)
+#define PRINT_ASM(fmt, ...) _asm_len = 8 + printf("\t" fmt , ##__VA_ARGS__)
+#define PRINT_ASM_sem	printf("%*s#%s %s=%%%d, %s=%%%d,  cyc %d", \
+        (_asm_len < 48) ? (48 - _asm_len) : 2, "", \
+        mc.ori_sem.c_str(),	\
+        mc.s1 >= 0 ? vr_declare_manager.declare_at[mc.s1]->tk.src.c_str() : "", mc.s1,	\
+        	mc.s2 >= 0 ? vr_declare_manager.declare_at[mc.s2]->tk.src.c_str() : "", mc.s2, 	\
+			mc.start_cycle);	\
+        printf("\n");
+
+#if 1
+	#define PRINT_MORE	\
+			printf("%*s#%s, cyc %d\n", \
+				(_asm_len < 48) ? (48 - _asm_len) : 2, "", \
+				mc.ori_sem.c_str(), mc.start_cycle);
+#else
+	#define PRINT_MORE	\
+	//		printf("\n");
+#endif
 
 void dump_mc(Scope *scp, string mc_list_name)
 {
@@ -256,11 +277,6 @@ void dump_mc(Scope *scp, string mc_list_name)
 
 		switch (stamp)
 		{
-		case MC_LI:
-			PRINT_ASM("%s %%%d, num %d", mc.asm_code.c_str(), mc.s1, mc.const_num);
-			PRINT_MORE
-			break;
-
 		case MC_LD:
 			PRINT_ASM("%s %%%d, dword ptr [%d]", mc.asm_code.c_str(), mc.s1, mc.of1);
 			PRINT_MORE
@@ -272,12 +288,30 @@ void dump_mc(Scope *scp, string mc_list_name)
 			break;
 
 		case MC_ASSIGN:
-			case MC_ADD:
-			case MC_SUB:
-			case MC_IMUL:
-			PRINT_ASM("%s %%%d, %%%d", mc.asm_code.c_str(), mc.s1, mc.s2);
+			PRINT_ASM("%s %%%d, %%%d", mc.asm_code.c_str(), mc.dst, mc.s1);
 			PRINT_MORE
 			break;
+
+//		case MC_ADD:
+//			case MC_SUB:
+//			case MC_IMUL:
+//			PRINT_ASM("%s %%%d, %%%d", mc.asm_code.c_str(), mc.s1, mc.s2);
+//			PRINT_MORE
+//			break;
+//
+//		case MC_DIV:
+//			PRINT_ASM("mov eax, %%%d", mc.s1);
+//			PRINT_MORE
+//
+//			PRINT_ASM("cdq \n");
+//			PRINT_ASM("idiv %%%d div \n", mc.s2);
+//			PRINT_ASM("mov %%%d, eax div \n", mc.s1);
+			break;
+
+		case MC_ADD:
+			case MC_SUB:
+			case MC_IMUL:
+			case MC_DIV:
 
 		case MC_CMP_E:
 			case MC_CMP_NE:
@@ -293,20 +327,15 @@ void dump_mc(Scope *scp, string mc_list_name)
 			PRINT_MORE
 			break;
 
-		case MC_DIV:
-			PRINT_ASM("mov eax, %%%d", mc.s1);
-			PRINT_MORE
-
-			PRINT_ASM("cdq \n");
-			PRINT_ASM("idiv %%%d div \n", mc.s2);
-			PRINT_ASM("mov %%%d, eax div \n", mc.s1);
-			break;
-
 		case MC_SAVE_RET:
 			PRINT_ASM("mov eax, %%%d", mc.s1);
 			PRINT_MORE
 			break;
 
+		case MC_LI:
+			//			PRINT_ASM("%s %%%d, num %d", mc.asm_code.c_str(), mc.s1, mc.const_num);
+//			PRINT_MORE
+//			break;
 		default:
 			ERR("%d \n", stamp);
 			break;

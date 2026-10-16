@@ -58,18 +58,7 @@
  ret
  */
 
-#if 1
-	#define PRINT_MORE	\
-			printf("\t\t#%s", mc.ori_sem.c_str());	\
-			printf(", cyc %d", mc.start_cycle);	\
-		/*	PRINT_ASM(", off %d\n", mc.of1);	*/	\
-			printf("\n");
-#else
-#define PRINT_MORE	\
-//		printf("\n");
-#endif
-
-enum X64pr {
+enum X64PhysicReg {
 //	R8D,
 //	R9D,
 	R10D,
@@ -84,7 +73,14 @@ enum X64pr {
 	X64PR_MAX,
 };
 
-extern const char *pr_name[];
+struct X64Pr{
+	int idx;
+	string name;
+	int value;
+};
+extern vector<X64Pr> x64pr;
+
+extern const char *physic_reg_name[];
 const char* pr_name_byte(int pr);
 
 struct VrState
@@ -168,9 +164,9 @@ extern VirtualRegDeclareManager vr_declare_manager;
 
 static int mcidx = 0;
 struct X64mc {
-	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s1, int tac_s2)
+	X64mc(MachineCodeStamp mc_stamp, int tac_dst, int tac_s1, int tac_s2)
 	{
-		stamp = _mc_stamp;
+		stamp = mc_stamp;
 		dst = tac_dst;
 		s1 = tac_s1;
 		s2 = tac_s2;
@@ -179,18 +175,18 @@ struct X64mc {
 		of1 = vr_declare_manager.get_vr_off(s1);
 		of2 = vr_declare_manager.get_vr_off(s2);
 
-		asm_code = mc_info[_mc_stamp].mc_code;
-		latency = mc_info[_mc_stamp].mc_latency;
+		asm_code = mc_info[mc_stamp].mc_code;
+		latency = mc_info[mc_stamp].mc_latency;
 		idx = mcidx++;
 	}
-	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s2)
+	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s1)
 	{
 		stamp = _mc_stamp;
-		s1 = tac_dst;
-		s2 = tac_s2;
+		dst = tac_dst;
+		s1 = tac_s1;
 
+		of_dst = vr_declare_manager.get_vr_off(dst);
 		of1 = vr_declare_manager.get_vr_off(s1);
-		of2 = vr_declare_manager.get_vr_off(s2);
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
@@ -301,6 +297,7 @@ void clear_all_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 
+const char* pr_name(int pr);
 void spill_vr(vector<VrState> &vr_to_pr, vector<PrState> &pr_to_vr,
 	int vr, vector<X64mc> &x64mc_alloc, const string &tag = "");
 void spill_all_pr(BasicBlock *bb);
