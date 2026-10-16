@@ -10,20 +10,22 @@
 #include "basic_block.h"
 #include <cmath>
 
-void spill_vr(vector<VrState> &vrst, vector<PrState> &prst, int vr,
+void spill_vr(vector<VrState> &vr_st, vector<PrState> &pr_st, int vr,
     vector<X64mc> &mcs, const string &tag)
 {
 	Ast *p = vr_declare_manager.declare_at[vr];
 	if (p->sem_stamp == SEM_CONST_NUM)
 		return;
 
-	int &pr = vrst[vr].pr;
-	int &u = vrst[vr].u;
-	bool &dirty = vrst[vr].dirty;
+	int &pr = vr_st[vr].pr;
+	int &u = vr_st[vr].u;
+	bool &dirty = vr_st[vr].dirty;
 
+	if(pr == X64PR_MAX || u == VR_USAGE_INVALID || pr_st[pr].vr != vr)
+		LOG("pr=%d, u=%d, pr_st[%d].vr=%d != %d", pr, u, pr, pr_st[pr].vr, vr);
 	assert(pr != X64PR_MAX);
 	assert(u != VR_USAGE_INVALID);
-	assert(prst[pr].vr == vr);
+	assert(pr_st[pr].vr == vr);
 
 	// MC_victim
 	X64mc mc(MC_victim, vr);
@@ -40,7 +42,7 @@ void spill_vr(vector<VrState> &vrst, vector<PrState> &prst, int vr,
 		mcs.push_back(mc);
 	}
 
-	prst[pr].vr = INVALID_VR;
+	pr_st[pr].vr = INVALID_VR;
 	pr = X64PR_MAX;
 	u = VR_USAGE_INVALID;
 	dirty = false;
