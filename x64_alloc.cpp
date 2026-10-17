@@ -9,17 +9,36 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-const char *physic_reg_name[] = {
-    //    [R8D] = "r8d",
-//    [R9D] = "r9d",
-    [R10D] = "r10d",
-    [R11D] = "r11d",
-    [R12D] = "r12d",
-    [R13D] = "r13d",
-    [R14D] = "r14d",
-    [R15D] = "r15d",
-//    [EBX] = "ebx",
-    };
+//const int X64PR_CONST = X64PR_MAX + 1;
+
+const char* pr_name(int pr)
+{
+	switch (pr)
+	{
+//	case R8D:
+//		return "r8b";
+//	case R9D:
+//		return "r9b";
+	case R10D:
+		return "r10d";
+	case R11D:
+		return "r11d";
+	case R12D:
+		return "r12d";
+	case R13D:
+		return "r13d";
+	case R14D:
+		return "r14d";
+	case R15D:
+		return "r15d";
+	case PR_IMM:
+		return "pr_imm";
+	}
+
+	ERR("no byte register");
+	return 0;
+}
+;
 
 const char* pr_name_byte(int pr)
 {
@@ -52,19 +71,18 @@ const char* pr_name_byte(int pr)
 vector<VrState> vr_state;
 vector<PrState> pr_state(X64PR_MAX, {INVALID_VR});
 
-const int X64PR_CONST = X64PR_MAX + 1;
 extern Mc2mc fake_cmp_mc_to_real_mc[];
 
-const char* pr_name(int pr, int vr)
+const char* pr_name_const(int pr, int vr)
 {
-	if (pr == X64PR_CONST)
+	if (pr == PR_IMM)
 	{
-		string s;
-		s = to_string(vr_declare_manager.declare_at[vr]->const_value);
+		static string s;
+		s = to_string(declare_record.ast[vr]->const_value);
 		return s.c_str();
 	}
-	assert(pr != X64PR_MAX && pr != X64PR_CONST);
-	return physic_reg_name[pr];
+	assert(pr != X64PR_MAX);
+	return pr_name(pr);
 }
 static int get_pr()
 {
@@ -82,17 +100,17 @@ static int get_pr()
 
 //X64pr (*ptr_get_pr)();
 static int get_pr__load_vr(vector<X64mc> &x64mc_alloced, int vr, int u,
-	bool immediate_force_alloc = false)
+    bool immediate_force_alloc = false)
 {
-	Ast *p = vr_declare_manager.declare_at[vr];
-	if (!immediate_force_alloc && p->sem_stamp == SEM_CONST_NUM)
+	Ast *p = declare_record.ast[vr];
+	if (!immediate_force_alloc && p->sem_stamp == SEM_IMMEDIATE)
 	{
-		vr_state[vr].pr = X64PR_CONST;
+		vr_state[vr].pr = PR_IMM;
 		vr_state[vr].u = VR_USAGE_READ;
-		return X64PR_CONST;
+		return PR_IMM;
 	}
 
-	if (immediate_force_alloc && p->sem_stamp == SEM_CONST_NUM && vr_state[vr].pr == X64PR_CONST)
+	if (immediate_force_alloc && p->sem_stamp == SEM_IMMEDIATE && vr_state[vr].pr == PR_IMM)
 	{
 		vr_state[vr].pr = X64PR_MAX;
 	}
@@ -137,8 +155,8 @@ static void spill_pr(vector<X64mc> &x64mc_alloced, int vr)
 	assert(pr != X64PR_MAX);
 	assert(u != VR_USAGE_INVALID);
 
-	Ast *p = vr_declare_manager.declare_at[vr];
-	if (p->sem_stamp == SEM_CONST_NUM && pr > X64PR_MAX)
+	Ast *p = declare_record.ast[vr];
+	if (p->sem_stamp == SEM_IMMEDIATE && pr > X64PR_MAX)
 	{
 		LOG("vr=%%%d, pr=%d", vr, vr_state[vr].pr);
 		assert(vr_state[vr].pr > X64PR_MAX);
@@ -172,7 +190,7 @@ static void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2)
 
 static int load_immediate(vector<X64mc> &mcs, int vr)
 {
-	int value = vr_declare_manager.declare_at[vr]->const_value;
+	int value = declare_record.ast[vr]->const_value;
 
 	X64mc mc;
 	mc = X64mc(MC_LI);
@@ -222,7 +240,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 			case MC_CMP_GE:
 			mc.pr_dst = get_pr__load_vr(mcs, mc.dst, VR_USAGE_WRITE);
 
-			if(vr_declare_manager.declare_at[mc.s1]->sem_stamp == SEM_CONST_NUM)
+			if (declare_record.ast[mc.s1]->sem_stamp == SEM_IMMEDIATE)
 				mc.pr1 = load_immediate(mcs, mc.s1);
 			else
 				mc.pr1 = get_pr__load_vr(mcs, mc.s1, VR_USAGE_READ);
@@ -239,7 +257,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 
 			mc.pr1 = get_pr__load_vr(mcs, mc.s1, VR_USAGE_READ);
 
-			if(vr_declare_manager.declare_at[mc.s2]->sem_stamp == SEM_CONST_NUM)
+			if (declare_record.ast[mc.s2]->sem_stamp == SEM_IMMEDIATE)
 				mc.pr2 = load_immediate(mcs, mc.s2);
 			else
 				mc.pr2 = get_pr__load_vr(mcs, mc.s2, VR_USAGE_READ);
@@ -252,7 +270,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 		case MC_CMP_TEST:
 			mc.pr_dst = get_pr__load_vr(mcs, mc.dst, VR_USAGE_WRITE);
 
-			if(vr_declare_manager.declare_at[mc.s1]->sem_stamp == SEM_CONST_NUM)
+			if (declare_record.ast[mc.s1]->sem_stamp == SEM_IMMEDIATE)
 				mc.pr1 = load_immediate(mcs, mc.s1);
 			else
 				mc.pr1 = get_pr__load_vr(mcs, mc.s1, VR_USAGE_READ);
@@ -304,8 +322,8 @@ static int _asm_len = 0;
 #define PRINT_ASM_sem	fprintf(fp, "%*s#%s %s=%%%d, %s=%%%d,  cyc %d", \
 	        (_asm_len < 48) ? (48 - _asm_len) : 2, "", \
 	        mc.ori_sem.c_str(),	\
-	        mc.s1 >= 0 ? vr_declare_manager.declare_at[mc.s1]->tk.src.c_str() : "", mc.s1,	\
-        	mc.s2 >= 0 ? vr_declare_manager.declare_at[mc.s2]->tk.src.c_str() : "", mc.s2, 	\
+	        mc.s1 >= 0 ? declare_record.ast[mc.s1]->tk.src.c_str() : "", mc.s1,	\
+        	mc.s2 >= 0 ? declare_record.ast[mc.s2]->tk.src.c_str() : "", mc.s2, 	\
 			mc.start_cycle);	\
 	        fprintf(fp, "\n");
 
@@ -339,12 +357,12 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		switch (stamp)
 		{
 		case MC_LI:
-			PRINT_ASM("%s %s, %d", mc.asm_code.c_str(), pr_name(mc.pr1, mc.s1), mc.const_num);
+			PRINT_ASM("%s %s, %d", mc.asm_code.c_str(), pr_name_const(mc.pr1, mc.s1), mc.const_num);
 			PRINT_ASM_sem
 			break;
 
 		case MC_LD:
-			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_name(mc.pr1, mc.s1), mc.of1);
+			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_name_const(mc.pr1, mc.s1), mc.of1);
 			PRINT_ASM_sem
 			break;
 
@@ -354,28 +372,28 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			break;
 
 		case MC_ST:
-			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc.asm_code.c_str(), mc.of1, pr_name(mc.pr1, mc.s1));
+			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc.asm_code.c_str(), mc.of1, pr_name_const(mc.pr1, mc.s1));
 			PRINT_ASM_sem
 			break;
 
 		case MC_ASSIGN:
-			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name(mc.pr_dst, mc.dst), pr_name(mc.pr1, mc.s1));
+			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name_const(mc.pr_dst, mc.dst), pr_name_const(mc.pr1, mc.s1));
 			PRINT_ASM_sem
 			break;
 
 		case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
-			PRINT_ASM("%s %s, %s \n", mc_info[MC_ASSIGN].mc_code.c_str(), pr_name(mc.pr_dst, mc.dst), pr_name(mc.pr1, mc.s1));
-			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name(mc.pr_dst, mc.dst), pr_name(mc.pr2, mc.s2));
+			PRINT_ASM("mov %s, %s \n", pr_name_const(mc.pr_dst, mc.dst), pr_name_const(mc.pr1, mc.s1));
+			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name_const(mc.pr_dst, mc.dst), pr_name_const(mc.pr2, mc.s2));
 			PRINT_ASM_sem
 			break;
 
 		case MC_DIV:
-			PRINT_ASM("mov eax, %s \n", pr_name(mc.pr1, mc.s1));
+			PRINT_ASM("mov eax, %s \n", pr_name_const(mc.pr1, mc.s1));
 			PRINT_ASM("cdq \n");
-			PRINT_ASM("idiv %s \n", pr_name(mc.pr2, mc.s2));
-			PRINT_ASM("mov %s, eax", pr_name(mc.pr_dst, mc.dst));
+			PRINT_ASM("idiv %s \n", pr_name_const(mc.pr2, mc.s2));
+			PRINT_ASM("mov %s, eax", pr_name_const(mc.pr_dst, mc.dst));
 			PRINT_ASM_sem
 			break;
 
@@ -387,36 +405,38 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			case MC_CMP_GE:
 
 			cmp_mc = fake_cmp_mc_to_real_mc[stamp].mc_cmp;
-			PRINT_ASM("%s %s, %s", mc_info[cmp_mc].mc_code.c_str(), pr_name(mc.pr1, mc.s1), pr_name(mc.pr2, mc.s2));
+			PRINT_ASM("%s %s, %s", mc_info[cmp_mc].mc_code.c_str(),
+				pr_name_const(mc.pr1, mc.s1),
+			    pr_name_const(mc.pr2, mc.s2));
 			PRINT_ASM_sem
 
 			set_mc = fake_cmp_mc_to_real_mc[stamp].mc_set;
 			PRINT_ASM("%s %s", mc_info[set_mc].mc_code.c_str(), pr_name_byte(mc.pr_dst));
 			PRINT_ASM_sem
-			PRINT_ASM("movzx %s, %s", physic_reg_name[mc.pr_dst], pr_name_byte(mc.pr_dst));
+			PRINT_ASM("movzx %s, %s", pr_name(mc.pr_dst), pr_name_byte(mc.pr_dst));
 			PRINT_ASM_sem
 			break;
 
 		case MC_CMP_TEST:
-			PRINT_ASM("test %s, %s", pr_name(mc.pr1, mc.s1), pr_name(mc.pr1, mc.s1));
+			PRINT_ASM("test %s, %s", pr_name_const(mc.pr1, mc.s1), pr_name_const(mc.pr1, mc.s1));
 			PRINT_ASM_sem
 
 			set_mc = fake_cmp_mc_to_real_mc[stamp].mc_set;
 			PRINT_ASM("%s %s", mc_info[set_mc].mc_code.c_str(), pr_name_byte(mc.pr_dst));
 			PRINT_ASM_sem
-			PRINT_ASM("movzx %s, %s", physic_reg_name[mc.pr_dst], pr_name_byte(mc.pr_dst));
+			PRINT_ASM("movzx %s, %s", pr_name(mc.pr_dst), pr_name_byte(mc.pr_dst));
 			PRINT_ASM_sem
 			break;
 
 		case MC_SAVE_RET:
 			PRINT_ASM("#---------------- print ret ----------------# \n");
-			PRINT_ASM("mov esi, %s \n", pr_name(mc.pr1, mc.s1));
+			PRINT_ASM("mov esi, %s \n", pr_name_const(mc.pr1, mc.s1));
 			PRINT_ASM("lea rdi, [rip + fmt] \n");
 			PRINT_ASM("mov eax, 0 \n");
 			PRINT_ASM("call printf@PLT \n");
 			PRINT_ASM("#------------------------------------------# \n");
 
-			PRINT_ASM("mov eax, %s \n", pr_name(mc.pr1, mc.s1));
+			PRINT_ASM("mov eax, %s \n", pr_name_const(mc.pr1, mc.s1));
 			break;
 
 		default:
@@ -436,7 +456,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 }
 static void dump_asm(const string &asm_file)
 {
-	int rsp_off = vr_declare_manager.offset;
+	int rsp_off = declare_record.offset;
 	align16(rsp_off);
 	//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 

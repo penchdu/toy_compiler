@@ -40,7 +40,7 @@ for DIR_NAME in "${TEST_DIRS[@]}"; do
         GCC_BIN="$TEST_DIR/.gcc_ref/$BASENAME"
         mkdir -p "$TEST_DIR/.gcc_ref"
         if [ ! -x "$GCC_BIN" ] || [ "$CPP" -nt "$GCC_BIN" ]; then
-            echo "gcc: $CPP"
+            echo "gcc compile: $CPP"
             RUNNER_TMP="$(mktemp --suffix=.cpp)"
             cat > "$RUNNER_TMP" <<EOF
 #include <stdio.h>

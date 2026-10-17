@@ -31,8 +31,8 @@ static Scope* cond_to_negative()
 
 	// put non-const_num to left
 	if( p->op >= OP_CMP_E && p->op <= OP_CMP_GE
-		&& p->left->sem_stamp == SEM_CONST_NUM
-		&& p->right->sem_stamp != SEM_CONST_NUM)
+		&& p->left->sem_stamp == SEM_IMMEDIATE
+		&& p->right->sem_stamp != SEM_IMMEDIATE)
 	{
 		Ast *left = p->left;
 		Ast *right = p->right;

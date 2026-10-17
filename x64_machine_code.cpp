@@ -201,7 +201,7 @@ static void gen_mc(Scope *scp)
 			ERR("todo sem_func* semty %d \n", sem);
 			break;
 
-		case SEM_CONST_NUM:
+		case SEM_IMMEDIATE:
 //			mc = X64mc(MC_LI, code.dst);
 //			mc.const_num = code.const_num_value;
 //			mc.ori_sem = "li";

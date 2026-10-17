@@ -8,7 +8,7 @@
 #include "frontend.h"
 #include "x64_back_end.h"
 
-VirtualRegDeclareManager vr_declare_manager;
+VrDeclareRecord declare_record;
 extern int print_test();
 
 int main(int argc, char **argv)

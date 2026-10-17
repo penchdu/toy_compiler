@@ -148,9 +148,9 @@ static void print_mc_err(int a, int b, const X64mc &mc)
 
 	printf("%d %d, %s %s(%%%d) %s(%%%d) %s(%%%d) \n", a, b,
 		mc_info[stamp].mc_code.c_str(),
-		dst >= 0 ? vr_declare_manager.declare_at[dst]->tk.src.c_str() : "", dst,
-		s1 >= 0 ? vr_declare_manager.declare_at[s1]->tk.src.c_str() : "", s1,
-			s2 >= 0 ? vr_declare_manager.declare_at[s2]->tk.src.c_str() : "", s2);
+		dst >= 0 ? declare_record.ast[dst]->tk.src.c_str() : "", dst,
+		s1 >= 0 ? declare_record.ast[s1]->tk.src.c_str() : "", s1,
+			s2 >= 0 ? declare_record.ast[s2]->tk.src.c_str() : "", s2);
 }
 void dump_chain(vector<X64mc> &x64mc)
 {

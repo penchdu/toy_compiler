@@ -24,7 +24,7 @@ static int case_sem_assign(Ast *p)
 	Semantic ty = p->right->sem_stamp;
 
 	if (!(ty == SEM_VAR
-	    || ty == SEM_CONST_NUM
+	    || ty == SEM_IMMEDIATE
 	    || (ty == SEM_OPERATOR)
 	    || ty == SEM_FUNC_CALL))
 	{
@@ -47,7 +47,7 @@ static int case_sem_op(Ast *p)
 	assert(p->left);
 	Semantic ty = p->left->sem_stamp;
 	assert(ty == SEM_VAR
-	    || ty == SEM_CONST_NUM
+	    || ty == SEM_IMMEDIATE
 	    || ty == SEM_OPERATOR
 	    || ty == SEM_FUNC_CALL);
 
@@ -60,7 +60,7 @@ static int case_sem_op(Ast *p)
 	assert(p->right);
 	ty = p->right->sem_stamp;
 	assert(ty == SEM_VAR
-	    || ty == SEM_CONST_NUM
+	    || ty == SEM_IMMEDIATE
 	    || ty == SEM_OPERATOR
 	    || ty == SEM_FUNC_CALL);
 
@@ -80,7 +80,7 @@ static int case_sem_save_retuen_up_down(Ast *p)
 
 	Semantic ty = p->left->sem_stamp;
 	if (!(ty == SEM_VAR
-	    || ty == SEM_CONST_NUM
+	    || ty == SEM_IMMEDIATE
 	    || ty == SEM_OPERATOR
 	    || ty == SEM_FUNC_CALL))
 	{
@@ -184,7 +184,7 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 		case_sem_var(p);
 		break;
 
-	case SEM_CONST_NUM:
+	case SEM_IMMEDIATE:
 		break;
 
 	case SEM_OPERATOR:
@@ -258,7 +258,7 @@ static int case_op(Ast *p)
 // todo gen a assign inst
 	case OP_CMP_TEST:
 		p->type = p->left->type;
-		p->vr = vr_declare_manager.new_vr(p);
+		p->vr = declare_record.new_vr(p);
 		new_private_transient_symb(p);
 		return p->vr;
 
@@ -277,7 +277,7 @@ static int case_op(Ast *p)
 			ERR("op type mismatch %d %d", p->left->type, p->right->type);
 
 		p->type = p->left->type;
-		p->vr = vr_declare_manager.new_vr(p);
+		p->vr = declare_record.new_vr(p);
 		new_private_transient_symb(p);
 		return p->vr;
 
@@ -320,14 +320,14 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 		symb = p->symb;
 		assert(symb);
 		if (symb->vr < 0)
-			symb->vr = vr_declare_manager.new_vr(p);
+			symb->vr = declare_record.new_vr(p);
 
 		// todo symb->vr to be defined in "new =" to gen ssa
 		p->vr = symb->vr;
 		return symb->vr;
 
-	case SEM_CONST_NUM:
-		p->vr = vr_declare_manager.new_vr(p);
+	case SEM_IMMEDIATE:
+		p->vr = declare_record.new_vr(p);
 		p->symb = new_private_transient_symb(p);
 		p->symb->stamp = SYMB_CONST;
 		return p->vr;

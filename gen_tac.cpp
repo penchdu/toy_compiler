@@ -43,7 +43,7 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 		// todo symb->vr to be defined in "new =" to gen ssa
 		return p->symb->vr;
 
-	case SEM_CONST_NUM:
+	case SEM_IMMEDIATE:
 		assert(p->symb);
 		return p->symb->vr;
 
@@ -135,7 +135,7 @@ static void dump_tac(Scope *scp)
 
 		switch (p->sem_stamp)
 		{
-		case SEM_CONST_NUM:
+		case SEM_IMMEDIATE:
 			printf("const:\t %%%d num %d\n", r.dst, p->const_value);
 			break;
 

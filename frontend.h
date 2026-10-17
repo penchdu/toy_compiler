@@ -248,7 +248,7 @@ public:
 			break;
 
 		case TK_CONST_NUM:
-			sem_stamp = SEM_CONST_NUM;
+			sem_stamp = SEM_IMMEDIATE;
 			type = INT;
 			const_value = atoi(_token.src.c_str());
 			break;
@@ -372,14 +372,14 @@ extern Scope *current_scope_pointer;
 extern Scope file_scp;
 extern int scope_id;
 
-struct VirtualRegDeclareManager
+struct VrDeclareRecord
 {
 	int new_vr(Ast *p, int size = 4)
 	{
 		id++;
 		offset += size;
 		vr_off.push_back(offset);
-		declare_at.push_back(p);
+		ast.push_back(p);
 		return id;
 	}
 
@@ -400,11 +400,11 @@ struct VirtualRegDeclareManager
 	int id = -1;
 	int offset = 0;
 	vector<int> vr_off;
-	vector<Ast*> declare_at;
+	vector<Ast*> ast;
 };
-extern VirtualRegDeclareManager vr_declare_manager;
-#define vr_name(vr) vr_declare_manager.declare_at[vr]->symb->unique_name.c_str()
-#define vr_size vr_declare_manager.size()
+extern VrDeclareRecord declare_record;
+#define vr_name(vr) declare_record.ast[vr]->symb->unique_name.c_str()
+#define vr_size declare_record.size()
 
 #if 0
 #define PARSER_LOG(fmt, ...) do{ \

@@ -70,7 +70,7 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 
 	[SEM_VAR_DECLARE] = "SEM_VAR_DECLARE",
 	[SEM_VAR] = "SEM_VAR",
-	[SEM_CONST_NUM] = "SEM_CONST_NUM",
+	[SEM_IMMEDIATE] = "SEM_CONST_NUM",
 
 	[SEM_IF] = "SEM_IF",
 	[SEM_IF_cond] = "SEM_IF_cond",

@@ -49,7 +49,7 @@ void check_vr_consume_cnt(Scope *scp)
 }
 bool is_private_symb(Scope *scp, int vr)
 {
-	Ast *declare_at = vr_declare_manager.declare_at[vr];
+	Ast *declare_at = declare_record.ast[vr];
 	Symbol *symb = declare_at->symb;
 
 	for (auto p : *(scp->symb_table))
@@ -66,7 +66,7 @@ bool is_private_symb(Scope *scp, int vr)
 void update_vr_consume_cnt(Scope *scp, int vr, int update_value, int usage)
 {
 	assert(usage & VR_USAGE_READ);
-	Ast *declare_at = vr_declare_manager.declare_at[vr];
+	Ast *declare_at = declare_record.ast[vr];
 	Scope *scp_declare_at = declare_at->scope;
 //	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
 //	assert(declare_at->this_scp == declare_at->home_scp);
@@ -131,7 +131,7 @@ void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value)
 
 static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 {
-	Ast *declare_at = vr_declare_manager.declare_at[vr];
+	Ast *declare_at = declare_record.ast[vr];
 	Scope *scp_declare_at = declare_at->scope;
 //	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
 //	assert(declare_at->this_scp == declare_at->home_scp);
@@ -237,7 +237,7 @@ static void _gen_liveness(Scope *scp)
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 static void _check_while_used_outer_symb(int vr, int usage)
 {
-	Ast *p = vr_declare_manager.declare_at[vr];
+	Ast *p = declare_record.ast[vr];
 	Symbol *symb = p->symb;
 
 	// outer-while-scope should hold all outer-symb used in this while, include the outer-symb only used
@@ -358,7 +358,7 @@ void dump_while_used_outer_symb(Scope *scp)
 		{
 			int cnt = scp->outer_symb_read[vr];
 			if (cnt > 0)
-				printf(" %s=%%%d(%d)", vr_declare_manager.declare_at[vr]->tk.src.c_str(), vr, cnt);
+				printf(" %s=%%%d(%d)", declare_record.ast[vr]->tk.src.c_str(), vr, cnt);
 		}
 		printf("\n");
 	}
@@ -369,7 +369,7 @@ void dump_while_used_outer_symb(Scope *scp)
 		{
 			int cnt = scp->outer_symb_write[vr];
 			if (cnt > 0)
-				printf(" %s=%%%d(%d)", vr_declare_manager.declare_at[vr]->tk.src.c_str(), vr, cnt);
+				printf(" %s=%%%d(%d)", declare_record.ast[vr]->tk.src.c_str(), vr, cnt);
 		}
 		printf("\n");
 	}

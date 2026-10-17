@@ -71,11 +71,12 @@ enum X64PhysicReg {
 //	EAX,
 //	EBX,
 	X64PR_MAX,
+
+	PR_IMM,
 };
+//extern const int X64PR_CONST;
 
-extern const int X64PR_CONST;
-
-extern const char *physic_reg_name[];
+const char* pr_name(int pr);
 const char* pr_name_byte(int pr);
 
 struct VrState
@@ -125,7 +126,6 @@ enum MachineCodeStamp {
 	MC_CMP_LE,
 	MC_CMP_G,
 	MC_CMP_GE,
-
 	MC_CMP_TEST,
 
 	MC_SET_E,
@@ -134,7 +134,6 @@ enum MachineCodeStamp {
 	MC_SET_LE,
 	MC_SET_G,
 	MC_SET_GE,
-
 	MC_SET_TEST,
 
 	MC_JMP,
@@ -159,7 +158,7 @@ struct McInfo {
 	string mc_code;	// just for print
 };
 extern const McInfo mc_info[];
-extern VirtualRegDeclareManager vr_declare_manager;
+extern VrDeclareRecord declare_record;
 
 static int mcidx = 0;
 struct X64mc {
@@ -170,9 +169,9 @@ struct X64mc {
 		s1 = tac_s1;
 		s2 = tac_s2;
 
-		of_dst = vr_declare_manager.get_vr_off(dst);
-		of1 = vr_declare_manager.get_vr_off(s1);
-		of2 = vr_declare_manager.get_vr_off(s2);
+		of_dst = declare_record.get_vr_off(dst);
+		of1 = declare_record.get_vr_off(s1);
+		of2 = declare_record.get_vr_off(s2);
 
 		asm_code = mc_info[mc_stamp].mc_code;
 		latency = mc_info[mc_stamp].mc_latency;
@@ -184,8 +183,8 @@ struct X64mc {
 		dst = tac_dst;
 		s1 = tac_s1;
 
-		of_dst = vr_declare_manager.get_vr_off(dst);
-		of1 = vr_declare_manager.get_vr_off(s1);
+		of_dst = declare_record.get_vr_off(dst);
+		of1 = declare_record.get_vr_off(s1);
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
@@ -195,7 +194,7 @@ struct X64mc {
 	{
 		stamp = _mc_stamp;
 		s1 = tac_s1;
-		of1 = vr_declare_manager.get_vr_off(tac_s1);
+		of1 = declare_record.get_vr_off(tac_s1);
 
 		asm_code = mc_info[_mc_stamp].mc_code;
 		latency = mc_info[_mc_stamp].mc_latency;
@@ -296,7 +295,7 @@ void clear_all_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 
-const char* pr_name(int pr, int vr);
+const char* pr_name_const(int pr, int vr);
 void spill_vr(vector<VrState> &vr_to_pr, vector<PrState> &pr_to_vr,
 	int vr, vector<X64mc> &x64mc_alloc, const string &tag = "");
 void spill_all_pr(BasicBlock *bb);

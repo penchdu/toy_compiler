@@ -97,7 +97,7 @@ enum Semantic {
 
 	SEM_VAR_DECLARE,
 	SEM_VAR,
-	SEM_CONST_NUM,
+	SEM_IMMEDIATE,
 
 	SEM_IF,
 	SEM_IF_cond,

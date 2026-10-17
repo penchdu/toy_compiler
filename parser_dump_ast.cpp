@@ -43,7 +43,7 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 		else
 			printf("[var %s %%%d]\n", p->symb->unique_name.c_str(), p->symb->vr);
 	}
-	else if (p->sem_stamp == SEM_CONST_NUM)
+	else if (p->sem_stamp == SEM_IMMEDIATE)
 	{
 		if (!p->symb)
 			printf("[num %d]\n", p->const_value);

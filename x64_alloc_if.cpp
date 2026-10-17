@@ -18,7 +18,7 @@ static void then_pre_work(Scope *else_branch)
 		int cnt = else_branch->outer_symb_read[vr];
 		if (cnt == 0)
 			continue;
-		Symbol *symb = (vr_declare_manager.declare_at[vr])->symb;
+		Symbol *symb = (declare_record.ast[vr])->symb;
 		symb->use_cnt -= cnt;
 	}
 }
@@ -29,7 +29,7 @@ static void then_end_work(Scope *else_branch)
 		int cnt = else_branch->outer_symb_read[vr];
 		if (cnt == 0)
 			continue;
-		Symbol *symb = (vr_declare_manager.declare_at[vr])->symb;
+		Symbol *symb = (declare_record.ast[vr])->symb;
 		symb->use_cnt += cnt;
 	}
 }

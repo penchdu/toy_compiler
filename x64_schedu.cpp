@@ -161,9 +161,9 @@ void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx)
 	    prefix ? prefix : "",
 	    scp ? scp->name.c_str() : "unknown scp", idx,
 	    mc_info[stamp].mc_code.c_str(),
-	    dst >= 0 ? vr_declare_manager.declare_at[dst]->tk.src.c_str() : "", dst,
-	    s1 >= 0 ? vr_declare_manager.declare_at[s1]->tk.src.c_str() : "", s1,
-	    s2 >= 0 ? vr_declare_manager.declare_at[s2]->tk.src.c_str() : "", s2);
+	    dst >= 0 ? declare_record.ast[dst]->tk.src.c_str() : "", dst,
+	    s1 >= 0 ? declare_record.ast[s1]->tk.src.c_str() : "", s1,
+	    s2 >= 0 ? declare_record.ast[s2]->tk.src.c_str() : "", s2);
 }
 static bool is_private_transient(Scope *scp, int vr)
 {
@@ -444,7 +444,7 @@ static void mc_schdu(Scope *scp)
 		int consume = scp->consume_cnt_in_bb[i];
 		if (use != consume)
 		{
-			Ast *ast = vr_declare_manager.declare_at[i];
+			Ast *ast = declare_record.ast[i];
 			LOG("MISMATCH vr=%d use=%d consume=%d stamp=%d scp=%s",
 				i, use, consume, ast->symb_stamp, scp->name.c_str());
 			ERR("%%%d, %d %d", i, use, consume);
