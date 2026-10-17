@@ -105,18 +105,9 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 			prev_read[dst].clear();
 			break;
 
-		case MC_CMP_TEST:
-			create_dependcy_RAW(idx, prev_write[s1]);
-			prev_read[s1].push_back(idx);
-
-			create_dependcy_WAW(idx, prev_write[dst]);
-			create_dependcy_WAR(idx, prev_read[dst]);
-			prev_write[dst] = idx;
-			prev_read[dst].clear();
-			break;
-
+		case MC_TEST:
 		case MC_SAVE_RET:
-			printf("MC_SAVE_RET_VALUE %d %d, %lu\n", s1, s2, prev_read.size());
+//			printf("MC_SAVE_RET_VALUE %d %d, %lu\n", s1, s2, prev_read.size());
 			create_dependcy_RAW(idx, prev_write[s1]);
 			prev_read[s1].push_back(idx);
 			break;

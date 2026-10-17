@@ -48,6 +48,9 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 		return p->symb->vr;
 
 	case SEM_OPERATOR:
+		if (p->op == OP_LOGIC_AND || p->op == OP_LOGIC_OR)
+			ERR("op: %d", p->op);
+
 		if (p->op == OP_ASSIGN)
 		{
 			if (a == b) // not put into tac
@@ -59,8 +62,13 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 			tacs.push_back(t);
 			return a;
 		}
-		if (p->op == OP_LOGIC_AND || p->op == OP_LOGIC_OR)
-			ERR("op: %d", p->op);
+		if (p->op == OP_TEST)
+		{
+			t = Tac(p);
+			t.s1 = a;
+			tacs.push_back(t);
+			return -1;
+		}
 
 		t = Tac(p);
 		t.dst = p->vr;

@@ -51,7 +51,7 @@ static int case_sem_op(Ast *p)
 	    || ty == SEM_OPERATOR
 	    || ty == SEM_FUNC_CALL);
 
-	if (p->op == OP_CMP_TEST)
+	if (p->op == OP_TEST)
 	{
 		assert(!p->right);
 		return 0;
@@ -256,7 +256,7 @@ static int case_op(Ast *p)
 		return p->vr;
 
 // todo gen a assign inst
-	case OP_CMP_TEST:
+	case OP_TEST:
 		p->type = p->left->type;
 		p->vr = declare_record.new_vr(p);
 		new_private_transient_symb(p);

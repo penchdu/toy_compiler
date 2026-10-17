@@ -76,6 +76,11 @@ enum X64PhysicReg {
 };
 //extern const int X64PR_CONST;
 
+enum AllocMethod {
+	O0,
+	WAVE,
+};
+
 const char* pr_name(int pr);
 const char* pr_name_byte(int pr);
 
@@ -126,7 +131,7 @@ enum MachineCodeStamp {
 	MC_CMP_LE,
 	MC_CMP_G,
 	MC_CMP_GE,
-	MC_CMP_TEST,
+	MC_TEST,
 
 	MC_SET_E,
 	MC_SET_NE,
@@ -295,12 +300,27 @@ void clear_all_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 
-const char* pr_name_const(int pr, int vr);
-void spill_vr(vector<VrState> &vr_to_pr, vector<PrState> &pr_to_vr,
-	int vr, vector<X64mc> &x64mc_alloc, const string &tag = "");
+const char* pr_name_asm(int pr, int vr);
+void spill_vr(
+	enum AllocMethod method,
+	vector<VrState> &vr_to_pr,
+	vector<PrState> &pr_to_vr,
+	int vr, vector<X64mc> &mcs,
+	const string &tag = "");
+
 void spill_all_pr(BasicBlock *bb);
 
 void x64_reg_alloc();
+
+
+int get_pr_o0();
+int get_pr_wave(BasicBlock *bb, int mc_idx);
+int get_pr(enum AllocMethod method,
+	BasicBlock *bb, int mc_idx,
+	int vr, int u,
+    bool alloc_immediate = false);
+
+int get_pr_alloc_imm(enum AllocMethod method, BasicBlock *bb, int mc_idx, int vr);
 
 void dump_vr_state(const vector<VrState> &vp, const string &tag);
 void check_pr_vr_consistency();
@@ -308,7 +328,6 @@ void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr);
 void init_wave(BasicBlock *bb);
 
 int get_free_pr_num(const vector<PrState> &prst, int reserved_pr = X64PR_MAX);
-int wave_get_pr(BasicBlock *bb, int mc_idx);
 void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i);
 void x64_reg_alloc_wave();
 void ra_wave_regular_scope(Scope *scp);

@@ -219,10 +219,9 @@ public:
 			op = OP_CMP_NE;
 			op_prio = OP_CMP_NE_PRIORITY;
 			break;
-
-		case TK_CMP_TEST:
-			op = OP_CMP_TEST;
-			op_prio = OP_CMP_TEST_PRIORITY;
+		case TK_TEST:
+			op = OP_TEST;
+			op_prio = OP_TEST_PRIORITY;
 			break;
 
 		case TK_LOGIC_AND:

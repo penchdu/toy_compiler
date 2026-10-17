@@ -30,7 +30,7 @@ int get_reserved_pr(BasicBlock *bb)
 	if (swap_pr == X64PR_MAX)
 		swap_pr = X64PR_MAX - 1;
 
-	spill_vr(vr_state, pr_state, pr_state[swap_pr].vr, bb->x64mc_alloc_wave);
+	spill_vr(WAVE, vr_state, pr_state, pr_state[swap_pr].vr, bb->x64mc_alloc_wave);
 	pr_state[swap_pr].vr = INVALID_VR;
 	return swap_pr;
 }
@@ -174,7 +174,7 @@ void recover_pr_state(
 		{
 //			LOG("scp %s, recover spill %s=%%%d-%s", scp->name.c_str(),
 //			    vr_name(vr), vr, get_pr_name(pr));
-			spill_vr(now_vr_state, now_pr_state, vr, mcs, " while recover");
+			spill_vr(WAVE, now_vr_state, now_pr_state, vr, mcs, " while recover");
 			spilled++;
 		}
 	}
@@ -525,7 +525,7 @@ void move_victim_to_pre_cond(
 			int vr = mc.s1;
 			assert(mc.pr1 == pre_cond_vr_state[vr].pr);
 
-			spill_vr(pre_cond_vr_state,
+			spill_vr(WAVE, pre_cond_vr_state,
 			    pre_cond_pr_state,
 			    vr, mcs_while, " ,move from b" + to_string(cond_or_body->id) + ",");
 

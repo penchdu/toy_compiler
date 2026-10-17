@@ -115,10 +115,7 @@ void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value)
 		update_vr_consume_cnt(scp, mc.s2, update_value);
 		break;
 
-	case MC_CMP_TEST:
-		update_vr_consume_cnt(scp, mc.s1, update_value);
-		break;
-
+	case MC_TEST:
 	case MC_SAVE_RET:
 		update_vr_consume_cnt(scp, mc.s1, update_value);
 		break;
@@ -212,11 +209,7 @@ static void _gen_liveness(Scope *scp)
 			gen_vr_use_cnt(scp, mc.dst, VR_USAGE_WRITE);
 			break;
 
-		case MC_CMP_TEST:
-			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
-			gen_vr_use_cnt(scp, mc.dst, VR_USAGE_WRITE);
-			break;
-
+		case MC_TEST:
 		case MC_SAVE_RET:
 			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
 			break;
@@ -297,11 +290,7 @@ static void check_while_used_outer_symb(Scope *scp)
 			_check_while_used_outer_symb(mc.dst, VR_USAGE_WRITE);
 			break;
 
-		case MC_CMP_TEST:
-			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ);
-			_check_while_used_outer_symb(mc.dst, VR_USAGE_WRITE);
-			break;
-
+		case MC_TEST:
 		case MC_SAVE_RET:
 			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ);
 			break;

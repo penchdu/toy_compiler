@@ -52,7 +52,7 @@ bool has_function_unit(MachineCodeStamp stamp)
 		case MC_CMP_LE:
 		case MC_CMP_G:
 		case MC_CMP_GE:
-		case MC_CMP_TEST:
+		case MC_TEST:
 		return free_alu_unit > 0;
 
 	case MC_IMUL:
@@ -80,7 +80,7 @@ bool get_function_unit(MachineCodeStamp stamp)
 		case MC_CMP_LE:
 		case MC_CMP_G:
 		case MC_CMP_GE:
-		case MC_CMP_TEST:
+		case MC_TEST:
 		case MC_SAVE_RET:
 
 		if (free_alu_unit > 0)
@@ -126,7 +126,7 @@ void free_function_unit(MachineCodeStamp stamp)
 		case MC_CMP_LE:
 		case MC_CMP_G:
 		case MC_CMP_GE:
-		case MC_CMP_TEST:
+		case MC_TEST:
 		case MC_SAVE_RET:
 
 		free_alu_unit++;

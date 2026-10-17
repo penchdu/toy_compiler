@@ -10,48 +10,6 @@
 #include "basic_block.h"
 #include <cmath>
 
-void spill_vr(vector<VrState> &vr_st, vector<PrState> &pr_st, int vr,
-    vector<X64mc> &mcs, const string &tag)
-{
-	int &pr = vr_st[vr].pr;
-	int &u = vr_st[vr].u;
-	bool &dirty = vr_st[vr].dirty;
-
-	Ast *p = declare_record.ast[vr];
-	if (pr > X64PR_MAX)
-	{
-//		LOG("vr=%%%d, pr=%d", vr, vr_state[vr].pr);
-		assert(pr == PR_IMM);
-		return;
-	}
-
-	if(pr == X64PR_MAX || u == VR_USAGE_INVALID || pr_st[pr].vr != vr)
-		ERR("pr=%d, u=%d, pr_st[%d].vr=%d != %d", pr, u, pr, pr_st[pr].vr, vr);
-
-	assert(pr != X64PR_MAX);
-	assert(u != VR_USAGE_INVALID);
-	assert(pr_st[pr].vr == vr);
-
-	// MC_victim
-	X64mc mc(MC_victim, vr);
-	mc.pr1 = (int) pr;
-	mc.ori_sem = string("victim ") + pr_name(pr) + tag;
-	mcs.push_back(mc);
-
-	if (/*p->sem_stamp != SEM_CONST_NUM &&*/dirty
-	    && p->symb->consume_cnt < p->symb->use_cnt)
-	{
-		X64mc mc(MC_ST, vr);
-		mc.pr1 = (int) pr;
-		mc.ori_sem = string("spill ") + pr_name(pr) + tag;
-		mcs.push_back(mc);
-	}
-
-	pr_st[pr].vr = INVALID_VR;
-	pr = X64PR_MAX;
-	u = VR_USAGE_INVALID;
-	dirty = false;
-}
 void spill_all_pr(BasicBlock *bb)
 {
 	for (int pr = R10D; pr < X64PR_MAX; pr++)
@@ -59,7 +17,7 @@ void spill_all_pr(BasicBlock *bb)
 		int vr = pr_state[pr].vr;
 		if (vr != INVALID_VR)
 		{
-			spill_vr(vr_state, pr_state, vr, bb->x64mc_alloc_wave);
+			spill_vr(WAVE, vr_state, pr_state, vr, bb->x64mc_alloc_wave);
 //			ERR();
 		}
 	}
@@ -77,7 +35,7 @@ int get_free_pr_num(const vector<PrState> &prst, int reserved_pr)
 	return free_pr;
 }
 
-int wave_get_pr(BasicBlock *bb, int mc_idx)
+int get_pr_wave(BasicBlock *bb, int mc_idx)
 {
 	X64mc &mc = bb->x64mc_schedu[mc_idx];
 
@@ -114,93 +72,8 @@ int wave_get_pr(BasicBlock *bb, int mc_idx)
 	assert(min_score_vr != INVALID_VR);
 
 	int pr = vr_state[min_score_vr].pr;
-	spill_vr(vr_state, pr_state, min_score_vr, bb->x64mc_alloc_wave);
+	spill_vr(WAVE, vr_state, pr_state, min_score_vr, bb->x64mc_alloc_wave);
 	return pr;
-}
-
-static int get_pr__load_vr(BasicBlock *bb, int vr, int u, int mc_idx,
-	bool immediate_force_alloc = false)
-{
-	Ast *p = declare_record.ast[vr];
-	if (!immediate_force_alloc && p->sem_stamp == SEM_IMMEDIATE)
-	{
-		vr_state[vr].pr = PR_IMM;
-		vr_state[vr].u = VR_USAGE_READ;
-		return PR_IMM;
-	}
-
-	if (immediate_force_alloc && p->sem_stamp == SEM_IMMEDIATE && vr_state[vr].pr == PR_IMM)
-	{
-		vr_state[vr].pr = X64PR_MAX;
-	}
-
-	/*
-	 * todo
-	 * mc_assign %1, %1
-	 * s1 == s2
-	 */
-	assert(u != VR_USAGE_INVALID);
-	bool need_load = 0;
-
-	if (vr_state[vr].pr == X64PR_MAX)
-	{
-		int pr = wave_get_pr(bb, mc_idx);
-		vr_state[vr].pr = pr;
-		vr_state[vr].u = u;
-		vr_state[vr].dirty = u & VR_USAGE_WRITE;
-		pr_state[pr].vr = vr;
-		need_load = (u & VR_USAGE_READ);
-	}
-	// todo, if (!(vr2pr[vr].u & VR_USAGE_WRITE) && (u & VR_USAGE_WRITE) ?
-// 	// else: VR 已经在寄存器中，值有效 —— 永远不需要 MC_LD！
-// 	else if (!(vr2pr[vr].u & VR_USAGE_READ)
-// 	    && (u & VR_USAGE_READ))
-// 	{
-// 		need_load = 1;
-// 	}
-	else
-	{
-		vr_state[vr].u |= u;
-		vr_state[vr].dirty |= (u & VR_USAGE_WRITE);
-	}
-
-	if (need_load)
-	{
-		Ast *p = declare_record.ast[vr];
-		if (p->sem_stamp == SEM_IMMEDIATE)
-		{
-			X64mc mc(MC_LI, vr);
-			mc.pr1 = vr_state[vr].pr;
-			mc.const_num = p->const_value;
-			mc.ori_sem = "li";
-			bb->x64mc_alloc_wave.push_back(mc);
-		}
-		else
-		{
-			X64mc mc(MC_LD, vr);
-			mc.pr1 = vr_state[vr].pr;
-			mc.ori_sem = "ld";
-			bb->x64mc_alloc_wave.push_back(mc);
-		}
-	}
-
-	return vr_state[vr].pr;
-}
-
-static int load_immediate(BasicBlock *bb, int vr, int mc_idx)
-{
-	vector<X64mc> &mcs = bb->x64mc_alloc_wave;
-	int value = declare_record.ast[vr]->const_value;
-
-	X64mc mc;
-	mc = X64mc(MC_LI);
-	mc.s1 = vr;
-	mc.pr1 = get_pr__load_vr(bb, vr, VR_USAGE_READ, mc_idx, true);
-	mc.const_num = value;
-	mc.ori_sem = "li";
-	mcs.push_back(mc);
-
-	return mc.pr1;
 }
 
 void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr)
@@ -232,7 +105,7 @@ void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr)
 			    scp->use_cnt_in_bb[vr], scp->consume_cnt_in_bb[vr],
 			    symb->use_cnt, symb->consume_cnt);
 
-		spill_vr(vr_state, pr_state, vr, mcs, " check_dead_vr");
+		spill_vr(WAVE, vr_state, pr_state, vr, mcs, " check_dead_vr");
 
 //		// last use in global
 //		int pr = vr2pr[vr].pr;
@@ -307,6 +180,15 @@ void check_pr_vr_consistency()
 	}
 }
 
+static int get_pr(BasicBlock *bb, int mc_idx, int vr, int u)
+{
+	return get_pr(WAVE, bb, mc_idx, vr, u);
+}
+static int get_pr_alloc_imm(BasicBlock *bb, int mc_idx, int vr)
+{
+	return get_pr_alloc_imm(WAVE, bb, mc_idx, vr);
+}
+
 void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 {
 	vector<X64mc> &mcs = bb->x64mc_alloc_wave;
@@ -319,8 +201,8 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 		if (mc.dst == mc.s1)
 			break;
 
-		mc.pr_dst = get_pr__load_vr(bb, mc.dst, VR_USAGE_WRITE, i);
-		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
+		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
+		mc.pr1 = get_pr(bb, i, mc.s1, VR_USAGE_READ);
 		mcs.push_back(mc);
 		break;
 
@@ -334,47 +216,31 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 		case MC_CMP_LE:
 		case MC_CMP_G:
 		case MC_CMP_GE:
-		mc.pr_dst = get_pr__load_vr(bb, mc.dst, VR_USAGE_WRITE, i);
-
-		if(declare_record.ast[mc.s1]->sem_stamp == SEM_IMMEDIATE)
-			mc.pr1 = load_immediate(bb, mc.s1, i);
-		else
-			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
-
-		mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
+		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
+		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
+		mc.pr2 = get_pr(bb, i, mc.s2, VR_USAGE_READ);
 		mcs.push_back(mc);
 		break;
 
 	case MC_DIV:
-		mc.pr_dst = get_pr__load_vr(bb, mc.dst, VR_USAGE_WRITE, i);
-
-		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
-
-		if(declare_record.ast[mc.s2]->sem_stamp == SEM_IMMEDIATE)
-			mc.pr2 = load_immediate(bb, mc.s2, i);
-		else
-			mc.pr2 = get_pr__load_vr(bb, mc.s2, VR_USAGE_READ, i);
+		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
+		mc.pr1 = get_pr(bb, i, mc.s1, VR_USAGE_READ);
+		mc.pr2 = get_pr_alloc_imm(bb, i, mc.s2);
 		mcs.push_back(mc);
 		break;
 
-	case MC_CMP_TEST:
-		mc.pr_dst = get_pr__load_vr(bb, mc.dst, VR_USAGE_WRITE, i);
-
-		if(declare_record.ast[mc.s1]->sem_stamp == SEM_IMMEDIATE)
-			mc.pr1 = load_immediate(bb, mc.s1, i);
-		else
-			mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
-
+	case MC_TEST:
+		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
 		mcs.push_back(mc);
 		break;
 
 	case MC_SAVE_RET:
-		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_READ, i);
+		mc.pr1 = get_pr(bb, i, mc.s1, VR_USAGE_READ);
 		mcs.push_back(mc);
 		break;
 
 //	case MC_LI:
-		//		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE, i);
+		//		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE);
 //		mcs.push_back(mc);
 //		vr_state[mc.s1].dirty = 0;
 //		break;

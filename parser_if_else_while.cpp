@@ -46,15 +46,15 @@ static Scope* cond_to_negative()
 	if (p->op >= OP_CMP_E && p->op <= OP_CMP_GE)
 	{
 		p->op = cmp_op_to_negative[p->op];
+		current_scope_pointer->asts.push_back(p);
 	}
 	else
 	{
-		Ast *test = new_ast_node({"==", TK_CMP_TEST});
+		Ast *test = new_ast_node({"fake_token_test", TK_TEST});
 		test->left = p;
-		p = test;
+		current_scope_pointer->asts.push_back(test);
 	}
 
-	current_scope_pointer->asts.push_back(p);
 	exit_current_scope();
 	return cond;
 }
