@@ -10,19 +10,6 @@
 #include "basic_block.h"
 #include <cmath>
 
-void spill_all_pr(BasicBlock *bb)
-{
-	for (int pr = R10D; pr < X64PR_MAX; pr++)
-	{
-		int vr = pr_state[pr].vr;
-		if (vr != INVALID_VR)
-		{
-			spill_vr(WAVE, vr_state, pr_state, vr, bb->x64mc_alloc_wave);
-//			ERR();
-		}
-	}
-}
-
 int get_free_pr_num(const vector<PrState> &prst, int reserved_pr)
 {
 	int free_pr = 0;
@@ -81,10 +68,6 @@ void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr)
 	if (vr < 0)
 		return;
 
-//	int bb_use = scp->use_cnt_in_bb[vr];
-//	if (bb_use < 0)
-//		return;
-
 	Ast *declare_at = declare_record.ast[vr];
 	Symbol *symb = declare_at->symb;
 
@@ -96,7 +79,6 @@ void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr)
 
 	if (vr_state[vr].pr != X64PR_MAX
 	    && symb->consume_cnt >= symb->use_cnt)
-	//	    && symb->cld_consume_cnt >= symb->cld_use_cnt
 	{
 		assert(symb->consume_cnt == symb->use_cnt);
 
@@ -106,22 +88,6 @@ void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr)
 			    symb->use_cnt, symb->consume_cnt);
 
 		spill_vr(WAVE, vr_state, pr_state, vr, mcs, " check_dead_vr");
-
-//		// last use in global
-//		int pr = vr2pr[vr].pr;
-////		LOG("%s clear %s %s", scp->name.c_str(), symb->src.c_str(), get_pr_name(pr));
-//
-//		vr2pr[vr].pr = X64PR_MAX;
-//		vr2pr[vr].u = VR_USAGE_INVALID;
-//
-//		if (pr2vr[pr].vr == INVALID__VR)
-//		{
-//			int vr = pr2vr[pr].vr;
-//			ERR("scp=%s %s=%%%d", scp->name.c_str(),
-//			    vr_declare_manager.declare_at[vr]->tk.src.c_str(), vr);
-//		}
-//		assert(pr2vr[pr].vr != INVALID__VR);
-//		pr2vr[pr].vr = INVALID__VR;
 	}
 }
 
@@ -182,11 +148,11 @@ void check_pr_vr_consistency()
 
 static int get_pr(BasicBlock *bb, int mc_idx, int vr, int u)
 {
-	return get_pr(WAVE, bb, mc_idx, vr, u);
+	return get_pr(WAVE, bb->x64mc_alloc_wave, bb, mc_idx, vr, u);
 }
 static int get_pr_alloc_imm(BasicBlock *bb, int mc_idx, int vr)
 {
-	return get_pr_alloc_imm(WAVE, bb, mc_idx, vr);
+	return get_pr_alloc_imm(WAVE, bb->x64mc_alloc_wave, bb, mc_idx, vr);
 }
 
 void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
@@ -201,8 +167,8 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 		if (mc.dst == mc.s1)
 			break;
 
-		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
 		mc.pr1 = get_pr(bb, i, mc.s1, VR_USAGE_READ);
+		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
 		mcs.push_back(mc);
 		break;
 
@@ -216,16 +182,16 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 		case MC_CMP_LE:
 		case MC_CMP_G:
 		case MC_CMP_GE:
-		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
 		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
 		mc.pr2 = get_pr(bb, i, mc.s2, VR_USAGE_READ);
+		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
 		mcs.push_back(mc);
 		break;
 
 	case MC_DIV:
-		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
 		mc.pr1 = get_pr(bb, i, mc.s1, VR_USAGE_READ);
 		mc.pr2 = get_pr_alloc_imm(bb, i, mc.s2);
+		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
 		mcs.push_back(mc);
 		break;
 

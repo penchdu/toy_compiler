@@ -151,17 +151,16 @@ int get_pr_o0()
 	for (int i = R10D; i < X64PR_MAX; i++)
 	{
 		if (pr_state[i].vr == INVALID_VR)
-		{
 			return i;
-		}
 	}
 
 	ERR("-O0");
 	return X64PR_MAX;
 }
 
-//X64pr (*ptr_get_pr)();
+//int (*func_get_pr)();
 int get_pr(enum AllocMethod method,
+	vector<X64mc> &mcs,
 	BasicBlock *bb, int mc_idx,
 	int vr, int u,
     bool alloc_immediate)
@@ -214,23 +213,21 @@ int get_pr(enum AllocMethod method,
 	{
 		vr_state[vr].dirty |= (u & VR_USAGE_WRITE);
 
-		if (!(vr_state[vr].u & VR_USAGE_READ) && (u & VR_USAGE_READ))
-			need_load = 1;
+//		if (!(vr_state[vr].u & VR_USAGE_READ) && (u & VR_USAGE_READ))
+//		{
+		/*
+		 * it will be not ok in a=a+1,
+		 * but now, a=a+1; -> t=a+1; a=t;
+		 *
+		 */
+//			need_load = 1;
+//		}
 	}
 
 	vr_state[vr].u |= u;
 
 	if (need_load)
 	{
-		vector<X64mc> *mcs = 0;
-
-		if(method == O0)
-			mcs = &bb->x64mc_alloc_o0;
-		else if(method == WAVE)
-			mcs = &bb->x64mc_alloc_wave;
-		else
-			ERR();
-
 		Ast *p = declare_record.ast[vr];
 		if (p->sem_stamp == SEM_IMMEDIATE)
 		{
@@ -238,37 +235,39 @@ int get_pr(enum AllocMethod method,
 			mc.pr1 = vr_state[vr].pr;
 			mc.const_num = p->const_value;
 			mc.ori_sem = "li";
-			mcs->push_back(mc);
+			mcs.push_back(mc);
 		}
 		else
 		{
 			X64mc mc(MC_LD, vr);
 			mc.pr1 = vr_state[vr].pr;
 			mc.ori_sem = "ld";
-			mcs->push_back(mc);
+			mcs.push_back(mc);
 		}
 	}
 
 	return vr_state[vr].pr;
 }
 
-int get_pr_alloc_imm(enum AllocMethod method,
+int get_pr_alloc_imm(
+	enum AllocMethod method,
+	vector<X64mc> &mcs,
 	BasicBlock *bb, int mc_idx, int vr)
 {
 	Ast *p = declare_record.ast[vr];
 	if (p->sem_stamp == SEM_IMMEDIATE)
-		return get_pr(method, bb, mc_idx, vr, VR_USAGE_READ, true);
+		return get_pr(method, mcs, bb, mc_idx, vr, VR_USAGE_READ, true);
 
-	return get_pr(method, bb, mc_idx, vr, VR_USAGE_READ);
+	return get_pr(method, mcs, bb, mc_idx, vr, VR_USAGE_READ);
 }
 
 static int get_pr(BasicBlock *bb, int vr, int u)
 {
-	return get_pr(O0, bb, 0, vr, u);
+	return get_pr(O0, bb->x64mc_alloc_o0, bb, 0, vr, u);
 }
 static int get_pr_alloc_imm(BasicBlock *bb, int vr)
 {
-	return get_pr_alloc_imm(O0, bb, 0, vr);
+	return get_pr_alloc_imm(O0, bb->x64mc_alloc_o0, bb, 0, vr);
 }
 
 static void x64_reg_alloc_o0(Scope *scp)
@@ -288,9 +287,8 @@ static void x64_reg_alloc_o0(Scope *scp)
 		case MC_ASSIGN:
 			//			if (mc.s1 == mc.s2)
 //				break;
-
-			mc.pr_dst = get_pr(bb, mc.dst, VR_USAGE_WRITE);
 			mc.pr1 = get_pr(bb, mc.s1, VR_USAGE_READ);
+			mc.pr_dst = get_pr(bb, mc.dst, VR_USAGE_WRITE);
 			mcs.push_back(mc);
 			spill_vr(mc.dst, mc.s1, mcs);
 			break;
@@ -305,9 +303,9 @@ static void x64_reg_alloc_o0(Scope *scp)
 			case MC_CMP_LE:
 			case MC_CMP_G:
 			case MC_CMP_GE:
-			mc.pr_dst = get_pr(bb, mc.dst, VR_USAGE_WRITE);
 			mc.pr1 = get_pr_alloc_imm(bb, mc.s1);
 			mc.pr2 = get_pr(bb, mc.s2, VR_USAGE_READ);
+			mc.pr_dst = get_pr(bb, mc.dst, VR_USAGE_WRITE);
 
 			mcs.push_back(mc);
 			spill_vr(mc.dst, mcs);
@@ -315,9 +313,9 @@ static void x64_reg_alloc_o0(Scope *scp)
 			break;
 
 		case MC_DIV:
-			mc.pr_dst = get_pr(bb, mc.dst, VR_USAGE_WRITE);
 			mc.pr1 = get_pr(bb, mc.s1, VR_USAGE_READ);
 			mc.pr2 = get_pr_alloc_imm(bb, mc.s2);
+			mc.pr_dst = get_pr(bb, mc.dst, VR_USAGE_WRITE);
 
 			mcs.push_back(mc);
 			spill_vr(mc.dst, mcs);
@@ -369,16 +367,22 @@ int align16(int &n)
 //}
 
 static int _asm_len = 0;
+void print_asm_sem(FILE *fp, X64mc &mc)
+{
+	fprintf(fp, "%*s#%s" , (_asm_len < 48) ? (48 - _asm_len) : 2, "",  mc.ori_sem.c_str());
+
+	if(mc.dst >= 0)
+		fprintf(fp, ", %s %%%d" , vr_name(mc.dst), mc.dst);
+	if(mc.s1 >= 0)
+		fprintf(fp, ", %s %%%d" , vr_name(mc.s1), mc.s1);
+	if(mc.s2 >= 0)
+		fprintf(fp, ", %s %%%d" , vr_name(mc.s2), mc.s2);
+	fprintf(fp, "  cyc %d\n", mc.start_cycle);
+}
+
 #define PRINT_ASM_HEAD(fmt, ...) fprintf(fp, fmt "\n", ##__VA_ARGS__)
 #define PRINT_ASM(fmt, ...) _asm_len = 8 + fprintf(fp, "\t" fmt , ##__VA_ARGS__)
-#define PRINT_ASM_sem	fprintf(fp, "%*s#%s %s %%%d  %s %%%d, %s %%%d,  cyc %d", \
-	        (_asm_len < 48) ? (48 - _asm_len) : 2, "", \
-	        mc.ori_sem.c_str(),	\
-	        mc.dst >= 0 ? vr_name(mc.dst) : "", mc.dst,	\
-			mc.s1 >= 0 ? vr_name(mc.s1) : "", mc.s1,	\
-        	mc.s2 >= 0 ? vr_name(mc.s2) : "", mc.s2, 	\
-			mc.start_cycle);	\
-	        fprintf(fp, "\n");
+#define PRINT_ASM_sem	print_asm_sem(fp, mc);
 
 static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 {

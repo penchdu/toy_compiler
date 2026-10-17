@@ -316,11 +316,12 @@ void x64_reg_alloc();
 int get_pr_o0();
 int get_pr_wave(BasicBlock *bb, int mc_idx);
 int get_pr(enum AllocMethod method,
+	vector<X64mc> &mcs,
 	BasicBlock *bb, int mc_idx,
 	int vr, int u,
     bool alloc_immediate = false);
 
-int get_pr_alloc_imm(enum AllocMethod method, BasicBlock *bb, int mc_idx, int vr);
+int get_pr_alloc_imm(enum AllocMethod method, vector<X64mc> &mcs, BasicBlock *bb, int mc_idx, int vr);
 
 void dump_vr_state(const vector<VrState> &vp, const string &tag);
 void check_pr_vr_consistency();

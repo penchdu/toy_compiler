@@ -227,7 +227,15 @@ static Symbol* new_private_transient_symb(Ast *p)
 	Symbol *symb = new Symbol;
 	symb->type = p->type;
 	symb->vr = p->vr;
-	symb->src = "%" + to_string(p->vr);
+
+	if(p->sem_stamp == SEM_IMMEDIATE)
+	{
+		symb->src = p->tk.src;
+	}
+	else
+	{
+		symb->src = p->tk.src + "%" + to_string(p->vr);
+	}
 	symb->unique_name = symb->src;
 	symb->stamp = SYMB_PRIVATE_transient;
 	symb->depth = p->scope->depth;
