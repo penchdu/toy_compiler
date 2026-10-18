@@ -205,11 +205,6 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 		mcs.push_back(mc);
 		break;
 
-//	case MC_LI:
-		//		mc.pr1 = get_pr__load_vr(bb, mc.s1, VR_USAGE_WRITE);
-//		mcs.push_back(mc);
-//		vr_state[mc.s1].dirty = 0;
-//		break;
 	default:
 		ERR("%d \n", mc_stamp);
 		break;

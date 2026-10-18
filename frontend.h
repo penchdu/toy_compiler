@@ -446,7 +446,7 @@ void dump_ast();
 void parser();
 void sem_analysis();
 void gen_three_address_code();
-void gen_liveness();
+void gen_use_cnt();
 
 
 #endif /* FRONTEND_H_ */

@@ -168,7 +168,7 @@ static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 	}
 }
 
-static void _gen_liveness(Scope *scp)
+static void _gen_use_cnt(Scope *scp)
 {
 	BasicBlock *bb = scp->basic_block;
 	scp->use_cnt_in_bb.resize(vr_size);
@@ -224,7 +224,7 @@ static void _gen_liveness(Scope *scp)
 	}
 
 	for (Scope *p : scp->clds)
-		_gen_liveness(p);
+		_gen_use_cnt(p);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -366,9 +366,9 @@ void dump_while_used_outer_symb(Scope *scp)
 	for (Scope *p : scp->clds)
 		dump_while_used_outer_symb(p);
 }
-void gen_liveness()
+void gen_use_cnt()
 {
-	_gen_liveness(&file_scp);
+	_gen_use_cnt(&file_scp);
 
 	find_while_used_outer_symb(&file_scp);
 

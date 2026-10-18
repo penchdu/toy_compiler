@@ -74,15 +74,11 @@ enum X64PhysicReg {
 
 	PR_IMM,
 };
-//extern const int X64PR_CONST;
 
 enum AllocMethod {
 	O0,
 	WAVE,
 };
-
-const char* pr_name(int pr);
-const char* pr_name_byte(int pr);
 
 struct VrState
 {
@@ -300,18 +296,16 @@ void clear_all_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);
 void mc_schedule();
 
+const char* pr_name(int pr);
+const char* pr_name_byte(int pr);
 const char* pr_name_asm(int pr, int vr);
+
 void spill_vr(
 	enum AllocMethod method,
 	vector<VrState> &vr_to_pr,
 	vector<PrState> &pr_to_vr,
 	int vr, vector<X64mc> &mcs,
 	const string &tag = "");
-
-void spill_all_pr(BasicBlock *bb);
-
-void x64_reg_alloc();
-
 
 int get_pr_o0();
 int get_pr_wave(BasicBlock *bb, int mc_idx);
@@ -322,6 +316,8 @@ int get_pr(enum AllocMethod method,
     bool alloc_immediate = false);
 
 int get_pr_alloc_imm(enum AllocMethod method, vector<X64mc> &mcs, BasicBlock *bb, int mc_idx, int vr);
+
+void x64_reg_alloc();
 
 void dump_vr_state(const vector<VrState> &vp, const string &tag);
 void check_pr_vr_consistency();

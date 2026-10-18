@@ -9,8 +9,6 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-//const int X64PR_CONST = X64PR_MAX + 1;
-
 const char* pr_name(int pr)
 {
 	switch (pr)
@@ -38,7 +36,6 @@ const char* pr_name(int pr)
 	ERR("no byte register");
 	return 0;
 }
-;
 
 const char* pr_name_byte(int pr)
 {
@@ -135,15 +132,21 @@ static void spill_vr(int vr, vector<X64mc> &mcs)
 {
 	spill_vr(O0, vr_state, pr_state, vr, mcs);
 }
-static void spill_vr(int vr1, int vr2, vector<X64mc> &mcs)
+static void spill_vr(const X64mc &mc, vector<X64mc> &mcs)
 {
-	if (vr1 == vr2)
+	if(mc.dst >= 0)
+		spill_vr(mc.dst, mcs);
+
+	if (mc.s1 >= 0 && mc.s1 == mc.s2)
 	{
-		spill_vr(vr1, mcs);
+		spill_vr(mc.s1, mcs);
 		return;
 	}
-	spill_vr(vr1, mcs);
-	spill_vr(vr2, mcs);
+
+	if (mc.s1 >= 0)
+		spill_vr(mc.s1, mcs);
+	if (mc.s2 >= 0)
+		spill_vr(mc.s2, mcs);
 }
 
 int get_pr_o0()
@@ -215,9 +218,11 @@ int get_pr(enum AllocMethod method,
 
 //		if (!(vr_state[vr].u & VR_USAGE_READ) && (u & VR_USAGE_READ))
 //		{
+
 		/*
 		 * it will be not ok in a=a+1,
-		 * but now, a=a+1; -> t=a+1; a=t;
+		 * but now,  a=a+1;  ->  t=a+1;  a=t;
+		 * error will happen when delete t, unless alloc the 2nd a first
 		 *
 		 */
 //			need_load = 1;
@@ -243,6 +248,8 @@ int get_pr(enum AllocMethod method,
 			mc.pr1 = vr_state[vr].pr;
 			mc.ori_sem = "ld";
 			mcs.push_back(mc);
+
+//			vr_state[vr].dirty = 0;
 		}
 	}
 
@@ -290,7 +297,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 			mc.pr1 = get_pr(bb, mc.s1, VR_USAGE_READ);
 			mc.pr_dst = get_pr(bb, mc.dst, VR_USAGE_WRITE);
 			mcs.push_back(mc);
-			spill_vr(mc.dst, mc.s1, mcs);
+			spill_vr(mc, mcs);
 			break;
 
 		case MC_ADD:
@@ -308,8 +315,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 			mc.pr_dst = get_pr(bb, mc.dst, VR_USAGE_WRITE);
 
 			mcs.push_back(mc);
-			spill_vr(mc.dst, mcs);
-			spill_vr(mc.s1, mc.s2, mcs);
+			spill_vr(mc, mcs);
 			break;
 
 		case MC_DIV:
@@ -318,28 +324,22 @@ static void x64_reg_alloc_o0(Scope *scp)
 			mc.pr_dst = get_pr(bb, mc.dst, VR_USAGE_WRITE);
 
 			mcs.push_back(mc);
-			spill_vr(mc.dst, mcs);
-			spill_vr(mc.s1, mc.s2, mcs);
+			spill_vr(mc, mcs);
 			break;
 
 		case MC_TEST:
 			mc.pr1 = get_pr_alloc_imm(bb, mc.s1);
 
 			mcs.push_back(mc);
-			spill_vr(mc.s1, mcs);
+			spill_vr(mc, mcs);
 			break;
 
 		case MC_SAVE_RET:
 			mc.pr1 = get_pr(bb, mc.s1, VR_USAGE_READ);
 			mcs.push_back(mc);
-			spill_vr(mc.s1, mcs);
+			spill_vr(mc, mcs);
 			break;
 
-//		case MC_LI:
-			//			mc.pr1 = get_pr__load_vr(x64mc_alloc, mc.s1, VR_USAGE_WRITE);
-//			x64mc_alloc.push_back(mc);
-//			spill_pr(x64mc_alloc, mc.s1);
-//			break;
 		case MC_victim:
 			default:
 			ERR("%d \n", mc_stamp);
@@ -367,7 +367,7 @@ int align16(int &n)
 //}
 
 static int _asm_len = 0;
-void print_asm_sem(FILE *fp, X64mc &mc)
+static void print_asm_sem(FILE *fp, X64mc &mc)
 {
 	fprintf(fp, "%*s#%s" , (_asm_len < 48) ? (48 - _asm_len) : 2, "",  mc.ori_sem.c_str());
 

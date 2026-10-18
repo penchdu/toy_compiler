@@ -761,8 +761,8 @@ void ra_wave_while(Scope *while_scp)
 	 *
 	 */
 
-	int pre_cond_reserved_pr = get_reserved_pr(while_scp->basic_block);
-	assert(pre_cond_reserved_pr != X64PR_MAX);
+	int pre_cond_swap_pr = get_reserved_pr(while_scp->basic_block);
+	assert(pre_cond_swap_pr != X64PR_MAX);
 
 //	for(int vr : scp->outer_symb_write)
 //	{
@@ -825,7 +825,7 @@ void ra_wave_while(Scope *while_scp)
 	    pre_cond_pr_state,
 	    after_cond_vr_state,
 	    after_cond_pr_state,
-	    pre_cond_reserved_pr);
+	    pre_cond_swap_pr);
 
 	vr_state = after_cond_vr_state;
 	pr_state = after_cond_pr_state;
@@ -839,7 +839,7 @@ void ra_wave_while(Scope *while_scp)
 	recover_pr_state(
 	    pre_cond_vr_state,
 	    pre_cond_pr_state,
-	    pre_cond_reserved_pr,
+	    pre_cond_swap_pr,
 	    after_body_vr_state,
 	    after_body_pr_state,
 	    get_inner_tail_of_scope(body));
@@ -859,7 +859,7 @@ void ra_wave_while(Scope *while_scp)
 		ra_wave__continue_break(cond,
 		    pre_cond_vr_state,
 		    pre_cond_pr_state,
-		    pre_cond_reserved_pr,
+		    pre_cond_swap_pr,
 		    p);
 	}
 
