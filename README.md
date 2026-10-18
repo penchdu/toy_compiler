@@ -100,6 +100,7 @@ Current merge algorithm is too simple. an improve is: consider future VR use aft
 20k+ random case passed.
 
 
+
 ## Project Status
 - [x] Lexer
 - [x] two-stack Parser
@@ -366,7 +367,7 @@ No differences or compile failures found.
 ```c
 
 $make
-$./build/vsc test.cpp	#generate a0.s a1.s
+$./build/vsc test.c	#generate a0.s a1.s
 $gcc a0.s -o a0
 $gcc a1.s -o a1
 $./a0
@@ -375,7 +376,7 @@ $./a1
 ```
 
 
-example `test.cpp`:
+example `test.c`:
 
 ```c
 
@@ -808,8 +809,3 @@ main:
 
 
 ```
-
-
-
-
-
