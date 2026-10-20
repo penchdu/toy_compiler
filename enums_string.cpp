@@ -68,6 +68,7 @@ const char *Operator_string[OP_ALL + 1] = {
 const char *Semantic_string[SEM_INVALID + 1] = {
 	[SEM_OPERATOR] = "SEM_OPERATOR",
 
+	[SEM_FUNC_ARG] = "SEM_FUNC_ARG",
 	[SEM_VAR_DECLARE] = "SEM_VAR_DECLARE",
 	[SEM_VAR] = "SEM_VAR",
 	[SEM_IMMEDIATE] = "SEM_IMMEDIATE",

@@ -350,6 +350,7 @@ public:
 	enum Type return_type = INVALID_TYPE;
 	vector<SymbolFunc*> _func_table;
 	vector<SymbolFunc*> *func_table = &_func_table;
+	vector<int> arg;
 
 	Scope* new_cld()
 	{

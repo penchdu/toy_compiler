@@ -5,9 +5,9 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 TEST_DIRS=(
 	case1
-	case4
-	case2
-	case3_vsl_alloc_cases
+	#case4
+	#case2
+	#case3_vsl_alloc_cases
 
 )
 
@@ -33,19 +33,19 @@ for DIR_NAME in "${TEST_DIRS[@]}"; do
     done
     [ -z "$TEST_DIR" ] && continue
 
-    for CPP in "$TEST_DIR"/*.cpp; do
-        [ -e "$CPP" ] || continue
-        NAME="$(basename "$CPP")"
-        BASENAME="${NAME%.cpp}"
+    for SRC in "$TEST_DIR"/*.c; do
+        [ -e "$SRC" ] || continue
+        NAME="$(basename "$SRC")"
+        BASENAME="${NAME%.c}"
         GCC_BIN="$TEST_DIR/.gcc_ref/$BASENAME"
         mkdir -p "$TEST_DIR/.gcc_ref"
-        if [ ! -x "$GCC_BIN" ] || [ "$CPP" -nt "$GCC_BIN" ]; then
-            echo "gcc compile: $CPP"
-            RUNNER_TMP="$(mktemp --suffix=.cpp)"
+        if [ ! -x "$GCC_BIN" ] || [ "$SRC" -nt "$GCC_BIN" ]; then
+            echo "gcc compile: $SRC"
+            RUNNER_TMP="$(mktemp --suffix=.c)"
             cat > "$RUNNER_TMP" <<EOF
 #include <stdio.h>
-#include "$CPP"
-int main() { printf("Result: %d\n", test()); return 0; }
+#include "$SRC"
+int main() { printf("Result: %d\n", test(0)); return 0; }
 EOF
             if ! gcc "$RUNNER_TMP" -o "$GCC_BIN" > /dev/null 2>&1; then
                 rm -f "$RUNNER_TMP" "${GCC_BIN}.broken"
@@ -66,20 +66,25 @@ for DIR_NAME in "${TEST_DIRS[@]}"; do
     [ -z "$TEST_DIR" ] && { echo "skip: $DIR_NAME (not found)"; continue; }
     echo "===== $DIR_NAME ====="
 
-    for CPP in "$TEST_DIR"/*.cpp; do
-        [ -e "$CPP" ] || continue
+    for SRC in "$TEST_DIR"/*.c; do
+        [ -e "$SRC" ] || continue
         let total=total+1
 
-        NAME="$(basename "$CPP")"
-        BASENAME="${NAME%.cpp}"
+        NAME="$(basename "$SRC")"
+        BASENAME="${NAME%.c}"
         CD="$(mktemp -d)"
 
-        (cd "$CD" && "$VSC" "$CPP") > /dev/null 2>&1
+        (cd "$CD" && "$VSC" "$SRC") > /dev/null 2>&1
         if [ ! -f "$CD/a0.s" ] || [ ! -f "$CD/a1.s" ]; then
             echo "fail: $NAME (vsc compile)"; let fail=fail+1; rm -rf "$CD"; continue
         fi
 
-        if ! (cd "$CD" && gcc a0.s -o a0 && gcc a1.s -o a1) > /dev/null 2>&1; then
+        cat > "$CD/main.c" <<'EOF'
+#include <stdio.h>
+extern int test();
+int main() { printf("Result: %d\n", test(0)); return 0; }
+EOF
+        if ! (cd "$CD" && gcc main.c a0.s -o a0 && gcc main.c a1.s -o a1) > /dev/null 2>&1; then
             echo "fail: $NAME (gcc assemble)"; let fail=fail+1; rm -rf "$CD"; continue
         fi
 

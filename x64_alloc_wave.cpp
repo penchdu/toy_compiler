@@ -216,6 +216,21 @@ void ra_wave_regular_scope(Scope *scp)
 	//	LOG("scp %s", scp->name.c_str());
 	BasicBlock *bb = scp->basic_block;
 
+	if(scp->sem_stamp == SEM_FUNC_DEFINE)
+	{
+		assert(scp->arg.size() == 1);
+		int vr = scp->arg[0];
+
+		assert(vr_state[vr].pr == X64PR_MAX);
+		assert(pr_state[EDI].vr == INVALID_VR);
+
+		vr_state[vr].pr = EDI;
+		vr_state[vr].u = VR_USAGE_WRITE;
+		vr_state[vr].dirty = 1;
+
+		pr_state[EDI].vr = vr;
+	}
+
 	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
 	{
 		const X64mc &mc = bb->x64mc_schedu[i];

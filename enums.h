@@ -95,6 +95,7 @@ enum Operator{
 enum Semantic {
 	SEM_OPERATOR,
 
+	SEM_FUNC_ARG,
 	SEM_VAR_DECLARE,
 	SEM_VAR,
 	SEM_IMMEDIATE,

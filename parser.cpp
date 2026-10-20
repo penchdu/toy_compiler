@@ -117,10 +117,22 @@ static int case_tk_func()
 	string func_name = tk.src;
 
 	// assume just one argument
-	tk = tokens.peek();
+	tk = tokens.get();
 	assert(tk.stamp == TK_PAREN_L);
-	Ast *arg = parse_expr_with_paren();
 
+	tk = tokens.get();
+	assert(tk.stamp == TK_INT);
+	Ast *arg_type = new_ast_node(tk);
+
+	tk = tokens.get();
+	Ast *arg = new_ast_node(tk);
+	arg->sem_stamp = SEM_FUNC_ARG;
+	arg_type->left = arg;
+
+	tk = tokens.get();
+	assert(tk.stamp == TK_PAREN_R);
+
+	////////////////////////
 	tk = tokens.peek();
 	assert(tk.stamp == TK_BRACE_L);
 
@@ -148,7 +160,10 @@ static int case_tk_func()
 	func->return_label->name = ".L_return";
 	func->return_label->parent = func;
 
+	func->asts.push_back(arg_type);
 	func->asts.push_back(arg);
+	arg_type->scope = func;
+	arg->scope = func;
 
 	SymbolFunc *sym = new SymbolFunc;
 	sym->return_type = return_type;

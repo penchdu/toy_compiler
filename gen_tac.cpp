@@ -38,6 +38,7 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 	{
 	// leaf node
 	case SEM_VAR:
+	case SEM_FUNC_ARG:
 		assert(p->symb);
 
 		// todo symb->vr to be defined in "new =" to gen ssa

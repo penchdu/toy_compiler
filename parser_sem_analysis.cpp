@@ -145,6 +145,8 @@ static int case_sem_variable_declare(Ast *ty)
 			ERR("%s is already declared", var->tk.src.c_str());
 	}
 
+	//var->vr =
+
 	Symbol *symb = new Symbol;
 	symb->type = var->type;
 	symb->src = var->tk.src;
@@ -180,6 +182,7 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 		case_sem_variable_declare(p);
 		break;
 
+	case SEM_FUNC_ARG:
 	case SEM_VAR:
 		case_sem_var(p);
 		break;
@@ -243,6 +246,25 @@ static Symbol* new_private_transient_symb(Ast *p)
 	p->scope->symb_table->push_back(symb);
 
 	return symb;
+}
+
+static int case_arg(Ast *p)
+{
+	Scope *func = p->scope;
+	while (func && func->sem_stamp != SEM_FUNC_DEFINE)
+		func = func->parent;
+
+	if (!func)
+		ERR();
+
+	Symbol *symb = p->symb;
+	assert(symb);
+	assert(symb->vr < 0);
+	symb->vr = declare_record.new_vr(p);
+	p->vr = symb->vr;
+
+	func->arg.push_back(p->vr);
+	return symb->vr;
 }
 
 static int case_op(Ast *p)
@@ -320,6 +342,9 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 
 	switch (p->sem_stamp)
 	{
+	case SEM_FUNC_ARG:
+		return case_arg(p);
+
 	// leaf node
 	case SEM_VAR:
 		symb = p->symb;

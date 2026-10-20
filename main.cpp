@@ -15,7 +15,7 @@ int main(int argc, char **argv)
 {
 	const char *file = 0;
 	if (argc == 1)
-		file = "./test/1.cpp";
+		file = "./test/1.c";
 	else
 		file = argv[1];
 
@@ -33,12 +33,18 @@ int main(int argc, char **argv)
 
 	if (argc == 1)
 	{
-		system("gcc a0.s -o a0");
+		system("gcc main_wrapper.c a0.s -o a0 -O0");
+		system("objdump -d -M intel a0 > a0_final.s");
+		system("gcc main_wrapper.c a1.s -o a1 -O0");
+		system("objdump -d -M intel a1 > a1_final.s");
+
 		system("./a0");
-		system("gcc a1.s -o a1");
 		system("./a1");
 
-		print_test();
+		system("gcc -S ./test/1.c -o print_test.s");
+		system("gcc main_wrapper.c print_test.s -o print_test");
+		system("./print_test");
+//		print_test();
 	}
 
 	fclose(fp);

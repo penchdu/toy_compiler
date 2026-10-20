@@ -1,7 +1,10 @@
 
 
-int test()
+int test(int i0)
 {
+	if(i0 < 0)
+		return 0;
+
 	int a = 1;
 	int b = 2;
 	int c = 3;
@@ -9,7 +12,7 @@ int test()
 	int e = 5;
 	int f = 6;
 
-	int i0 = 20000;
+//	int i0 = 20000;
 	int v1 = 1;
 	while ((i0 = i0 - v1) > 0)
 	{

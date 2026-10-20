@@ -36,7 +36,7 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 	else if (p->sem_stamp == SEM_OPERATOR)	// OP_ALL
 		printf("[%s %%%d]\n", Operator_string[p->op], p->vr);
 
-	else if (p->sem_stamp == SEM_VAR)
+	else if (p->sem_stamp == SEM_VAR || p->sem_stamp == SEM_FUNC_ARG)
 	{
 		if (!p->symb)
 			printf("[var %s]\n", p->tk.src.c_str());

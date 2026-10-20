@@ -60,7 +60,7 @@
 
 enum X64PhysicReg {
 //	R8D,
-//	R9D,
+	EDI,
 	R10D,
 	R11D,
 	R12D,
