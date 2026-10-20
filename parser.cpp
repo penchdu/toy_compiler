@@ -15,7 +15,7 @@ int scope_id = 0;
 //int scope_depth = 0;
 bool in_func_define = 0;
 
-
+Ast* parse_expr_with_paren();
 static Ast* parse_expr(TokenStamp end_tk_stamp);
 static void parse_file__gen_ast();
 
@@ -116,12 +116,10 @@ static int case_tk_func()
 	tk = tokens.get();
 	string func_name = tk.src;
 
-	// assume no argument
-	tk = tokens.get();
+	// assume just one argument
+	tk = tokens.peek();
 	assert(tk.stamp == TK_PAREN_L);
-
-	tk = tokens.get();
-	assert(tk.stamp == TK_PAREN_R);
+	Ast *arg = parse_expr_with_paren();
 
 	tk = tokens.peek();
 	assert(tk.stamp == TK_BRACE_L);
@@ -149,6 +147,8 @@ static int case_tk_func()
 	func->return_label->id = -1; //scope_id++;
 	func->return_label->name = ".L_return";
 	func->return_label->parent = func;
+
+	func->asts.push_back(arg);
 
 	SymbolFunc *sym = new SymbolFunc;
 	sym->return_type = return_type;
@@ -239,6 +239,7 @@ Ast* parse_expr_with_paren()
 {
 	Token tk = tokens.get();
 	PARSER_LOG("%s", tk.src.c_str());
+	assert(tk.stamp == TK_PAREN_L);
 
 	tk = tokens.peek();
 	if (tk.stamp == TK_PAREN_R)
