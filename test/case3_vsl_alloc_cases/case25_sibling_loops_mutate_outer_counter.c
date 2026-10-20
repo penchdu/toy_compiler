@@ -1,4 +1,4 @@
-int test() {
+int test(int dummy) {
     int i = 0; int k = 0;
     int a = 1; int b = 2; int c = 4; int d = 8; int sum = 3;
     while ((i = i + 1) <= 3) {

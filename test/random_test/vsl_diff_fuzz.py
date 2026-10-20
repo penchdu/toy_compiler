@@ -48,10 +48,12 @@ class GeneratedCase:
 class ProgramGenerator:
     def __init__(self, seed: int, data_count: int, max_depth: int, budget: int,
                  tokens: dict[str, bool], force_dead_tail: bool,
-                 random_control_placement_probability: float):
+                 random_control_placement_probability: float,
+                 param_count: int):
         self.rng = random.Random(seed)
         self.seed = seed
         self.data_vars = [f"v{i}" for i in range(data_count)]
+        self.param_vars = [f"p{i}" for i in range(param_count)]
         self.counter_vars: list[str] = []
         self.max_depth = max_depth
         self.budget = budget
@@ -369,8 +371,14 @@ class ProgramGenerator:
         return out
 
     def generate(self) -> GeneratedCase:
-        prelude = [f"int {name} = {self.rng.randint(0, 12)};" for name in self.data_vars]
-        lines = ["int test()", "{"]
+        prelude = []
+        for i, name in enumerate(self.data_vars):
+            if i < len(self.param_vars):
+                prelude.append(f"int {name} = {self.param_vars[i]};")
+            else:
+                prelude.append(f"int {name} = {self.rng.randint(0, 12)};")
+        signature = ", ".join(f"int {name}" for name in self.param_vars)
+        lines = [f"int test({signature})", "{"]
 
         # Preserve a guaranteed outer loop only when while is enabled. This
         # makes it possible to test syntax subsets with loops disabled.
@@ -421,7 +429,11 @@ class ProgramGenerator:
         if counters:
             lines.insert(2 + len(counters), "")
         result_vars = self.data_vars + self.counter_vars
-        lines.append("    return " + " + ".join(result_vars) + ";")
+        # Parameters not mapped to a data variable still contribute to the result,
+        # so every requested argument is observable by the differential test.
+        extra_params = self.param_vars[len(self.data_vars):]
+        return_terms = result_vars + extra_params
+        lines.append("    return " + " + ".join(return_terms) + ";")
         lines.append("}")
         return GeneratedCase(
             "\n".join(lines) + "\n",
@@ -559,6 +571,8 @@ def main() -> int:
     parser.add_argument("--timeout", type=float, default=None, help="override timeout per command, seconds")
     parser.add_argument("--vars-min", type=int, default=None, help="override minimum data variables")
     parser.add_argument("--vars-max", type=int, default=None, help="override maximum data variables")
+    parser.add_argument("--params", type=int, default=1,
+                        help="number of int parameters in each generated test(int, ...); default: 1")
     parser.add_argument("--depth", type=int, default=None, help="override maximum randomized nesting depth")
     parser.add_argument("--budget", type=int, default=None, help="override AST statement budget per program")
     mode = parser.add_mutually_exclusive_group()
@@ -605,6 +619,8 @@ def main() -> int:
         parser.error("test.cases / --cases must be >= 1")
     if vars_min < 2 or vars_max < vars_min:
         parser.error("require 2 <= vars_min / --vars-min <= vars_max / --vars-max")
+    if args.params < 1:
+        parser.error("--params must be >= 1")
     if depth < 1 or budget < 1:
         parser.error("max_depth / --depth and statement_budget / --budget must be >= 1")
     if timeout <= 0:
@@ -639,7 +655,7 @@ def main() -> int:
     assembler = str(tool_cfg["assembler"])
     print(f"Config: {config_path}")
     print(f"Random seed: {seed}")
-    print(f"Cases: {cases}; variables: {vars_min}..{vars_max}; max depth: {depth}; budget: {budget}")
+    print(f"Cases: {cases}; int parameters: {args.params}; variables: {vars_min}..{vars_max}; max depth: {depth}; budget: {budget}")
     print("Enabled tokens: " + (", ".join(name for name, enabled in tokens.items() if enabled) or "(none)"))
     print(f"Force statements after break/continue: {force_dead_tail}")
     print(f"Fully random control-placement probability: {random_control_probability:.0%} per program")
@@ -662,7 +678,7 @@ def main() -> int:
         data_count = case_rng.randint(vars_min, vars_max)
         generated = ProgramGenerator(
             case_seed, data_count, depth, budget, tokens, force_dead_tail,
-            random_control_probability,
+            random_control_probability, args.params,
         ).generate()
         total_breaks += generated.break_count
         total_continues += generated.continue_count
@@ -679,6 +695,7 @@ def main() -> int:
             "master_seed": seed,
             "case_seed": case_seed,
             "case_index": index + 1,
+            "int_parameter_count": args.params,
             "cases": cases,
             "vars_min": vars_min,
             "vars_max": vars_max,
@@ -718,12 +735,34 @@ def main() -> int:
         reference_path = temp_path / "reference.cpp"
         (temp_path / "run_settings.json").write_text(json.dumps(run_settings, indent=2) + "\n", encoding="utf-8")
         source_path.write_text(generated.source, encoding="utf-8")
+        parameter_values = [case_rng.randint(-10, 10) for _ in range(args.params)]
+        argv_parse = " ".join(
+            f"int arg{i} = (argc > {i + 1}) ? atoi(argv[{i + 1}]) : 0;"
+            for i in range(args.params)
+        )
+        reference_call_args = ", ".join(f"arg{i}" for i in range(args.params))
         reference_source = (
-            "#include <stdio.h>\n\n"
+            "#include <stdio.h>\n#include <stdlib.h>\n\n"
             + generated.source
-            + '\nint main(void) { printf("Result: %d\\n", test()); return 0; }\n'
+            + f'\nint main(int argc, char **argv) {{ {argv_parse} '
+              f'printf("Result: %d\\n", test({reference_call_args})); return 0; }}\n'
         )
         reference_path.write_text(reference_source, encoding="utf-8")
+        driver_path = temp_path / "main.c"
+        extern_params = ", ".join("int" for _ in range(args.params))
+        driver_args = ", ".join(f"arg{i}" for i in range(args.params))
+        driver_values = " ".join(
+            f"int arg{i} = (argc > {i + 1}) ? atoi(argv[{i + 1}]) : 0;"
+            for i in range(args.params)
+        )
+        driver_source = (
+            "#include <stdio.h>\n#include <stdlib.h>\n\n"
+            f"extern int test({extern_params});\n"
+            f"int main(int argc, char **argv) {{ {driver_values} "
+            f'printf("Result: %d\\n", test({driver_args})); return 0; }}\n'
+        )
+        driver_path.write_text(driver_source, encoding="utf-8")
+        (temp_path / "args.txt").write_text(" ".join(map(str, parameter_values)) + "\n", encoding="utf-8")
         (temp_path / "seed.txt").write_text(
             f"master_seed={seed}\ncase_seed={case_seed}\nindex={index + 1}\n",
             encoding="utf-8",
@@ -739,8 +778,8 @@ def main() -> int:
                 category = "reference_failed"
                 detail = "The generated case did not compile with host g++; likely generator or syntax issue."
             else:
-                ref_run = run_cmd(["./reference"], temp_path, timeout)
-                logs["reference_run.log"] = f"$ ./reference\nexit={ref_run.returncode}\nSTDOUT:\n{ref_run.stdout}\nSTDERR:\n{ref_run.stderr}"
+                ref_run = run_cmd(["./reference", *map(str, parameter_values)], temp_path, timeout)
+                logs["reference_run.log"] = f"$ ./reference {' '.join(map(str, parameter_values))}\nexit={ref_run.returncode}\nSTDOUT:\n{ref_run.stdout}\nSTDERR:\n{ref_run.stderr}"
                 if ref_run.returncode != 0:
                     category = "reference_failed"
                     detail = "Reference executable returned a non-zero status."
@@ -756,14 +795,14 @@ def main() -> int:
                             category = "vsc_failed"
                             detail = "VSC failed or did not produce a1.s. Check vsc_compile.log."
                         else:
-                            asm = run_cmd([assembler, "a1.s", "-o", "vsl_exec"], temp_path, timeout)
-                            logs["assemble.log"] = f"$ {assembler} a1.s -o vsl_exec\nexit={asm.returncode}\nSTDOUT:\n{asm.stdout}\nSTDERR:\n{asm.stderr}"
+                            asm = run_cmd([assembler, "main.c", "a1.s", "-o", "vsl_exec"], temp_path, timeout)
+                            logs["assemble.log"] = f"$ {assembler} main.c a1.s -o vsl_exec\nexit={asm.returncode}\nSTDOUT:\n{asm.stdout}\nSTDERR:\n{asm.stderr}"
                             if asm.returncode != 0:
                                 category = "assemble_failed"
                                 detail = "GCC could not assemble/link VSC-generated a1.s."
                             else:
-                                vsl_run = run_cmd(["./vsl_exec"], temp_path, timeout)
-                                logs["vsl_run.log"] = f"$ ./vsl_exec\nexit={vsl_run.returncode}\nSTDOUT:\n{vsl_run.stdout}\nSTDERR:\n{vsl_run.stderr}"
+                                vsl_run = run_cmd(["./vsl_exec", *map(str, parameter_values)], temp_path, timeout)
+                                logs["vsl_run.log"] = f"$ ./vsl_exec {' '.join(map(str, parameter_values))}\nexit={vsl_run.returncode}\nSTDOUT:\n{vsl_run.stdout}\nSTDERR:\n{vsl_run.stderr}"
                                 actual = result_value(vsl_run.stdout)
                                 # Do not treat every non-zero process status as a test failure:
                                 # the VSC-generated entry point may return a value in EAX, so

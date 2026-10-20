@@ -1,7 +1,7 @@
 //int c = 0;
 //int c2 = 1;
 
-int test()
+int test(int dummy)
 {
 	int a = 1;
 	

@@ -1,4 +1,4 @@
-int test()
+int test(int dummy)
 {
     int a = 0;
 
@@ -9,7 +9,7 @@ int test()
 
             break;
 
-            // 不应该生成 TAC
+            // 不应该生�?TAC
             a = a + 100;
         }
 

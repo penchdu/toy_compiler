@@ -3,7 +3,7 @@
 // evaluated. The allocator should have an opportunity to emit MC_ST for i
 // inside the condition block. That condition-side store should make a second
 // body-tail store for the same VR unnecessary.
-int test()
+int test(int dummy)
 {
     int x0 = 0; int x1 = 0; int x2 = 0; int x3 = 0;
     int x4 = 0; int x5 = 0; int x6 = 0; int x7 = 0;

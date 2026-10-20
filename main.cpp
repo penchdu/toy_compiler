@@ -9,7 +9,6 @@
 #include "x64_back_end.h"
 
 VrDeclareRecord declare_record;
-extern int print_test();
 
 int main(int argc, char **argv)
 {
@@ -33,18 +32,14 @@ int main(int argc, char **argv)
 
 	if (argc == 1)
 	{
-		system("gcc main_wrapper.c a0.s -o a0 -O0");
-		system("objdump -d -M intel a0 > a0_final.s");
-		system("gcc main_wrapper.c a1.s -o a1 -O0");
-		system("objdump -d -M intel a1 > a1_final.s");
-
+		system("gcc  print_test.c  a0.s  -o  a0  -O0");
+		system("gcc  print_test.c  a1.s  -o  a1  -O0");
 		system("./a0");
 		system("./a1");
 
-		system("gcc -S ./test/1.c -o print_test.s");
-		system("gcc main_wrapper.c print_test.s -o print_test");
+		system("gcc  -S  ./test/1.c  -o  print_test.s");
+		system("gcc  print_test.c  print_test.s  -o  print_test");
 		system("./print_test");
-//		print_test();
 	}
 
 	fclose(fp);

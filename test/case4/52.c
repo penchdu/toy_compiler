@@ -1,5 +1,5 @@
 //10
-int test()
+int test(int dummy)
 {
     int a=0;
     int b=0;

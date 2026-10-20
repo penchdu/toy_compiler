@@ -27,8 +27,8 @@ const char* pr_name(int pr)
 		return "r13d";
 	case R14D:
 		return "r14d";
-	case R15D:
-		return "r15d";
+//	case R15D:
+//		return "r15d";
 	case PR_IMM:
 		return "pr_imm";
 	}
@@ -55,8 +55,8 @@ const char* pr_name_byte(int pr)
 		return "r13b";
 	case R14D:
 		return "r14b";
-	case R15D:
-		return "r15b";
+//	case R15D:
+//		return "r15b";
 //	case EBX:
 //		return "bl";
 	}
@@ -404,7 +404,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 //	LOG("scp: %s", scp->name.c_str());
 	if (scp->sem_stamp == SEM_FUNC_DEFINE)
 	{
-		PRINT_ASM_HEAD("\n\n.globl %s", scp->name.c_str());
+		PRINT_ASM_HEAD(".globl %s \n", scp->name.c_str());
 		PRINT_ASM_HEAD("%s:", scp->name.c_str());
 
 		int rsp_off = declare_record.offset;
@@ -412,7 +412,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 		PRINT_ASM("push rbp \n");
 		PRINT_ASM("mov rbp, rsp \n");
-		PRINT_ASM("sub rsp, %d \n\n", rsp_off);
+		PRINT_ASM("sub rsp, %d \n", rsp_off);
 
 	}
 	//////////////////////////////////////////////////
@@ -426,7 +426,9 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 	)
 	    && scp->sem_stamp != SEM_FUNC_DEFINE
 	)
-		PRINT_ASM_HEAD("\n\n%s:", scp->name.c_str());
+	{
+		PRINT_ASM_HEAD("\n%s:", scp->name.c_str());
+	}
 
 	vector<X64mc> *mc_list;
 	if (asm_file == "a0.s")

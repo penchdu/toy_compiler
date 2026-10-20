@@ -2,7 +2,7 @@
 // own BasicBlocks. x is kept clean while both child loops are allocated; it is
 // dirtied only afterward. The outer repair must find all relevant victims in
 // the descendants, not only scan the outer body's own BasicBlock.
-int test()
+int test(int dummy)
 {
     int x = 6;
     int p = 10;

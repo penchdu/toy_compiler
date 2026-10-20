@@ -3,7 +3,7 @@
 // that already-allocated child loop with the new x value. If x had a victim in
 // a descendant BB with no MC_ST, outer new_dirty repair must discover that
 // child-loop victim; scanning only the outer body's own BB cannot do so.
-int test()
+int test(int dummy)
 {
     int x = 5;
     int p = 9;

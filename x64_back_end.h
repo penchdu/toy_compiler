@@ -66,7 +66,7 @@ enum X64PhysicReg {
 	R12D,
 	R13D,
 	R14D,
-	R15D,
+//	R15D,
 
 //	EAX,
 //	EBX,

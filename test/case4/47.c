@@ -1,10 +1,9 @@
-int test()
+int test(int dummy)
 {
 	int a = 1;
 	int b = 0;
 
-	// 不进入
-	while (a < 0)
+	// 不进�?	while (a < 0)
 	{
 		a = a + 100;
 	}

@@ -3,7 +3,7 @@
 // That makes this a direct test of whether outer st_new_dirty can locate victim
 // sites in deep descendant BasicBlocks. The deepest expressions add temporary
 // pressure while the live set of source variables stays relatively small.
-int test()
+int test(int dummy)
 {
     int x = 5;
     int p = 10;

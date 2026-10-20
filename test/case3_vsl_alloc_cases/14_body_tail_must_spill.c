@@ -2,7 +2,7 @@
 // The loop body dirties a, b and c, which remain live after the loop.
 // The condition should not emit MC_ST for these VRs; the body tail must
 // store any such dirty VR that remains resident after recovery.
-int test()
+int test(int dummy)
 {
     int a = 2;
     int b = 3;

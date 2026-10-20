@@ -5,10 +5,9 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 TEST_DIRS=(
 	case1
-	#case4
-	#case2
-	#case3_vsl_alloc_cases
-
+	case4
+	case2
+	case3_vsl_alloc_cases
 )
 
 VSC="$PROJECT_DIR/build/vsc"

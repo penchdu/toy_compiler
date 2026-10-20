@@ -1,4 +1,4 @@
-int test() {
+int test(int dummy) {
     int i = 0;
     int j = 0;
     int x = 1;
