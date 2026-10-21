@@ -13,7 +13,7 @@
 int get_free_pr_num(const vector<PrState> &prst, int reserved_pr)
 {
 	int free_pr = 0;
-	for (int pr = R10D; pr < X64PR_MAX; pr++)
+	for (int pr = 0; pr < X64PR_MAX; pr++)
 	{
 		int vr = prst[pr].vr;
 		if (vr == INVALID_VR && pr != reserved_pr)
@@ -26,7 +26,7 @@ int get_pr_wave(BasicBlock *bb, int mc_idx)
 {
 	X64mc &mc = bb->x64mc_schedu[mc_idx];
 
-	for (int pr = R10D; pr < X64PR_MAX; pr++)
+	for (int pr = 0; pr < X64PR_MAX; pr++)
 	{
 		if (pr_state[pr].vr == INVALID_VR)
 			return pr;
@@ -35,7 +35,7 @@ int get_pr_wave(BasicBlock *bb, int mc_idx)
 	float min_score = 100000;
 	int min_score_vr = INVALID_VR;
 
-	for (int pr = R10D; pr < X64PR_MAX; pr++)
+	for (int pr = 0; pr < X64PR_MAX; pr++)
 	{
 		int vr = pr_state[pr].vr;
 		if (vr == mc.dst
@@ -118,7 +118,7 @@ static void check_bb_use_cnt(Scope *scp, int target_symb_stamp = SYMB_ALL)
 }
 void check_pr_vr_consistency()
 {
-	for (int pr = R10D; pr < X64PR_MAX; pr++)
+	for (int pr = 0; pr < X64PR_MAX; pr++)
 	{
 		int vr = pr_state[pr].vr;
 		if (vr == INVALID_VR)
@@ -216,19 +216,21 @@ void ra_wave_regular_scope(Scope *scp)
 	//	LOG("scp %s", scp->name.c_str());
 	BasicBlock *bb = scp->basic_block;
 
-	if(scp->sem_stamp == SEM_FUNC_DEFINE)
+	if (scp->sem_stamp == SEM_FUNC_DEFINE)
 	{
-		assert(scp->arg.size() == 1);
-		int vr = scp->arg[0];
+		if (scp->arg.size() == 1)
+		{
+			int vr = scp->arg[0];
 
-		assert(vr_state[vr].pr == X64PR_MAX);
-		assert(pr_state[EDI].vr == INVALID_VR);
+			assert(vr_state[vr].pr == X64PR_MAX);
+			assert(pr_state[EDI].vr == INVALID_VR);
 
-		vr_state[vr].pr = EDI;
-		vr_state[vr].u = VR_USAGE_WRITE;
-		vr_state[vr].dirty = 1;
+			vr_state[vr].pr = EDI;
+			vr_state[vr].u = VR_USAGE_WRITE;
+			vr_state[vr].dirty = 1;
 
-		pr_state[EDI].vr = vr;
+			pr_state[EDI].vr = vr;
+		}
 	}
 
 	for (int i = 0; i < bb->x64mc_schedu.size(); i++)

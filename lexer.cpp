@@ -306,6 +306,9 @@ static Token get_a_token_from_file(FILE *fp)
 		else if (word == "return")
 			tk.stamp = TK_RETURN;
 
+		else if (word == "volatile")
+			return get_a_token_from_file(fp);
+
 		else
 			tk.stamp = TK_VAR;
 

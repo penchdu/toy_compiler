@@ -118,7 +118,7 @@ void spill_vr(
 	{
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;
-		mc.ori_sem = string("spill ") + pr_name(pr) + tag;
+		mc.ori_sem = string("memory spill ") + pr_name(pr) + tag;
 		mcs.push_back(mc);
 	}
 
@@ -151,7 +151,7 @@ static void spill_vr(const X64mc &mc, vector<X64mc> &mcs)
 
 int get_pr_o0()
 {
-	for (int i = R10D; i < X64PR_MAX; i++)
+	for (int i = 0; i < X64PR_MAX; i++)
 	{
 		if (pr_state[i].vr == INVALID_VR)
 			return i;
@@ -246,7 +246,7 @@ int get_pr(enum AllocMethod method,
 		{
 			X64mc mc(MC_LD, vr);
 			mc.pr1 = vr_state[vr].pr;
-			mc.ori_sem = "ld";
+			mc.ori_sem = "memory ld";
 			mcs.push_back(mc);
 
 //			vr_state[vr].dirty = 0;
@@ -286,17 +286,19 @@ static void x64_reg_alloc_o0(Scope *scp)
 
 	if (scp->sem_stamp == SEM_FUNC_DEFINE)
 	{
-		assert(scp->arg.size() == 1);
-		int vr = scp->arg[0];
+		if (scp->arg.size() == 1)
+		{
+			int vr = scp->arg[0];
 
-		assert(vr_state[vr].pr == X64PR_MAX);
-		assert(pr_state[EDI].vr == INVALID_VR);
+			assert(vr_state[vr].pr == X64PR_MAX);
+			assert(pr_state[EDI].vr == INVALID_VR);
 
-		vr_state[vr].pr = EDI;
-		vr_state[vr].u = VR_USAGE_WRITE;
-		vr_state[vr].dirty = 1;
+			vr_state[vr].pr = EDI;
+			vr_state[vr].u = VR_USAGE_WRITE;
+			vr_state[vr].dirty = 1;
 
-		pr_state[EDI].vr = vr;
+			pr_state[EDI].vr = vr;
+		}
 	}
 
 	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
@@ -404,6 +406,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 //	LOG("scp: %s", scp->name.c_str());
 	if (scp->sem_stamp == SEM_FUNC_DEFINE)
 	{
+		PRINT_ASM_HEAD(".intel_syntax noprefix");
 		PRINT_ASM_HEAD(".globl %s \n", scp->name.c_str());
 		PRINT_ASM_HEAD("%s:", scp->name.c_str());
 
@@ -412,20 +415,19 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		//	printf("vreg.offset %d, rsp_of %d\n", vreg.offset, rsp_of);
 		PRINT_ASM("push rbp \n");
 		PRINT_ASM("mov rbp, rsp \n");
-		PRINT_ASM("sub rsp, %d \n", rsp_off);
+		PRINT_ASM("sub rsp, %d \n\n", rsp_off);
 
 	}
 	//////////////////////////////////////////////////
 
-
 	BasicBlock *bb = scp->basic_block;
 	if ((
-	bb->is_entry_label
-	    || bb->x64mc_alloc_o0.size()
-	    || bb->x64mc_alloc_wave.size()
-	)
+	    bb->is_entry_label
+	        || bb->x64mc_alloc_o0.size()
+	        || bb->x64mc_alloc_wave.size()
+	    )
 	    && scp->sem_stamp != SEM_FUNC_DEFINE
-	)
+	        )
 	{
 		PRINT_ASM_HEAD("\n%s:", scp->name.c_str());
 	}
@@ -522,7 +524,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			break;
 
 		case MC_SAVE_RET:
-//			PRINT_ASM("#---------------- print ret ----------------# \n");
+			//			PRINT_ASM("#---------------- print ret ----------------# \n");
 //			PRINT_ASM("mov esi, %s \n", pr_name_asm(mc.pr1, mc.s1));
 //			PRINT_ASM("lea rdi, [rip + fmt] \n");
 //			PRINT_ASM("mov eax, 0 \n");
@@ -547,7 +549,6 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 	for (Scope *p : scp->clds)
 		dump_bb_asm(fp, p, asm_file);
 
-
 	//////////////////////////////////////////////////
 
 	if (scp->sem_stamp == SEM_FUNC_DEFINE)
@@ -556,6 +557,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		PRINT_ASM("mov rsp, rbp \n");
 		PRINT_ASM("pop rbp \n");
 		PRINT_ASM("ret \n\n");
+		PRINT_ASM_HEAD(".section .note.GNU-stack,\"\",@progbits");
 	}
 }
 static void dump_asm(const string &asm_file)
@@ -565,7 +567,7 @@ static void dump_asm(const string &asm_file)
 	// string s = "#========== " + asm_file + " ==========#";
 
 	// PRINT_ASM_HEAD("%s", s.c_str());
-PRINT_ASM_HEAD(".intel_syntax noprefix");
+//PRINT_ASM_HEAD(".intel_syntax noprefix");
 //	PRINT_ASM_HEAD(".extern printf");
 //
 //	PRINT_ASM_HEAD(".section .rodata");
@@ -573,21 +575,8 @@ PRINT_ASM_HEAD(".intel_syntax noprefix");
 //	PRINT_ASM(".string \"Result: %%d\\n\" \n");
 //
 //	PRINT_ASM_HEAD(".section .text");
-//	PRINT_ASM_HEAD(".global main");
-//
-//	PRINT_ASM_HEAD("\nmain:");
-//	PRINT_ASM("push rbp \n");
-//	PRINT_ASM("mov rbp, rsp \n");
-//	PRINT_ASM("sub rsp, %d \n\n", rsp_off);
 
 	dump_bb_asm(fp, &file_scp, asm_file);
-
-//	PRINT_ASM_HEAD("\n\n.L_return:");
-//	PRINT_ASM("mov rsp, rbp \n");
-//	PRINT_ASM("pop rbp \n");
-//	PRINT_ASM("ret \n\n");
-PRINT_ASM_HEAD(".section .note.GNU-stack,\"\",@progbits");
-
 	fclose(fp);
 }
 #undef PRINT_ASM_HEAD

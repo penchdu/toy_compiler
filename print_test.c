@@ -4,7 +4,7 @@ extern int test(int);
 
 int main()
 {
-	int r = test(2000);
+	int r = test(1);
 	printf("Result: %d\n", r);
 	return r;
 }

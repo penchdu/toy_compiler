@@ -11,14 +11,14 @@
 
 int get_reserved_pr(BasicBlock *bb)
 {
-	for (int i = R10D; i < X64PR_MAX; i++)
+	for (int i = 0; i < X64PR_MAX; i++)
 	{
 		if (pr_state[i].vr == INVALID_VR)
 			return i;
 	}
 
 	int swap_pr = X64PR_MAX;
-	for (int pr = R10D; pr < X64PR_MAX; pr++)
+	for (int pr = 0; pr < X64PR_MAX; pr++)
 	{
 		int vr = pr_state[pr].vr;
 		if (vr_state[vr].u == VR_USAGE_READ)
@@ -184,7 +184,7 @@ void recover_pr_state(
 	if (now_pr_state[swap_pr].vr != INVALID_VR)
 	{
 		int free_pr = X64PR_MAX;
-		for (int i = R10D; i < X64PR_MAX; i++)
+		for (int i = 0; i < X64PR_MAX; i++)
 		{
 			if (now_pr_state[i].vr == INVALID_VR)
 			{
@@ -279,7 +279,7 @@ void recover_pr_state(
 			{
 				// must have another free pr
 				int free_pr = X64PR_MAX;
-				for (int pr = R10D; pr < X64PR_MAX; pr++)
+				for (int pr = 0; pr < X64PR_MAX; pr++)
 				{
 					if (now_pr_state[pr].vr == INVALID_VR && pr != swap_pr)
 					{
@@ -305,7 +305,7 @@ void recover_pr_state(
 			//  (now_A_vr == INVALID__VR)
 			mc = X64mc(MC_LD, vr);
 			mc.pr1 = A;
-			mc.ori_sem = "while 4, ld ";
+			mc.ori_sem = "memory, while 4, ld ";
 			mcs.push_back(mc);
 
 			// don't care if before dirty == 1
@@ -401,7 +401,7 @@ void st_additional_dirty_in_cond(Scope *cond, vector<bool> &additional_dirty, in
 		{
 			X64mc mc(MC_ST, vr);
 			mc.pr1 = mcs[i].pr1;
-			mc.ori_sem = "while dirty st";
+			mc.ori_sem = "memory, while dirty st";
 			mcs.insert(mcs.begin() + i + 1, mc);
 			fix++;
 		}
@@ -447,7 +447,7 @@ void st_additional_dirty_in_tail(Scope *scp,
 
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = state[vr].pr;
-		mc.ori_sem = "while spill st dirty ";
+		mc.ori_sem = "memory, while spill st dirty ";
 		mcs.push_back(mc);
 	}
 }

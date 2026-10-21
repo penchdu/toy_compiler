@@ -640,7 +640,7 @@ void ra_wave_if(Scope *if_scp)
 	}
 
 	int swap_pr = X64PR_MAX;
-	for (int pr = R10D; pr < X64PR_MAX; pr++)
+	for (int pr = X64PR_min; pr < X64PR_MAX; pr++)
 	{
 		if (after_then_pr_state[pr].vr == INVALID_VR)
 		{
@@ -703,4 +703,3 @@ void ra_wave_if(Scope *if_scp)
  *
  *
  */
-
