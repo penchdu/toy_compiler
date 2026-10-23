@@ -4,6 +4,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 TEST_DIRS=(
+	../vsc_test/time_compare/case
 	case1
 	case4
 	case2

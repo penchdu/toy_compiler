@@ -9,6 +9,7 @@
 #define X64_BACK_END_H_
 
 #include "enums.h"
+#include "frontend.h"
 
 /*
  *
@@ -72,11 +73,6 @@ enum X64PhysicReg {
 	X64PR_MAX,
 
 	PR_IMM,
-};
-
-enum AllocMethod {
-	O0,
-	WAVE,
 };
 
 struct VrState
@@ -226,17 +222,19 @@ struct X64mc {
 
 struct BasicBlock {
 	bool is_entry_label = 0;
+	vector<Tac> tac;
 	vector<X64mc> x64mc;
+	vector<X64mc> x64mc_alloc_O0;
+
+	vector<Tac> tac_O1;
+	vector<X64mc> x64mc_O1;
 	vector<X64mc> x64mc_schedu;
+	vector<X64mc> x64mc_alloc_wave;
 	vector<int> vr_unique;
 
 //	Scope *exit_jmp = 0;
 //	Scope *jmp_to = 0;
 	MachineCodeStamp jmp_mc_stamp = MC_INVALID;
-
-	//
-	vector<X64mc> x64mc_alloc_o0;
-	vector<X64mc> x64mc_alloc_wave;
 //	float max_wave_value = 0;
 };
 
@@ -277,7 +275,7 @@ const char* pr_name_byte(int pr);
 const char* pr_name_asm(int pr, int vr);
 
 void spill_vr(
-    enum AllocMethod method,
+    enum Optimize_level method,
     vector<VrState> &vr_to_pr,
     vector<PrState> &pr_to_vr,
     int vr, vector<X64mc> &mcs,
@@ -285,13 +283,13 @@ void spill_vr(
 
 int get_pr_o0();
 int get_pr_wave(BasicBlock *bb, int mc_idx);
-int get_pr(enum AllocMethod method,
+int get_pr(enum Optimize_level method,
     vector<X64mc> &mcs,
     BasicBlock *bb, int mc_idx,
     int vr, int u,
     bool alloc_immediate = false);
 
-int get_pr_alloc_imm(enum AllocMethod method, vector<X64mc> &mcs, BasicBlock *bb, int mc_idx, int vr);
+int get_pr_alloc_imm(enum Optimize_level method, vector<X64mc> &mcs, BasicBlock *bb, int mc_idx, int vr);
 
 void x64_reg_alloc();
 

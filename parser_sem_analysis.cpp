@@ -208,7 +208,9 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 }
 static void sem_analysis_named_var(Scope *scp)
 {
-//	LOG("%s", scp->name.c_str());
+	assert(scp->bb == 0);
+	scp->bb = new BasicBlock;
+
 	for (Ast *p : scp->asts)
 		trace_ast_up_down__named_variable_declare(p);
 
@@ -407,4 +409,3 @@ void sem_analysis()
 	sem_analysis_gen_vr(&file_scp);
 //	dump_ast();
 }
-

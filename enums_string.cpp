@@ -104,9 +104,8 @@ const char *Type_string[INVALID_TYPE + 1] = {
 	[INVALID_TYPE] = "INVALID_TYPE",
 };
 
-const char *SemanticNodeType_string[Semantic_node_func + 1] = {
-	[Semantic_node_ast] = "Semantic_node_ast",
-	[Semantic_node_scope] = "Semantic_node_scope",
-	[Semantic_node_func] = "Semantic_node_func",
+const char *Optimize_level_string[O1 + 1] = {
+	[O0] = "O0",
+	[O1] = "O1",
 };
 

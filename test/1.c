@@ -1,38 +1,12 @@
-int test(int x)
+int test(int dummy)
 {
-	int i = 5;
-	int a = 0;
-	int b = 1;
-	int c = 2;
+	int a = 3;
 
-	while ((i = i - 1) > 0)
+	int r = 3;
+	while ((r = r - 1) > 0)
 	{
-		a = a + i;
-
-		if (i == 3)
-		{
-			b = b + a;
-			continue;
-			a = 100;
-		}
-		else
-		{
-			c = c + i;
-		}
-
-		if (i == 2)
-		{
-			b = b + 10;
-			break;
-			c = 200;
-		}
-		else
-		{
-			a = a + c;
-		}
-
-		c = c + 1;
+		a = a + 6 + a;
 	}
 
-	return a + b + c + i;
+	return a;
 }

@@ -159,11 +159,9 @@ enum Type
 	INVALID_TYPE,
 };
 
-enum SemanticNodeType
-{
-	Semantic_node_ast,
-	Semantic_node_scope,
-	Semantic_node_func,
+enum Optimize_level {
+	O0,
+	O1,
 };
 
 //struct Virtual_reg2{

@@ -1,8 +1,3 @@
-// No if/else. Three nested while levels are allocated while x is still clean.
-// The outer body dirties x only after all descendant loops have been allocated.
-// That makes this a direct test of whether outer st_new_dirty can locate victim
-// sites in deep descendant BasicBlocks. The deepest expressions add temporary
-// pressure while the live set of source variables stays relatively small.
 int test(int dummy)
 {
     int x = 5;
@@ -25,7 +20,6 @@ int test(int dummy)
             }
         }
 
-        // Critical placement: dirty x after the whole nested-loop subtree.
         x = x - 1;
         p = p - 1;
     }

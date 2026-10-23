@@ -371,8 +371,8 @@ static void mc_schdu(Scope *scp)
 	 */
 
 //	LOG("scp %s", scp->name.c_str());
-	BasicBlock *bb = scp->basic_block;
-	vector<X64mc> &x64mc = bb->x64mc;
+	BasicBlock *bb = scp->bb;
+	vector<X64mc> &x64mc = bb->x64mc_O1;
 	vector<X64mc> &x64mc_schedu = bb->x64mc_schedu;
 
 	scp->consume_cnt_in_bb.clear();
@@ -385,8 +385,8 @@ static void mc_schdu(Scope *scp)
 	{
 		if (bb->is_entry_label)
 			LOG("bb %s == 0", scp->name.c_str());
-		if (x64mc.size() || scp->tac.size())
-			ERR("%lu, %lu", x64mc.size(), scp->tac.size());
+		if (x64mc.size() || scp->bb->tac_O1.size())
+			ERR("%lu, %lu", x64mc.size(), scp->bb->tac_O1.size());
 	}
 
 	while (!running.empty() || !ready.empty())
@@ -470,13 +470,13 @@ static void mc_schdu(Scope *scp)
 static void _mc_schedule(Scope *scp)
 {
 	select_pulled = 0;
-	BasicBlock *bb = scp->basic_block;
+	BasicBlock *bb = scp->bb;
 
-	if (bb->x64mc.size())
+	if (bb->x64mc_O1.size())
 	{
-		gen_use_def_chain(bb->x64mc);
-//		dump_chain(bb->x64mc);
-		gen_schdu_chain_latency(bb->x64mc);
+		gen_use_def_chain(bb->x64mc_O1);
+//		dump_chain(bb->x64mc_O1);
+		gen_schdu_chain_latency(bb->x64mc_O1);
 
 		mc_schdu(scp);
 	}

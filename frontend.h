@@ -342,8 +342,7 @@ public:
 	vector<VrState> *scp_vr_state = 0;
 	vector<PrState> *scp_pr_state = 0;
 
-	vector<Tac> tac;
-	BasicBlock *basic_block = 0;
+	BasicBlock *bb = 0;
 
 	// for function
 	Scope *return_label = 0;
@@ -405,6 +404,7 @@ struct VrDeclareRecord
 extern VrDeclareRecord declare_record;
 #define vr_name(vr) declare_record.ast[vr]->symb->unique_name.c_str()
 #define vr_off(vr) declare_record.get_vr_off(vr)
+#define vr_symb(vr) declare_record.ast[vr]->symb
 #define vr_size declare_record.size()
 
 #if 0

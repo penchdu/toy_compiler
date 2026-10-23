@@ -7,7 +7,6 @@
 
 #include "frontend.h"
 #include "x64_back_end.h"
-#include "basic_block.h"
 
 const McInfo mc_info[MC_INVALID + 1] = {
     [MC_LI] = {1, "mov"},
@@ -157,11 +156,26 @@ static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 		ERR();
 	}
 }
-static void gen_mc(Scope *scp)
+static void gen_mc(Scope *scp, Optimize_level level)
 {
+	assert(scp->bb != 0);
+
+	BasicBlock *bb = scp->bb;
+
+	vector<Tac> *tac = 0;
+	vector<X64mc> *mcs = 0;
+	if(level == O0)
+	{
+		tac = &bb->tac;
+		mcs = &bb->x64mc;
+	}
+	else if(level == O1)
+	{
+		tac = &bb->tac_O1;
+		mcs = &bb->x64mc_O1;
+	}
+
 	X64mc mc;
-	scp->basic_block = new BasicBlock;
-	BasicBlock *bb = scp->basic_block;
 
 	if (scp->sem_stamp == SEM_FUNC_DEFINE
 	    || scp->sem_stamp == SEM_IF_cond
@@ -171,19 +185,19 @@ static void gen_mc(Scope *scp)
 	    || scp->sem_stamp == SEM_WHILE_BODY
 	    || scp->sem_stamp == SEM_CONTINUE
 	    || scp->sem_stamp == SEM_BREAK
-	    || (scp->sem_stamp == SEM_UNNAMED_SCOPE && scp->tac.size())
+	    || (scp->sem_stamp == SEM_UNNAMED_SCOPE && tac->size())
 	    || scp->jmp_in.size() > 0
 	    || scp->asts.size() > 0)
 	{
 		bb->is_entry_label = true;
 	}
 
-	for (Tac &code : scp->tac)
+	for (Tac &code : *tac)
 	{
 		Semantic sem = code.ast->sem_stamp;
 		if (sem == SEM_OPERATOR)
 		{
-			gen_op_mc(bb->x64mc, code);
+			gen_op_mc(*mcs, code);
 			continue;
 		}
 
@@ -192,7 +206,7 @@ static void gen_mc(Scope *scp)
 		case SEM_SAVE_RET_VALUE:
 			mc = X64mc(MC_SAVE_RET, code.s1);
 			mc.ori_sem = "save_ret";
-			bb->x64mc.push_back(mc);
+			mcs->push_back(mc);
 			break;
 
 			// todo
@@ -238,13 +252,13 @@ static void gen_mc(Scope *scp)
 		}
 	}
 
-	if (scp->tac.size() != bb->x64mc.size())
+	if (tac->size() != mcs->size())
 	{
-		LOG("%lu %lu", scp->tac.size(), bb->x64mc.size());
+		LOG("%lu %lu", tac->size(), mcs->size());
 	}
 
 	for (Scope *p : scp->clds)
-		gen_mc(p);
+		gen_mc(p, level);
 }
 
 static int _asm_len = 0;
@@ -270,7 +284,7 @@ static int _asm_len = 0;
 
 void dump_mc(Scope *scp, string mc_list_name)
 {
-	BasicBlock *bb = scp->basic_block;
+	BasicBlock *bb = scp->bb;
 
 	if (bb->is_entry_label != 0)
 		PRINT_ASM_HEAD("\n%s:", scp->name.c_str());
@@ -377,7 +391,8 @@ void dump_mc(Scope *scp, string mc_list_name)
 
 void gen_machine_code()
 {
-	gen_mc(&file_scp);
+	gen_mc(&file_scp, O0);
+	gen_mc(&file_scp, O1);
 
 	PRINT_ASM_HEAD("========== mc ==========");
 	dump_mc(&file_scp, "x64mc");

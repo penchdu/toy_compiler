@@ -30,7 +30,7 @@ int get_swap_pr(BasicBlock *bb)
 	if (swap_pr == X64PR_MAX)
 		swap_pr = X64PR_MAX - 1;
 
-	spill_vr(WAVE, vr_state, pr_state, pr_state[swap_pr].vr, bb->x64mc_alloc_wave);
+	spill_vr(O1, vr_state, pr_state, pr_state[swap_pr].vr, bb->x64mc_alloc_wave);
 	pr_state[swap_pr].vr = INVALID_VR;
 	return swap_pr;
 }
@@ -129,7 +129,7 @@ void while__end_work(Scope *scp)
 	}
 
 	Scope *tail = scp->clds[2];
-	auto &mcs = tail->basic_block->x64mc_alloc_wave;
+	auto &mcs = tail->bb->x64mc_alloc_wave;
 
 	for (int vr = 0; vr < scp->outer_symb_read.size(); vr++)
 	{
@@ -164,7 +164,7 @@ void recover_pr_state(
     vector<PrState> &now_pr_state,
     Scope *tail_scope_to_gen_mc)
 {
-	vector<X64mc> &mcs = tail_scope_to_gen_mc->basic_block->x64mc_alloc_wave;
+	vector<X64mc> &mcs = tail_scope_to_gen_mc->bb->x64mc_alloc_wave;
 	X64mc mc;
 
 	int spilled = 0;
@@ -174,7 +174,7 @@ void recover_pr_state(
 		{
 //			LOG("scp %s, recover spill %s=%%%d-%s", scp->name.c_str(),
 //			    vr_name(vr), vr, get_pr_name(pr));
-			spill_vr(WAVE, now_vr_state, now_pr_state, vr, mcs, " while recover");
+			spill_vr(O1, now_vr_state, now_pr_state, vr, mcs, " while recover");
 			spilled++;
 		}
 	}
@@ -355,7 +355,7 @@ void st_additional_dirty_in_cond(Scope *cond, vector<bool> &additional_dirty, in
 {
 	int meet = 0;
 	int fix = 0;
-	auto &mcs = cond->basic_block->x64mc_alloc_wave;
+	auto &mcs = cond->bb->x64mc_alloc_wave;
 
 	for (int i = 0; i < mcs.size(); i++)
 	{
@@ -443,7 +443,7 @@ void st_additional_dirty_in_tail(Scope *scp,
 		if (!addtional_dirty[vr])
 			continue;
 
-		auto &mcs = scp->basic_block->x64mc_alloc_wave;
+		auto &mcs = scp->bb->x64mc_alloc_wave;
 
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = state[vr].pr;
@@ -462,7 +462,7 @@ void st_additional_dirty(Scope *cond,
 
 	if (dirty_cnt && cond)
 	{
-		auto &mcs = cond->basic_block->x64mc_alloc_wave;
+		auto &mcs = cond->bb->x64mc_alloc_wave;
 		st_additional_dirty_in_cond(cond, additional_dirty, dirty_cnt);
 	}
 
@@ -513,8 +513,8 @@ void move_victim_to_pre_cond(
     vector<int> &vr_referenced,
     vector<int> &vr_victim)
 {
-	auto &mcs_while = while_scp->basic_block->x64mc_alloc_wave;
-	auto &mcs = cond_or_body->basic_block->x64mc_alloc_wave;
+	auto &mcs_while = while_scp->bb->x64mc_alloc_wave;
+	auto &mcs = cond_or_body->bb->x64mc_alloc_wave;
 
 	for (int i = 0; i < mcs.size(); i++)
 	{
@@ -525,7 +525,7 @@ void move_victim_to_pre_cond(
 			int vr = mc.s1;
 			assert(mc.pr1 == pre_cond_vr_state[vr].pr);
 
-			spill_vr(WAVE,
+			spill_vr(O1,
 				pre_cond_vr_state,
 			    pre_cond_pr_state,
 			    vr, mcs_while,
@@ -621,8 +621,8 @@ void move_ld_to_pre_cond(
     vector<int> &vr_ld,
     int reserved_pr)
 {
-	auto &mcs_while = while_scp->basic_block->x64mc_alloc_wave;
-	auto &mcs = cond_or_body->basic_block->x64mc_alloc_wave;
+	auto &mcs_while = while_scp->bb->x64mc_alloc_wave;
+	auto &mcs = cond_or_body->bb->x64mc_alloc_wave;
 
 	for (int i = 0; i < mcs.size(); i++)
 	{
@@ -763,7 +763,7 @@ void ra_wave_while(Scope *while_scp)
 	 *
 	 */
 
-	int pre_cond_swap_pr = get_swap_pr(while_scp->basic_block);
+	int pre_cond_swap_pr = get_swap_pr(while_scp->bb);
 	assert(pre_cond_swap_pr != X64PR_MAX);
 
 //	for(int vr : scp->outer_symb_write)
@@ -799,7 +799,7 @@ void ra_wave_while(Scope *while_scp)
 
 	ra_wave_scope(cond);
 
-	int after_cond_swap_pr = get_swap_pr(cond->basic_block);	// while_scp->basic_block ?
+	int after_cond_swap_pr = get_swap_pr(cond->bb);	// while_scp->basic_block ?
 	assert(after_cond_swap_pr != X64PR_MAX);
 
 	vector<VrState> after_cond_vr_state = vr_state;

@@ -83,7 +83,7 @@ const char* pr_name_asm(int pr, int vr)
 }
 
 void spill_vr(
-    enum AllocMethod method,
+    enum Optimize_level method,
     vector<VrState> &vr_st,
     vector<PrState> &pr_st,
     int vr, vector<X64mc> &mcs,
@@ -116,7 +116,7 @@ void spill_vr(
 
 	if (method == O0 ||
 	    (/*p->sem_stamp != SEM_CONST_NUM &&*/
-	    method == WAVE && dirty
+	    method == O1 && dirty
 	        && p->symb->consume_cnt < p->symb->use_cnt))
 	{
 		X64mc mc(MC_ST, vr);
@@ -165,7 +165,7 @@ int get_pr_o0()
 }
 
 //int (*func_get_pr)();
-int get_pr(enum AllocMethod method,
+int get_pr(enum Optimize_level method,
     vector<X64mc> &mcs,
     BasicBlock *bb, int mc_idx,
     int vr, int u,
@@ -203,7 +203,7 @@ int get_pr(enum AllocMethod method,
 
 		if (method == O0)
 			pr = get_pr_o0();
-		else if (method == WAVE)
+		else if (method == O1)
 			pr = get_pr_wave(bb, mc_idx);
 		else
 			ERR();
@@ -260,7 +260,7 @@ int get_pr(enum AllocMethod method,
 }
 
 int get_pr_alloc_imm(
-    enum AllocMethod method,
+    enum Optimize_level method,
     vector<X64mc> &mcs,
     BasicBlock *bb, int mc_idx, int vr)
 {
@@ -273,19 +273,19 @@ int get_pr_alloc_imm(
 
 static int get_pr(BasicBlock *bb, int vr, int u)
 {
-	return get_pr(O0, bb->x64mc_alloc_o0, bb, 0, vr, u);
+	return get_pr(O0, bb->x64mc_alloc_O0, bb, 0, vr, u);
 }
 static int get_pr_alloc_imm(BasicBlock *bb, int vr)
 {
-	return get_pr_alloc_imm(O0, bb->x64mc_alloc_o0, bb, 0, vr);
+	return get_pr_alloc_imm(O0, bb->x64mc_alloc_O0, bb, 0, vr);
 }
 
 static void x64_reg_alloc_o0(Scope *scp)
 {
 	X64mc inst;
 
-	BasicBlock *bb = scp->basic_block;
-	vector<X64mc> &mcs = bb->x64mc_alloc_o0;
+	BasicBlock *bb = scp->bb;
+	vector<X64mc> &mcs = bb->x64mc_alloc_O0;
 
 	if (scp->sem_stamp == SEM_FUNC_DEFINE)
 	{
@@ -304,9 +304,9 @@ static void x64_reg_alloc_o0(Scope *scp)
 		}
 	}
 
-	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
+	for (int i = 0; i < bb->x64mc.size(); i++)
 	{
-		X64mc mc = bb->x64mc_schedu[i];
+		X64mc mc = bb->x64mc[i];
 		MachineCodeStamp mc_stamp = mc.stamp;
 
 		switch (mc_stamp)
@@ -338,7 +338,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 			spill_vr(mc, mcs);
 			break;
 
-		case MC_DIV:
+	case MC_DIV:
 			mc.pr1 = get_pr(bb, mc.s1, VR_USAGE_READ);
 			mc.pr2 = get_pr_alloc_imm(bb, mc.s2);
 			mc.pr_dst = get_pr(bb, mc.dst, VR_USAGE_WRITE);
@@ -423,10 +423,10 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 	}
 	//////////////////////////////////////////////////
 
-	BasicBlock *bb = scp->basic_block;
+	BasicBlock *bb = scp->bb;
 	if ((
 	    bb->is_entry_label
-	        || bb->x64mc_alloc_o0.size()
+	        || bb->x64mc_alloc_O0.size()
 	        || bb->x64mc_alloc_wave.size()
 	    )
 	    && scp->sem_stamp != SEM_FUNC_DEFINE
@@ -437,7 +437,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 
 	vector<X64mc> *mc_list;
 	if (asm_file == "a0.s")
-		mc_list = &bb->x64mc_alloc_o0;
+		mc_list = &bb->x64mc_alloc_O0;
 	else if (asm_file == "a1.s")
 		mc_list = &bb->x64mc_alloc_wave;
 	else
