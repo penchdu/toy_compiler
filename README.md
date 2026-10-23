@@ -111,7 +111,7 @@ Current merge algorithm is too simple. an improve is: consider future VR use aft
 - [x] Symbol table
 - [ ] Liveness analysis
 - [ ] SSA
-- [ ] basic optimize
+- [x] basic optimize
 - [x] basic Semantic analysis
 - [x] Three-address IR
 - [x] x64 Inst-select
