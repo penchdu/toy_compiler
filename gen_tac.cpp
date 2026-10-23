@@ -6,24 +6,8 @@
  */
 
 #include "frontend.h"
-//#include "basic_block.h"
 
 extern Scope file_scp;
-//vector<BasicBlock> basic_blocks;
-
-//static int sem_if_scope(Ast *p)
-//{
-//	Scope *scp = p->this_scp;
-//	Ast *cond = scp->asts[0];
-//	assert(cond->op >= OP_CMP_LT && cond->op <= OP_CMP_NE);
-//	cond->vr;
-
-//	ThreeAddrCode *inst = new ThreeAddrCode(p);
-//	inst->dst = p->vr;
-//	inst->s1 = a;
-//	inst->s2 = b;
-//	three_addr_code.push_back(inst);
-//}
 
 static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 {
@@ -183,10 +167,50 @@ static void dump_tac(Scope *scp)
 	for (Scope *p : scp->clds)
 		dump_tac(p);
 }
+
+static void elimicate_transient_vr(Scope *scp)
+{
+	for(int i = 0; i < scp->tac.size(); )
+	{
+		if(i + 1 >= scp->tac.size())
+			break;
+
+		Tac &a = scp->tac[i];
+		Tac &b = scp->tac[i + 1];
+
+		if (a.dst < 0)
+		{
+			i++;
+			continue;
+		}
+
+		Symbol *symb = declare_record.ast[a.dst]->symb;
+		if(symb->stamp == SYMB_PRIVATE_transient
+			&& b.ast->op == OP_ASSIGN
+//			&& a.dst != a.s2
+			&& b.s1 == a.dst)
+		{
+			a.dst = b.dst;
+			scp->tac.erase(scp->tac.begin() + i + 1);
+			continue;
+		}
+
+		i++;
+	}
+
+	for (Scope *p : scp->clds)
+		elimicate_transient_vr(p);
+}
+
 void gen_three_address_code()
 {
 	gen_tac(&file_scp);
 	dump_ast();
+
+	printf("\n========== tac ==========\n");
+	dump_tac(&file_scp);
+
+	elimicate_transient_vr(&file_scp);
 
 	printf("\n========== tac ==========\n");
 	dump_tac(&file_scp);

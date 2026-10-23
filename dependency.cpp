@@ -19,6 +19,9 @@ void create_dependcy_RAW(int a, int b)
 	if (b < 0)
 		return;
 
+	if(a == b)
+		return;
+
 	auto &pred = mcs_predecessor[a].mcs;
 	if (std::find(pred.begin(), pred.end(), b) != pred.end())
 		return;

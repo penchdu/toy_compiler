@@ -331,7 +331,7 @@ void ra_wave_scope(Scope *scp);
 
 void while__pre_work(Scope *scp);
 void while__end_work(Scope *scp);
-int get_reserved_pr(BasicBlock *bb);
+int get_swap_pr(BasicBlock *bb);
 void recover_pr_state(
     const vector<VrState> &before_vr2pr,
     const vector<PrState> &before_pr2vr,

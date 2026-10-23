@@ -102,13 +102,16 @@ void spill_vr(
 		return;
 	}
 
-	if (pr == X64PR_MAX || u == VR_USAGE_INVALID || pr_st[pr].vr != vr)
+	if (pr == X64PR_MAX)
+		return;
+
+	if(u == VR_USAGE_INVALID || pr_st[pr].vr != vr)
 		ERR("pr=%d, u=%d, pr_st[%d].vr=%d != %d", pr, u, pr, pr_st[pr].vr, vr);
 
 	// MC_victim
 	X64mc mc(MC_victim, vr);
 	mc.pr1 = (int) pr;
-	mc.ori_sem = string("victim ") + pr_name(pr) + tag;
+	mc.ori_sem = string("victim, ") + vr_name(vr) + " " + pr_name(pr) + tag;
 	mcs.push_back(mc);
 
 	if (method == O0 ||
@@ -118,7 +121,7 @@ void spill_vr(
 	{
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;
-		mc.ori_sem = string("memory spill ") + pr_name(pr) + tag;
+		mc.ori_sem = string("memory spill, ") + vr_name(vr) + " " + pr_name(pr) + tag;
 		mcs.push_back(mc);
 	}
 
@@ -483,7 +486,8 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		case MC_ADD:
 			case MC_SUB:
 			case MC_IMUL:
-			PRINT_ASM("mov %s, %s \n", pr_name_asm(mc.pr_dst, mc.dst), pr_name_asm(mc.pr1, mc.s1));
+			if (mc.pr_dst != mc.pr1)
+				PRINT_ASM("mov %s, %s \n", pr_name_asm(mc.pr_dst, mc.dst), pr_name_asm(mc.pr1, mc.s1));
 			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name_asm(mc.pr_dst, mc.dst), pr_name_asm(mc.pr2, mc.s2));
 			PRINT_ASM_sem
 			break;
@@ -505,8 +509,12 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 
 			mc_cmp = fake_cmp_mc_to_real_mc[stamp].mc_cmp;
 			PRINT_ASM("%s %s, %s", mc_info[mc_cmp].mc_code.c_str(),
-			    pr_name_asm(mc.pr1, mc.s1), pr_name_asm(mc.pr2, mc.s2));
+			    pr_name_asm(mc.pr1, mc.s1),
+			    pr_name_asm(mc.pr2, mc.s2));
 			PRINT_ASM_sem
+
+			if(declare_record.ast[mc.dst]->symb->use_cnt <= 0)
+				break;
 
 			mc_set = fake_cmp_mc_to_real_mc[stamp].mc_set;
 			PRINT_ASM("%s %s", mc_info[mc_set].mc_code.c_str(), pr_name_byte(mc.pr_dst));

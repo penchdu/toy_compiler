@@ -82,9 +82,7 @@ void update_vr_consume_cnt(Scope *scp, int vr, int update_value, int usage)
 }
 void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value)
 {
-	MachineCodeStamp mc_stamp = mc.stamp;
-
-	switch (mc_stamp)
+	switch (mc.stamp)
 	{
 	case MC_LD:
 		break;
@@ -116,69 +114,47 @@ void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value)
 		break;
 
 	case MC_TEST:
-	case MC_SAVE_RET:
+		case MC_SAVE_RET:
 		update_vr_consume_cnt(scp, mc.s1, update_value);
 		break;
 
 	default:
-		ERR("%d \n", mc_stamp);
+		ERR("%d \n", mc.stamp);
 		break;
 	}
 }
 
 static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 {
-	Ast *declare_at = declare_record.ast[vr];
-	Scope *scp_declare_at = declare_at->scope;
-//	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
-//	assert(declare_at->this_scp == declare_at->home_scp);
+	Ast *p = declare_record.ast[vr];
+	Symbol *symb = p->symb;
 
-	Symbol *symb = declare_at->symb;
-
-	if (scp->symb_table != scp_declare_at->symb_table)	// outer
+	if (scp->symb_table != p->scope->symb_table)	// outer
 	{
-		assert(declare_at->symb->stamp != SYMB_PRIVATE_transient);
-
-		if (usage & VR_USAGE_READ)
-		{
-			symb->use_cnt++;
-//			symb->cld_use_cnt++;
-			symb->reference_cnt++;
-			scp->use_cnt_in_bb[vr]++;
+		assert(p->symb->stamp != SYMB_PRIVATE_transient);
+//		if (usage & VR_USAGE_READ)
 //			scp->outer_symb_used.push_back(vr);
-		}
-
-		if (usage & VR_USAGE_WRITE)
-			symb->reference_cnt++;
-
-		scp->appear_cnt_in_bb[vr]++;
 	}
-	else
-	{	// private
-		if (usage & VR_USAGE_READ)
-		{
-			symb->use_cnt++;
-			symb->reference_cnt++;
-			scp->use_cnt_in_bb[vr]++;
-		}
-		if (usage & VR_USAGE_WRITE)
-			symb->reference_cnt++;
 
-		scp->appear_cnt_in_bb[vr]++;
+	if (usage & VR_USAGE_READ)
+	{
+		symb->use_cnt++;
+		scp->use_cnt_in_bb[vr]++;
 	}
+
+	symb->reference_cnt++;
+	scp->reference_cnt_in_bb[vr]++;
 }
 
 static void _gen_use_cnt(Scope *scp)
 {
 	BasicBlock *bb = scp->basic_block;
 	scp->use_cnt_in_bb.resize(vr_size);
-	scp->appear_cnt_in_bb.resize(vr_size);
+	scp->reference_cnt_in_bb.resize(vr_size);
 
 	for (auto &mc : bb->x64mc)
 	{
-		MachineCodeStamp mc_stamp = mc.stamp;
-
-		switch (mc_stamp)
+		switch (mc.stamp)
 		{
 		case MC_LD:
 			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_WRITE);
@@ -210,15 +186,12 @@ static void _gen_use_cnt(Scope *scp)
 			break;
 
 		case MC_TEST:
-		case MC_SAVE_RET:
+			case MC_SAVE_RET:
 			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
 			break;
 
-//		case MC_LI:
-			//			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_WRITE);
-//			break;
 		default:
-			ERR("%d \n", mc_stamp);
+			ERR("%d \n", mc.stamp);
 			break;
 		}
 	}
@@ -253,13 +226,11 @@ static void check_while_used_outer_symb(Scope *scp)
 {
 	BasicBlock *bb = scp->basic_block;
 	scp->use_cnt_in_bb.resize(vr_size);
-	scp->appear_cnt_in_bb.resize(vr_size);
+	scp->reference_cnt_in_bb.resize(vr_size);
 
 	for (auto &mc : bb->x64mc)
 	{
-		MachineCodeStamp mc_stamp = mc.stamp;
-
-		switch (mc_stamp)
+		switch (mc.stamp)
 		{
 		case MC_LD:
 			_check_while_used_outer_symb(mc.s1, VR_USAGE_WRITE);
@@ -291,13 +262,12 @@ static void check_while_used_outer_symb(Scope *scp)
 			break;
 
 		case MC_TEST:
-		case MC_SAVE_RET:
+			case MC_SAVE_RET:
 			_check_while_used_outer_symb(mc.s1, VR_USAGE_READ);
 			break;
 
-//		case MC_LI:
-			default:
-			ERR("%d \n", mc_stamp);
+		default:
+			ERR("%d \n", mc.stamp);
 			break;
 		}
 	}
@@ -366,9 +336,52 @@ void dump_while_used_outer_symb(Scope *scp)
 	for (Scope *p : scp->clds)
 		dump_while_used_outer_symb(p);
 }
+
+void rm_dead_code(Scope *scp)
+{
+	for (int i = scp->clds.size() - 1; i >= 0; i--)
+		rm_dead_code(scp->clds[i]);
+
+	vector<X64mc> &mcs = scp->basic_block->x64mc;
+
+	for (int i = mcs.size() - 1; i >= 0; i--)
+	{
+		auto &mc = mcs[i];
+		if (mc.dst < 0 || declare_record.ast[mc.dst]->symb->use_cnt > 0)
+			continue;
+
+		MachineCodeStamp stamp = mcs[i].stamp;
+		if (stamp == MC_CMP
+			|| stamp == MC_CMP_E
+		    || stamp == MC_CMP_NE
+		    || stamp == MC_CMP_L
+		    || stamp == MC_CMP_LE
+		    || stamp == MC_CMP_G
+		    || stamp == MC_CMP_GE
+		    || stamp == MC_TEST)
+		{
+			continue;
+		}
+
+		if (mc.s1 >= 0)
+		{
+			declare_record.ast[mc.s1]->symb->use_cnt--;
+			scp->use_cnt_in_bb[mc.s1]--;
+		}
+		if (mc.s2 >= 0)
+		{
+			declare_record.ast[mc.s2]->symb->use_cnt--;
+			scp->use_cnt_in_bb[mc.s2]--;
+		}
+
+		mcs.erase(mcs.begin() + i);
+	}
+}
 void gen_use_cnt()
 {
 	_gen_use_cnt(&file_scp);
+
+	rm_dead_code(&file_scp);
 
 	find_while_used_outer_symb(&file_scp);
 

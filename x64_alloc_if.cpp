@@ -53,7 +53,7 @@ void ra_wave_if(Scope *if_scp)
 	then_pre_work(else_branch);
 	ra_wave_scope(then_branch);
 
-	int after_then_swap_pr = get_reserved_pr(then_branch->basic_block);
+	int after_then_swap_pr = get_swap_pr(then_branch->basic_block);
 	assert(after_then_swap_pr != X64PR_MAX);
 	vector<VrState> after_then_vr_state = vr_state;
 	vector<PrState> after_then_pr_state = pr_state;
@@ -65,7 +65,7 @@ void ra_wave_if(Scope *if_scp)
 	// else
 	ra_wave_scope(else_branch);
 
-	int after_else_swap_pr = get_reserved_pr(then_branch->basic_block);
+	int after_else_swap_pr = get_swap_pr(else_branch->basic_block);
 	assert(after_else_swap_pr != X64PR_MAX);
 
 	int after_then_pr = 0;

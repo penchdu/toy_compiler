@@ -331,7 +331,7 @@ public:
 	vector<int> addtional_symb_usage;
 
 	vector<int> use_cnt_in_bb;
-	vector<int> appear_cnt_in_bb;
+	vector<int> reference_cnt_in_bb;
 	vector<int> consume_cnt_in_bb;
 
 	// continue, break

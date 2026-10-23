@@ -256,7 +256,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 				float consumed_ratio_score = 0.5 * ((float) scp->consume_cnt_in_bb[vr] / scp->use_cnt_in_bb[vr]);
 				r.score += consumed_ratio_score;
 			}
-			if (scp->use_cnt_in_bb[vr] <= 0 && scp->appear_cnt_in_bb[vr] <= 0)
+			if (scp->use_cnt_in_bb[vr] <= 0 && scp->reference_cnt_in_bb[vr] <= 0)
 				print_mc_err("select1", scp, x64mc[mc_idx], mc_idx);
 		}
 	}
@@ -386,7 +386,7 @@ static void mc_schdu(Scope *scp)
 		if (bb->is_entry_label)
 			LOG("bb %s == 0", scp->name.c_str());
 		if (x64mc.size() || scp->tac.size())
-			ERR();
+			ERR("%lu, %lu", x64mc.size(), scp->tac.size());
 	}
 
 	while (!running.empty() || !ready.empty())

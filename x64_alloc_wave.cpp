@@ -272,6 +272,27 @@ void ra_wave_scope(Scope *scp)
 		ra_wave_regular_scope(scp);
 }
 
+static void elimicate_copy(Scope *scp)
+{
+	BasicBlock *bb = scp->basic_block;
+	auto &mcs = bb->x64mc_alloc_wave;
+
+	for (int i = 0; i < mcs.size(); i++)
+	{
+		const auto &mc = mcs[i];
+		if(mc.stamp == MC_ASSIGN && mc.pr_dst == mc.pr1)
+		{
+			mcs.erase(mcs.begin() + i);
+			continue;
+		}
+
+		i++;
+	}
+
+	for (Scope *p : scp->clds)
+		elimicate_copy(p);
+}
+
 void x64_reg_alloc_wave()
 {
 	LOG("\n======================== wave ========================\n");
@@ -286,5 +307,6 @@ void x64_reg_alloc_wave()
 
 	ra_wave_scope(&file_scp);
 
+	elimicate_copy(&file_scp);
 	check_vr_consume_cnt(&file_scp);
 }

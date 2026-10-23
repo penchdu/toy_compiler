@@ -9,7 +9,7 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-int get_reserved_pr(BasicBlock *bb)
+int get_swap_pr(BasicBlock *bb)
 {
 	for (int i = 0; i < X64PR_MAX; i++)
 	{
@@ -525,9 +525,11 @@ void move_victim_to_pre_cond(
 			int vr = mc.s1;
 			assert(mc.pr1 == pre_cond_vr_state[vr].pr);
 
-			spill_vr(WAVE, pre_cond_vr_state,
+			spill_vr(WAVE,
+				pre_cond_vr_state,
 			    pre_cond_pr_state,
-			    vr, mcs_while, " ,move from b" + to_string(cond_or_body->id) + ",");
+			    vr, mcs_while,
+			    " ,move from b" + to_string(cond_or_body->id) + ",");
 
 			vr_victim[vr]++;
 			mc.stamp = MC_INVALID;
@@ -761,7 +763,7 @@ void ra_wave_while(Scope *while_scp)
 	 *
 	 */
 
-	int pre_cond_swap_pr = get_reserved_pr(while_scp->basic_block);
+	int pre_cond_swap_pr = get_swap_pr(while_scp->basic_block);
 	assert(pre_cond_swap_pr != X64PR_MAX);
 
 //	for(int vr : scp->outer_symb_write)
@@ -797,7 +799,7 @@ void ra_wave_while(Scope *while_scp)
 
 	ra_wave_scope(cond);
 
-	int after_cond_swap_pr = get_reserved_pr(cond->basic_block);	// while_scp->basic_block ?
+	int after_cond_swap_pr = get_swap_pr(cond->basic_block);	// while_scp->basic_block ?
 	assert(after_cond_swap_pr != X64PR_MAX);
 
 	vector<VrState> after_cond_vr_state = vr_state;
