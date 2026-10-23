@@ -1,7 +1,7 @@
 /*
  * a.cpp
  *
- *  Created on: 2026年9月5日
+ *  Created on: 2026�?�?�?
  *      Author: x
  */
 
@@ -459,12 +459,13 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		switch (stamp)
 		{
 		case MC_LI:
-			PRINT_ASM("%s %s, %d", mc.asm_code.c_str(), pr_name_asm(mc.pr1, mc.s1), mc.const_num);
+			PRINT_ASM("%s %s, %d", mc_info[stamp].mc_code, pr_name_asm(mc.pr1, mc.s1), mc.const_num);
 			PRINT_ASM_sem
 			break;
 
 		case MC_LD:
-			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc.asm_code.c_str(), pr_name_asm(mc.pr1, mc.s1), mc.of1);
+			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc_info[stamp].mc_code,
+				pr_name_asm(mc.pr1, mc.s1), vr_off(mc.s1));
 			PRINT_ASM_sem
 			break;
 
@@ -474,12 +475,18 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			break;
 
 		case MC_ST:
-			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc.asm_code.c_str(), mc.of1, pr_name_asm(mc.pr1, mc.s1));
+			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc_info[stamp].mc_code,
+				vr_off(mc.s1), pr_name_asm(mc.pr1, mc.s1));
 			PRINT_ASM_sem
 			break;
 
 		case MC_ASSIGN:
-			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name_asm(mc.pr_dst, mc.dst), pr_name_asm(mc.pr1, mc.s1));
+			PRINT_ASM("%s %s, %s", mc_info[stamp].mc_code, pr_name_asm(mc.pr_dst, mc.dst), pr_name_asm(mc.pr1, mc.s1));
+			PRINT_ASM_sem
+			break;
+
+		case MC_NEG:
+			PRINT_ASM("%s %s", mc_info[stamp].mc_code, pr_name_asm(mc.pr1, mc.s1));
 			PRINT_ASM_sem
 			break;
 
@@ -488,7 +495,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			case MC_IMUL:
 			if (mc.pr_dst != mc.pr1)
 				PRINT_ASM("mov %s, %s \n", pr_name_asm(mc.pr_dst, mc.dst), pr_name_asm(mc.pr1, mc.s1));
-			PRINT_ASM("%s %s, %s", mc.asm_code.c_str(), pr_name_asm(mc.pr_dst, mc.dst), pr_name_asm(mc.pr2, mc.s2));
+			PRINT_ASM("%s %s, %s", mc_info[stamp].mc_code, pr_name_asm(mc.pr_dst, mc.dst), pr_name_asm(mc.pr2, mc.s2));
 			PRINT_ASM_sem
 			break;
 
@@ -508,24 +515,24 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			case MC_CMP_GE:
 
 			mc_cmp = fake_cmp_mc_to_real_mc[stamp].mc_cmp;
-			PRINT_ASM("%s %s, %s", mc_info[mc_cmp].mc_code.c_str(),
+			PRINT_ASM("%s %s, %s", mc_info[mc_cmp].mc_code,
 			    pr_name_asm(mc.pr1, mc.s1),
 			    pr_name_asm(mc.pr2, mc.s2));
 			PRINT_ASM_sem
 
-			if(declare_record.ast[mc.dst]->symb->use_cnt <= 0)
-				break;
+			if (declare_record.ast[mc.dst]->symb->use_cnt > 0)
+			{
+				mc_set = fake_cmp_mc_to_real_mc[stamp].mc_set;
+				PRINT_ASM("%s %s", mc_info[mc_set].mc_code, pr_name_byte(mc.pr_dst));
+				PRINT_ASM_sem
 
-			mc_set = fake_cmp_mc_to_real_mc[stamp].mc_set;
-			PRINT_ASM("%s %s", mc_info[mc_set].mc_code.c_str(), pr_name_byte(mc.pr_dst));
-			PRINT_ASM_sem
-
-			PRINT_ASM("movzx %s, %s", pr_name(mc.pr_dst), pr_name_byte(mc.pr_dst));
-			PRINT_ASM_sem
+				PRINT_ASM("movzx %s, %s", pr_name(mc.pr_dst), pr_name_byte(mc.pr_dst));
+				PRINT_ASM_sem
+			}
 			break;
 
 		case MC_TEST:
-			PRINT_ASM("%s %s, %s", mc_info[stamp].mc_code.c_str(),
+			PRINT_ASM("%s %s, %s", mc_info[stamp].mc_code,
 			    pr_name_asm(mc.pr1, mc.s1), pr_name_asm(mc.pr1, mc.s1));
 			PRINT_ASM_sem
 
@@ -550,7 +557,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 
 	if (scp->jmp_out != 0)
 	{
-		PRINT_ASM("%s %s \n", mc_info[bb->jmp_mc_stamp].mc_code.c_str(),
+		PRINT_ASM("%s %s \n", mc_info[bb->jmp_mc_stamp].mc_code,
 		    scp->jmp_out->name.c_str());
 	}
 

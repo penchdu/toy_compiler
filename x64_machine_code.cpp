@@ -1,7 +1,7 @@
 /*
  * a.cpp
  *
- *  Created on: 2026年9月5日
+ *  Created on: 2026�?�?�?
  *      Author: x
  */
 
@@ -16,6 +16,7 @@ const McInfo mc_info[MC_INVALID + 1] = {
     [MC_ST] = {3, "mov"},
 
     [MC_ASSIGN] = {1, "mov"},
+    [MC_NEG] = {1, "neg"},
     [MC_ADD] = {1, "add"},
     [MC_SUB] = {1, "sub"},
     [MC_IMUL] = {3, "imul"},
@@ -85,7 +86,7 @@ Mc2mc fake_cmp_mc_to_real_mc[] = {
     [MC_CMP_G] = {MC_CMP, MC_SET_G},
     [MC_CMP_GE] = {MC_CMP, MC_SET_GE},
 //    [MC_TEST] = {MC_TEST, MC_SET_TEST},
-};
+    };
 
 static void gen_op_add_sub_mul_div_mc(vector<X64mc> &x64mc, MachineCodeStamp mc, const string &ori_sem,
     int tac_dst, int tac_s1, int tac_s2)
@@ -200,7 +201,7 @@ static void gen_mc(Scope *scp)
 			break;
 
 		case SEM_IMMEDIATE:
-//			mc = X64mc(MC_LI, code.dst);
+			//			mc = X64mc(MC_LI, code.dst);
 //			mc.const_num = code.const_num_value;
 //			mc.ori_sem = "li";
 //			bb->x64mc.push_back(mc);
@@ -258,7 +259,7 @@ static int _asm_len = 0;
         printf("\n");
 
 #if 1
-	#define PRINT_MORE	\
+#define PRINT_MORE	\
 			printf("%*s#%s, cyc %d\n", \
 				(_asm_len < 48) ? (48 - _asm_len) : 2, "", \
 				mc.ori_sem.c_str(), mc.start_cycle);
@@ -290,24 +291,29 @@ void dump_mc(Scope *scp, string mc_list_name)
 		switch (stamp)
 		{
 		case MC_LD:
-			PRINT_ASM("%s %%%d, dword ptr [%d]", mc.asm_code.c_str(), mc.s1, mc.of1);
+			PRINT_ASM("%s %%%d, dword ptr [%d]", mc_info[stamp].mc_code, mc.s1, vr_off(mc.s1));
 			PRINT_MORE
 			break;
 
 		case MC_ST:
-			PRINT_ASM("%s dword ptr [%d], %%%d", mc.asm_code.c_str(), mc.of1, mc.s1);
+			PRINT_ASM("%s dword ptr [%d], %%%d", mc_info[stamp].mc_code, vr_off(mc.s1), mc.s1);
 			PRINT_MORE
 			break;
 
 		case MC_ASSIGN:
-			PRINT_ASM("%s %%%d, %%%d", mc.asm_code.c_str(), mc.dst, mc.s1);
+			PRINT_ASM("%s %%%d, %%%d", mc_info[stamp].mc_code, mc.dst, mc.s1);
+			PRINT_MORE
+			break;
+
+		case MC_NEG:
+			PRINT_ASM("%s %%%d", mc_info[stamp].mc_code, mc.s1);
 			PRINT_MORE
 			break;
 
 //		case MC_ADD:
 //			case MC_SUB:
 //			case MC_IMUL:
-//			PRINT_ASM("%s %%%d, %%%d", mc.asm_code.c_str(), mc.s1, mc.s2);
+//			PRINT_ASM("%s %%%d, %%%d", mc_info[stamp].mc_code, mc.s1, mc.s2);
 //			PRINT_MORE
 //			break;
 //
@@ -332,15 +338,15 @@ void dump_mc(Scope *scp, string mc_list_name)
 			case MC_CMP_G:
 			case MC_CMP_GE:
 
-			PRINT_ASM("%%%d = %s %%%d, %%%d", mc.dst, mc.asm_code.c_str(), mc.s1, mc.s2);
+			PRINT_ASM("%%%d = %s %%%d, %%%d", mc.dst, mc_info[stamp].mc_code, mc.s1, mc.s2);
 
 //			set_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_set;
-//			PRINT_ASM("%s %%%d", mc_info[set_mc].mc_code.c_str(), mc.dst);
+//			PRINT_ASM("%s %%%d", mc_info[set_mc].mc_code, mc.dst);
 			PRINT_MORE
 			break;
 
 		case MC_TEST:
-			PRINT_ASM("%s %%%d", mc.asm_code.c_str(), mc.s1);
+			PRINT_ASM("%s %%%d", mc_info[stamp].mc_code, mc.s1);
 			PRINT_MORE
 			break;
 
@@ -350,7 +356,7 @@ void dump_mc(Scope *scp, string mc_list_name)
 			break;
 
 //		case MC_LI:
-			//			PRINT_ASM("%s %%%d, num %d", mc.asm_code.c_str(), mc.s1, mc.const_num);
+			//			PRINT_ASM("%s %%%d, num %d", mc_info[stamp].mc_code, mc.s1, mc.const_num);
 //			PRINT_MORE
 //			break;
 		default:
@@ -361,7 +367,7 @@ void dump_mc(Scope *scp, string mc_list_name)
 
 	if (scp->jmp_out != 0)
 	{
-		PRINT_ASM("%s %s \n", mc_info[bb->jmp_mc_stamp].mc_code.c_str(),
+		PRINT_ASM("%s %s \n", mc_info[bb->jmp_mc_stamp].mc_code,
 		    scp->jmp_out->name.c_str());
 	}
 

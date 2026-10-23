@@ -155,19 +155,33 @@ static int get_pr_alloc_imm(BasicBlock *bb, int mc_idx, int vr)
 	return get_pr_alloc_imm(WAVE, bb->x64mc_alloc_wave, bb, mc_idx, vr);
 }
 
-void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
+void swap_operand(X64mc &mc)
+{
+	int s1 = mc.s1;
+	int pr1 = mc.pr1;
+
+	mc.s1 = mc.s2;
+	mc.pr1 = mc.pr2;
+
+	mc.s2 = s1;
+	mc.pr2 = pr1;
+}
+
+void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 {
 	vector<X64mc> &mcs = bb->x64mc_alloc_wave;
 	X64mc mc = schedued;
-	MachineCodeStamp mc_stamp = mc.stamp;
 
-	switch (mc_stamp)
+	switch (mc.stamp)
 	{
 	case MC_ASSIGN:
 		if (mc.dst == mc.s1)
 			break;
 
 		mc.pr1 = get_pr(bb, i, mc.s1, VR_USAGE_READ);
+		update_vr_consume_cnt(scp, mc.s1);
+		check_dead_vr(scp, mcs, mc.s1);
+
 		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
 		mcs.push_back(mc);
 		break;
@@ -175,6 +189,39 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 	case MC_ADD:
 		case MC_SUB:
 		case MC_IMUL:
+		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
+		mc.pr2 = get_pr(bb, i, mc.s2, VR_USAGE_READ);
+
+		update_vr_consume_cnt(scp, mc.s1);
+		update_vr_consume_cnt(scp, mc.s2);
+		check_dead_vr(scp, mcs, mc.s1);
+		check_dead_vr(scp, mcs, mc.s2);
+
+		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
+
+		if(mc.pr_dst == mc.pr2)
+		{
+			/*
+			* s2 is dead
+			*/
+			if(mc.stamp == MC_SUB)
+			{
+				X64mc neg_mc(MC_NEG, mc.s2);
+				neg_mc.pr1 = mc.pr2;
+				mcs.push_back(neg_mc);
+
+				mc.stamp = MC_ADD;
+
+				LOG("swap sub, %s=%%%d %s=%%%d", vr_name(mc.s1), mc.s1, vr_name(mc.s2), mc.s2);
+			}
+			assert(mc.stamp == MC_ADD || mc.stamp == MC_IMUL);
+			LOG("swap %s=%%%d %s=%%%d", vr_name(mc.s1), mc.s1, vr_name(mc.s2), mc.s2);
+
+			swap_operand(mc);
+		}
+
+		mcs.push_back(mc);
+		break;
 
 	case MC_CMP_E:
 		case MC_CMP_NE:
@@ -184,29 +231,49 @@ void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i)
 		case MC_CMP_GE:
 		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
 		mc.pr2 = get_pr(bb, i, mc.s2, VR_USAGE_READ);
-		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
+
+		update_vr_consume_cnt(scp, mc.s1);
+		update_vr_consume_cnt(scp, mc.s2);
+		check_dead_vr(scp, mcs, mc.s1);
+		check_dead_vr(scp, mcs, mc.s2);
+
+		if (declare_record.ast[mc.dst]->symb->use_cnt > 0)
+			mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
+
 		mcs.push_back(mc);
 		break;
 
 	case MC_DIV:
 		mc.pr1 = get_pr(bb, i, mc.s1, VR_USAGE_READ);
 		mc.pr2 = get_pr_alloc_imm(bb, i, mc.s2);
+
+		update_vr_consume_cnt(scp, mc.s1);
+		update_vr_consume_cnt(scp, mc.s2);
+		check_dead_vr(scp, mcs, mc.s1);
+		check_dead_vr(scp, mcs, mc.s2);
+
 		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
 		mcs.push_back(mc);
 		break;
 
 	case MC_TEST:
 		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
+		update_vr_consume_cnt(scp, mc.s1);
+		check_dead_vr(scp, mcs, mc.s1);
+
 		mcs.push_back(mc);
 		break;
 
 	case MC_SAVE_RET:
 		mc.pr1 = get_pr(bb, i, mc.s1, VR_USAGE_READ);
+		update_vr_consume_cnt(scp, mc.s1);
+		check_dead_vr(scp, mcs, mc.s1);
+
 		mcs.push_back(mc);
 		break;
 
 	default:
-		ERR("%d \n", mc_stamp);
+		ERR("%d \n", mc.stamp);
 		break;
 	}
 }
@@ -237,12 +304,12 @@ void ra_wave_regular_scope(Scope *scp)
 	{
 		const X64mc &mc = bb->x64mc_schedu[i];
 
-		ra_wave__mc(bb, mc, i);
-		update_mc_consume_cnt(scp, mc);
-
-		check_dead_vr(scp, bb->x64mc_alloc_wave, mc.dst);
-		check_dead_vr(scp, bb->x64mc_alloc_wave, mc.s1);
-		check_dead_vr(scp, bb->x64mc_alloc_wave, mc.s2);
+		ra_wave__mc(scp, bb, mc, i);
+//		update_mc_consume_cnt(scp, mc);
+//
+//		check_dead_vr(scp, bb->x64mc_alloc_wave, mc.dst);
+//		check_dead_vr(scp, bb->x64mc_alloc_wave, mc.s1);
+//		check_dead_vr(scp, bb->x64mc_alloc_wave, mc.s2);
 
 		check_pr_vr_consistency();
 	}

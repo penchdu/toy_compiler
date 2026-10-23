@@ -1,7 +1,7 @@
 /*
  * dependcy.cpp
  *
- *  Created on: 2026年9月27日
+ *  Created on: 2026�?�?7�?
  *      Author: x
  */
 #include "frontend.h"
@@ -141,7 +141,7 @@ static void print_mc_err(int a, int b, const X64mc &mc)
 	MachineCodeStamp stamp = mc.stamp;
 
 	printf("%d %d, %s %s(%%%d) %s(%%%d) %s(%%%d) \n", a, b,
-		mc_info[stamp].mc_code.c_str(),
+		mc_info[stamp].mc_code,
 		dst >= 0 ? declare_record.ast[dst]->tk.src.c_str() : "", dst,
 		s1 >= 0 ? declare_record.ast[s1]->tk.src.c_str() : "", s1,
 			s2 >= 0 ? declare_record.ast[s2]->tk.src.c_str() : "", s2);
@@ -184,7 +184,9 @@ int get_mc_latency(vector<X64mc> &x64mc, int mc_id)
 	if (chain_latency >= 0)
 		return chain_latency;
 
-	chain_latency = x64mc[mc_id].latency;
+	auto stamp = x64mc[mc_id].stamp;
+
+	chain_latency = mc_info[stamp].latency;
 	assert(chain_latency >= 0);
 
 	auto &mcs = mcs_successor[mc_id].mcs;

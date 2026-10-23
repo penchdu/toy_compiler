@@ -41,7 +41,7 @@
 
  op_+-*,
  %dst = %s1 + %s2	mov %dst, st[s1]
-					add %dst, st[s2]
+ add %dst, st[s2]
 
  op_div,
  %dst = %s1 / %s2
@@ -65,7 +65,7 @@ enum X64PhysicReg {
 	R12D,
 	R13D,
 	R14D,
-//	R15D,
+	//	R15D,
 
 //	EAX,
 //	EBX,
@@ -110,6 +110,7 @@ enum MachineCodeStamp {
 	MC_ST,	// reg -> ptr
 
 	MC_ASSIGN,	// reg-reg
+	MC_NEG,	// reg
 	MC_ADD,	// reg-reg
 	MC_SUB,
 	MC_IMUL,
@@ -152,10 +153,9 @@ struct Mc2mc {
 	MachineCodeStamp mc_set;
 };
 
-
 struct McInfo {
-	int mc_latency = -1;
-	string mc_code;	// just for print
+	int latency = -1;
+	const char *mc_code;	// just for print
 };
 extern const McInfo mc_info[];
 extern VrDeclareRecord declare_record;
@@ -169,42 +169,26 @@ struct X64mc {
 		s1 = tac_s1;
 		s2 = tac_s2;
 
-		of_dst = declare_record.get_vr_off(dst);
-		of1 = declare_record.get_vr_off(s1);
-		of2 = declare_record.get_vr_off(s2);
-
-		asm_code = mc_info[mc_stamp].mc_code;
-		latency = mc_info[mc_stamp].mc_latency;
 		idx = mcidx++;
 	}
-	X64mc(MachineCodeStamp _mc_stamp, int tac_dst, int tac_s1)
+	X64mc(MachineCodeStamp mc_stamp, int tac_dst, int tac_s1)
 	{
-		stamp = _mc_stamp;
+		stamp = mc_stamp;
 		dst = tac_dst;
 		s1 = tac_s1;
 
-		of_dst = declare_record.get_vr_off(dst);
-		of1 = declare_record.get_vr_off(s1);
-
-		asm_code = mc_info[_mc_stamp].mc_code;
-		latency = mc_info[_mc_stamp].mc_latency;
 		idx = mcidx++;
 	}
-	X64mc(MachineCodeStamp _mc_stamp, int tac_s1)
+	X64mc(MachineCodeStamp mc_stamp, int tac_s1)
 	{
-		stamp = _mc_stamp;
+		stamp = mc_stamp;
 		s1 = tac_s1;
-		of1 = declare_record.get_vr_off(tac_s1);
 
-		asm_code = mc_info[_mc_stamp].mc_code;
-		latency = mc_info[_mc_stamp].mc_latency;
 		idx = mcidx++;
 	}
-	X64mc(MachineCodeStamp _mc_stamp)
+	X64mc(MachineCodeStamp mc_stamp)
 	{
-		stamp = _mc_stamp;
-
-		asm_code = mc_info[_mc_stamp].mc_code;
+		stamp = mc_stamp;
 		idx = mcidx++;
 	}
 	X64mc()
@@ -222,9 +206,6 @@ struct X64mc {
 		};
 		int vr_list[3];
 	};
-	int of_dst = -1;
-	int of1 = -1;
-	int of2 = -1;
 
 //	VrUsage s1_usage;
 //	VrUsage s2_usage;
@@ -237,14 +218,11 @@ struct X64mc {
 	int const_num = 0;
 
 	// put these here to easy dump
-	string asm_code;
 	string ori_sem;
-	int latency = -1;
 	int chain_latency = -1;
 	int start_cycle = -1;
 	int idx = -1;
 };
-
 
 struct BasicBlock {
 	bool is_entry_label = 0;
@@ -279,7 +257,6 @@ void dump_wave_gnuplot(Wave &w, int vr);
 //void spill_pr(vector<X64mc> &x64mc_alloced, int vr);
 //void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2);
 
-
 void gen_machine_code();
 void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx);
 
@@ -288,7 +265,7 @@ void dump_chain(vector<X64mc> &x64mc);
 void gen_schdu_chain_latency(vector<X64mc> &x64mc);
 
 bool is_private_symb(Scope *scp, int vr);
-void update_vr_consume_cnt(Scope *scp, int vr, int update_value, int usage = VR_USAGE_READ);
+void update_vr_consume_cnt(Scope *scp, int vr, int update_value = 1);
 void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value = 1);
 void reset_scope_symb_consume_cnt(Scope *scp, int value);
 void clear_all_vr_consume_cnt(Scope *scp);
@@ -300,18 +277,18 @@ const char* pr_name_byte(int pr);
 const char* pr_name_asm(int pr, int vr);
 
 void spill_vr(
-	enum AllocMethod method,
-	vector<VrState> &vr_to_pr,
-	vector<PrState> &pr_to_vr,
-	int vr, vector<X64mc> &mcs,
-	const string &tag = "");
+    enum AllocMethod method,
+    vector<VrState> &vr_to_pr,
+    vector<PrState> &pr_to_vr,
+    int vr, vector<X64mc> &mcs,
+    const string &tag = "");
 
 int get_pr_o0();
 int get_pr_wave(BasicBlock *bb, int mc_idx);
 int get_pr(enum AllocMethod method,
-	vector<X64mc> &mcs,
-	BasicBlock *bb, int mc_idx,
-	int vr, int u,
+    vector<X64mc> &mcs,
+    BasicBlock *bb, int mc_idx,
+    int vr, int u,
     bool alloc_immediate = false);
 
 int get_pr_alloc_imm(enum AllocMethod method, vector<X64mc> &mcs, BasicBlock *bb, int mc_idx, int vr);
@@ -324,7 +301,7 @@ void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr);
 void init_wave(BasicBlock *bb);
 
 int get_free_pr_num(const vector<PrState> &prst, int reserved_pr = X64PR_MAX);
-void ra_wave__mc(BasicBlock *bb, const X64mc &schedued, int i);
+void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i);
 void x64_reg_alloc_wave();
 void ra_wave_regular_scope(Scope *scp);
 void ra_wave_scope(Scope *scp);

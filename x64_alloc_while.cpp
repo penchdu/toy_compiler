@@ -305,7 +305,7 @@ void recover_pr_state(
 			//  (now_A_vr == INVALID__VR)
 			mc = X64mc(MC_LD, vr);
 			mc.pr1 = A;
-			mc.ori_sem = "memory, while 4, ld ";
+			mc.ori_sem = "memory, ld while 4, ";
 			mcs.push_back(mc);
 
 			// don't care if before dirty == 1

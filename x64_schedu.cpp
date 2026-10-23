@@ -1,7 +1,7 @@
 /*
  * x64_inst_schdule.cpp
  *
- *  Created on: 2026年9月13日
+ *  Created on: 2026�?�?3�?
  *      Author: x
  */
 
@@ -160,7 +160,7 @@ void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx)
 	ERR("%s, scp %s, %d, %s %s(%%%d) %s(%%%d) %s(%%%d)",
 	    prefix ? prefix : "",
 	    scp ? scp->name.c_str() : "unknown scp", idx,
-	    mc_info[stamp].mc_code.c_str(),
+	    mc_info[stamp].mc_code,
 	    dst >= 0 ? declare_record.ast[dst]->tk.src.c_str() : "", dst,
 	    s1 >= 0 ? declare_record.ast[s1]->tk.src.c_str() : "", s1,
 	    s2 >= 0 ? declare_record.ast[s2]->tk.src.c_str() : "", s2);
@@ -365,7 +365,7 @@ static void mc_schdu(Scope *scp)
 	 *					break
 	 *
 	 *		for mc : running
-	 *			if cycle >= mc.start_time + mc.latency
+	 *			if cycle >= mc.start_time + mc.latency()
 	 *				rm mc in running
 	 *				mv mc->edges[i] to ready if dep[i].deps == 0
 	 */
@@ -394,10 +394,11 @@ static void mc_schdu(Scope *scp)
 		for (auto it = running.begin(); it != running.end();)
 		{
 			int mc_idx = *it;
+			auto stamp = x64mc[mc_idx].stamp;
 			assert(x64mc[mc_idx].start_cycle >= 0);
-			assert(x64mc[mc_idx].latency > 0);
+			assert(mc_info[stamp].latency > 0);
 
-			if (cycle >= x64mc[mc_idx].start_cycle + x64mc[mc_idx].latency)
+			if (cycle >= x64mc[mc_idx].start_cycle + mc_info[stamp].latency)
 			{
 				free_function_unit(x64mc[mc_idx].stamp);
 				update_mc_consume_cnt(scp, x64mc[mc_idx]);
@@ -427,9 +428,12 @@ static void mc_schdu(Scope *scp)
 			}
 
 			assert(x64mc[mc].start_cycle >= 0);
-			if (x64mc[mc].latency <= 0)
+
+			auto stamp = x64mc[mc].stamp;
+			if (mc_info[stamp].latency <= 0)
 			{
-				ERR("%d, %s", x64mc[mc].stamp, x64mc[mc].asm_code.c_str());
+				auto stamp = x64mc[mc].stamp;
+				ERR("%d, %s", x64mc[mc].stamp, mc_info[stamp].mc_code);
 			}
 		}
 		cycle++;
@@ -457,7 +461,7 @@ static void mc_schdu(Scope *scp)
 //	if (t.mc_stamp != MC_RET)
 //	{
 //		LOG("x64mc_scheduled last: %s %s, s1 %%%d, s2 %%%d, cycle: %d-%d\n",
-//		    t.asm_code.c_str(), t.ori_sem.c_str(),
+//		    t.asm_code().c_str(), t.ori_sem.c_str(),
 //		    t.s1, t.s2,
 //		    t.start_cycle, t.chain_latency);
 //	}

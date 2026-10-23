@@ -63,9 +63,9 @@ bool is_private_symb(Scope *scp, int vr)
 
 	return false;
 }
-void update_vr_consume_cnt(Scope *scp, int vr, int update_value, int usage)
+void update_vr_consume_cnt(Scope *scp, int vr, int update_value)
 {
-	assert(usage & VR_USAGE_READ);
+//	assert(usage & VR_USAGE_READ);
 	Ast *declare_at = declare_record.ast[vr];
 	Scope *scp_declare_at = declare_at->scope;
 //	LOG("%p %p, %s", declare_at->this_scp, declare_at->home_scp, declare_at->tk.src.c_str());
@@ -374,6 +374,7 @@ void rm_dead_code(Scope *scp)
 			scp->use_cnt_in_bb[mc.s2]--;
 		}
 
+		LOG("rm %s %%%d", vr_name(mc.dst), mc.dst);
 		mcs.erase(mcs.begin() + i);
 	}
 }
