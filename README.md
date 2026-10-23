@@ -646,155 +646,83 @@ spill every register use
 ```
 
 
-#========== a1.s ==========#
 .intel_syntax noprefix
-.extern printf
-.section .rodata
-fmt:
-	.string "Result: %d\n" 
-.section .text
-.global main
+.globl test 
 
-main:
+test:
 	push rbp 
 	mov rbp, rsp 
 	sub rsp, 128 
 
-	mov r10d, 2                            #li, 2 %8  cyc -1
-	cmp r10d, 3                            #cmpg, > %9, 2 %8, 3 %7  cyc 0
-	setg r11b                              #cmpg, > %9, 2 %8, 3 %7  cyc 0
-	movzx r11d, r11b                       #cmpg, > %9, 2 %8, 3 %7  cyc 0
-	                                       #victim r10d check_dead_vr, 2 %8  cyc -1
-	mov r10d, 0                            #assign, a %3, 0 %2  cyc 0
-	cmp r10d, 5                            #cmpg, > %5, a %3, 5 %4  cyc 1
-	setg r12b                              #cmpg, > %5, a %3, 5 %4  cyc 1
-	movzx r12d, r12b                       #cmpg, > %5, a %3, 5 %4  cyc 1
-	mov r13d, 5                            #assign, i %1, 5 %0  cyc 1
-	mov r14d, r11d                         #assign, c %10, > %9  cyc 2
-	                                       #victim r11d check_dead_vr, > %9  cyc -1
-	mov r11d, r12d                         #assign, b %6, > %5  cyc 2
-	                                       #victim r12d check_dead_vr, > %5  cyc -1
-
+	mov r10d, 5                            #assign, i %2, 5 %1  cyc 0
+	mov r11d, 0                            #assign, a %4, 0 %3  cyc 0
+	mov r12d, 1                            #assign, b %6, 1 %5  cyc 1
+	mov r13d, 2                            #assign, c %8, 2 %7  cyc 1
 
 .L_b3_while2_cond:
-	mov r12d, r13d 
-	sub r12d, 1                            #sub, - %13, i %1, 1 %12  cyc 0
-	mov r13d, r12d                         #assign, i %1, - %13  cyc 1
-	                                       #victim r12d check_dead_vr, - %13  cyc -1
-	cmp r13d, 0                            #cmple, > %14, i %1, 0 %11  cyc 2
-	setle r12b                             #cmple, > %14, i %1, 0 %11  cyc 2
-	movzx r12d, r12b                       #cmple, > %14, i %1, 0 %11  cyc 2
-	                                       #victim r12d check_dead_vr, > %14  cyc -1
+	sub r10d, 1                            #sub, i %2, i %2, 1 %10  cyc 0
+	cmp r10d, 0                            #cmple, > %12, i %2, 0 %9  cyc 1
 	jle .L_b30_while2_tail 
 
-
 .L_b4_while2_body:
-	mov r12d, r10d 
-	add r12d, r13d                         #add, + %15, a %3, i %1  cyc 0
-	mov r10d, r12d                         #assign, a %3, + %15  cyc 1
-	                                       #victim r12d check_dead_vr, + %15  cyc -1
-
+	add r11d, r10d                         #add, a %4, a %4, i %2  cyc 0
 
 .L_b6_if5_cond:
-	cmp r13d, 3                            #cmpne, == %17, i %1, 3 %16  cyc 0
-	setne r12b                             #cmpne, == %17, i %1, 3 %16  cyc 0
-	movzx r12d, r12b                       #cmpne, == %17, i %1, 3 %16  cyc 0
-	                                       #victim r12d check_dead_vr, == %17  cyc -1
+	cmp r10d, 3                            #cmpne, == %15, i %2, 3 %14  cyc 0
 	jne .L_b12_if5_else 
 
-
 .L_b7_if5_then:
-	mov r12d, r11d 
-	add r12d, r10d                         #add, + %18, b %6, a %3  cyc 0
-	mov r11d, r12d                         #assign, b %6, + %18  cyc 1
-	                                       #victim r12d check_dead_vr, + %18  cyc -1
-
+	add r12d, r11d                         #add, b %6, b %6, a %4  cyc 0
 
 .L_b8_while2_continue:
 	jmp .L_b3_while2_cond 
 
-
 .L_b10:
 	jmp .L_b14_if5_tail 
 
-
 .L_b12_if5_else:
-	mov r12d, r14d 
-	add r12d, r13d                         #add, + %20, c %10, i %1  cyc 0
-	mov r14d, r12d                         #assign, c %10, + %20  cyc 1
-	                                       #victim r12d check_dead_vr, + %20  cyc -1
+	add r13d, r10d                         #add, c %8, c %8, i %2  cyc 0
 	jmp .L_b14_if5_tail 
-
 
 .L_b14_if5_tail:
 
-
 .L_b17_if16_cond:
-	cmp r13d, 2                            #cmpne, == %22, i %1, 2 %21  cyc 0
-	setne r12b                             #cmpne, == %22, i %1, 2 %21  cyc 0
-	movzx r12d, r12b                       #cmpne, == %22, i %1, 2 %21  cyc 0
-	                                       #victim r12d check_dead_vr, == %22  cyc -1
+	cmp r10d, 2                            #cmpne, == %20, i %2, 2 %19  cyc 0
 	jne .L_b23_if16_else 
 
-
 .L_b18_if16_then:
-	mov r12d, r11d 
-	add r12d, 10                           #add, + %24, b %6, 10 %23  cyc 0
-	mov r11d, r12d                         #assign, b %6, + %24  cyc 1
-	                                       #victim r12d check_dead_vr, + %24  cyc -1
-
+	add r12d, 10                           #add, b %6, b %6, 10 %21  cyc 0
 
 .L_b19_while2_break:
 	jmp .L_b30_while2_tail 
 
-
 .L_b21:
 	jmp .L_b26_if16_tail 
 
-
 .L_b23_if16_else:
-	mov r12d, r10d 
-	add r12d, r14d                         #add, + %26, a %3, c %10  cyc 0
-	mov r10d, r12d                         #assign, a %3, + %26  cyc 1
-	                                       #victim r12d check_dead_vr, + %26  cyc -1
+	add r11d, r13d                         #add, a %4, a %4, c %8  cyc 0
 	jmp .L_b26_if16_tail 
-
 
 .L_b26_if16_tail:
 
-
 .L_b27:
-	mov r12d, r14d 
-	add r12d, 1                            #add, + %28, c %10, 1 %27  cyc 0
-	mov r14d, r12d                         #assign, c %10, + %28  cyc 1
-	                                       #victim r12d check_dead_vr, + %28  cyc -1
+	add r13d, 1                            #add, c %8, c %8, 1 %25  cyc 0
 	jmp .L_b3_while2_cond 
-
 
 .L_b30_while2_tail:
 
-
 .L_b31:
-	mov r12d, r10d 
-	add r12d, r11d                         #add, + %29, a %3, b %6  cyc 0
-	                                       #victim r10d check_dead_vr, a %3  cyc -1
-	                                       #victim r11d check_dead_vr, b %6  cyc -1
-	mov r10d, r12d 
-	add r10d, r14d                         #add, + %30, + %29, c %10  cyc 1
-	                                       #victim r12d check_dead_vr, + %29  cyc -1
-	                                       #victim r14d check_dead_vr, c %10  cyc -1
-	mov r11d, r10d 
-	add r11d, r13d                         #add, + %31, + %30, i %1  cyc 2
-	                                       #victim r10d check_dead_vr, + %30  cyc -1
-	                                       #victim r13d check_dead_vr, i %1  cyc -1
-	#---------------- print ret ----------------# 
-	mov esi, r11d 
-	lea rdi, [rip + fmt] 
-	mov eax, 0 
-	call printf@PLT 
-	#------------------------------------------# 
-	mov eax, r11d 
-	                                       #victim r11d check_dead_vr, + %31  cyc -1
+	                                       #victim, a r11d check_dead_vr, a %4  cyc -1
+	                                       #victim, b r12d check_dead_vr, b %6  cyc -1
+	add r11d, r12d                         #add, + %27, a %4, b %6  cyc 0
+	                                       #victim, + r11d check_dead_vr, + %27  cyc -1
+	                                       #victim, c r13d check_dead_vr, c %8  cyc -1
+	add r11d, r13d                         #add, + %28, + %27, c %8  cyc 1
+	                                       #victim, + r11d check_dead_vr, + %28  cyc -1
+	                                       #victim, i r10d check_dead_vr, i %2  cyc -1
+	add r10d, r11d                         #add, + %29, i %2, + %28  cyc 2
+	                                       #victim, + r10d check_dead_vr, + %29  cyc -1
+	mov eax, r10d 
 	jmp .L_return 
 
 
@@ -804,6 +732,7 @@ main:
 	ret 
 
 .section .note.GNU-stack,"",@progbits
+
 
 
 
