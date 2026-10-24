@@ -30,7 +30,7 @@ int get_swap_pr(BasicBlock *bb)
 	if (swap_pr == X64PR_MAX)
 		swap_pr = X64PR_MAX - 1;
 
-	spill_vr(O1, vr_state, pr_state, pr_state[swap_pr].vr, bb->x64mc_alloc_wave);
+	spill_vr(O1, vr_state, pr_state, pr_state[swap_pr].vr, bb->mc_alloc_wave, "get_swap_pr");
 	pr_state[swap_pr].vr = INVALID_VR;
 	return swap_pr;
 }
@@ -129,7 +129,7 @@ void while__end_work(Scope *scp)
 	}
 
 	Scope *tail = scp->clds[2];
-	auto &mcs = tail->bb->x64mc_alloc_wave;
+	auto &mcs = tail->bb->mc_alloc_wave;
 
 	for (int vr = 0; vr < scp->outer_symb_read.size(); vr++)
 	{
@@ -164,7 +164,7 @@ void recover_pr_state(
     vector<PrState> &now_pr_state,
     Scope *tail_scope_to_gen_mc)
 {
-	vector<X64mc> &mcs = tail_scope_to_gen_mc->bb->x64mc_alloc_wave;
+	vector<X64mc> &mcs = tail_scope_to_gen_mc->bb->mc_alloc_wave;
 	X64mc mc;
 
 	int spilled = 0;
@@ -305,7 +305,7 @@ void recover_pr_state(
 			//  (now_A_vr == INVALID__VR)
 			mc = X64mc(MC_LD, vr);
 			mc.pr1 = A;
-			mc.ori_sem = "memory, ld while 4, ";
+			mc.ori_sem = "memory ld while 4, ";
 			mcs.push_back(mc);
 
 			// don't care if before dirty == 1
@@ -355,7 +355,7 @@ void st_additional_dirty_in_cond(Scope *cond, vector<bool> &additional_dirty, in
 {
 	int meet = 0;
 	int fix = 0;
-	auto &mcs = cond->bb->x64mc_alloc_wave;
+	auto &mcs = cond->bb->mc_alloc_wave;
 
 	for (int i = 0; i < mcs.size(); i++)
 	{
@@ -443,7 +443,7 @@ void st_additional_dirty_in_tail(Scope *scp,
 		if (!addtional_dirty[vr])
 			continue;
 
-		auto &mcs = scp->bb->x64mc_alloc_wave;
+		auto &mcs = scp->bb->mc_alloc_wave;
 
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = state[vr].pr;
@@ -462,7 +462,7 @@ void st_additional_dirty(Scope *cond,
 
 	if (dirty_cnt && cond)
 	{
-		auto &mcs = cond->bb->x64mc_alloc_wave;
+		auto &mcs = cond->bb->mc_alloc_wave;
 		st_additional_dirty_in_cond(cond, additional_dirty, dirty_cnt);
 	}
 
@@ -513,8 +513,8 @@ void move_victim_to_pre_cond(
     vector<int> &vr_referenced,
     vector<int> &vr_victim)
 {
-	auto &mcs_while = while_scp->bb->x64mc_alloc_wave;
-	auto &mcs = cond_or_body->bb->x64mc_alloc_wave;
+	auto &mcs_while = while_scp->bb->mc_alloc_wave;
+	auto &mcs = cond_or_body->bb->mc_alloc_wave;
 
 	for (int i = 0; i < mcs.size(); i++)
 	{
@@ -621,8 +621,8 @@ void move_ld_to_pre_cond(
     vector<int> &vr_ld,
     int reserved_pr)
 {
-	auto &mcs_while = while_scp->bb->x64mc_alloc_wave;
-	auto &mcs = cond_or_body->bb->x64mc_alloc_wave;
+	auto &mcs_while = while_scp->bb->mc_alloc_wave;
+	auto &mcs = cond_or_body->bb->mc_alloc_wave;
 
 	for (int i = 0; i < mcs.size(); i++)
 	{

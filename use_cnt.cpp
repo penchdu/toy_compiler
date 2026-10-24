@@ -18,9 +18,9 @@ vector<ScopeUsedOuterSymb> while_cond_body_use_outer_symb;
 void reset_scope_symb_consume_cnt(Scope *scp, int value)
 {
 	BasicBlock *bb = scp->bb;
-	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
+	for (int i = 0; i < bb->mc_schedu.size(); i++)
 	{
-		const X64mc &mc = bb->x64mc_schedu[i];
+		const X64mc &mc = bb->mc_schedu[i];
 		update_mc_consume_cnt(scp, mc, value);
 		check_pr_vr_consistency();
 	}
@@ -152,7 +152,7 @@ static void _gen_use_cnt(Scope *scp)
 	scp->use_cnt_in_bb.resize(vr_size);
 	scp->reference_cnt_in_bb.resize(vr_size);
 
-	for (auto &mc : bb->x64mc_O1)
+	for (auto &mc : bb->mcO1)
 	{
 		switch (mc.stamp)
 		{
@@ -228,7 +228,7 @@ static void check_while_used_outer_symb(Scope *scp)
 	scp->use_cnt_in_bb.resize(vr_size);
 	scp->reference_cnt_in_bb.resize(vr_size);
 
-	for (auto &mc : bb->x64mc_O1)
+	for (auto &mc : bb->mcO1)
 	{
 		switch (mc.stamp)
 		{
@@ -342,7 +342,7 @@ void rm_dead_code(Scope *scp)
 	for (int i = scp->clds.size() - 1; i >= 0; i--)
 		rm_dead_code(scp->clds[i]);
 
-	vector<X64mc> &mcs = scp->bb->x64mc_O1;
+	vector<X64mc> &mcs = scp->bb->mcO1;
 
 	for (int i = mcs.size() - 1; i >= 0; i--)
 	{

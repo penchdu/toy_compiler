@@ -10,6 +10,11 @@
 #include "basic_block.h"
 #include <cmath>
 
+static void spill_vr(int vr, vector<X64mc> &mcs, const string &tag = "")
+{
+	spill_vr(O1, vr_state, pr_state, vr, mcs, tag);
+}
+
 int get_free_pr_num(const vector<PrState> &prst, int reserved_pr)
 {
 	int free_pr = 0;
@@ -24,7 +29,7 @@ int get_free_pr_num(const vector<PrState> &prst, int reserved_pr)
 
 int get_pr_wave(BasicBlock *bb, int mc_idx)
 {
-	X64mc &mc = bb->x64mc_schedu[mc_idx];
+	X64mc &mc = bb->mc_schedu[mc_idx];
 
 	for (int pr = 0; pr < X64PR_MAX; pr++)
 	{
@@ -59,7 +64,7 @@ int get_pr_wave(BasicBlock *bb, int mc_idx)
 	assert(min_score_vr != INVALID_VR);
 
 	int pr = vr_state[min_score_vr].pr;
-	spill_vr(O1, vr_state, pr_state, min_score_vr, bb->x64mc_alloc_wave);
+	spill_vr(min_score_vr, bb->mc_alloc_wave);
 	return pr;
 }
 
@@ -87,7 +92,7 @@ void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr)
 			    scp->use_cnt_in_bb[vr], scp->consume_cnt_in_bb[vr],
 			    symb->use_cnt, symb->consume_cnt);
 
-		spill_vr(O1, vr_state, pr_state, vr, mcs, " check_dead_vr");
+		spill_vr(vr, mcs, " check_dead_vr");
 	}
 }
 
@@ -148,11 +153,11 @@ void check_pr_vr_consistency()
 
 static int get_pr(BasicBlock *bb, int mc_idx, int vr, int u)
 {
-	return get_pr(O1, bb->x64mc_alloc_wave, bb, mc_idx, vr, u);
+	return get_pr(O1, bb->mc_alloc_wave, bb, mc_idx, vr, u);
 }
 static int get_pr_alloc_imm(BasicBlock *bb, int mc_idx, int vr)
 {
-	return get_pr_alloc_imm(O1, bb->x64mc_alloc_wave, bb, mc_idx, vr);
+	return get_pr_alloc_imm(O1, bb->mc_alloc_wave, bb, mc_idx, vr);
 }
 
 void swap_operand(X64mc &mc)
@@ -169,7 +174,7 @@ void swap_operand(X64mc &mc)
 
 void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 {
-	vector<X64mc> &mcs = bb->x64mc_alloc_wave;
+	vector<X64mc> &mcs = bb->mc_alloc_wave;
 	X64mc mc = schedued;
 
 	switch (mc.stamp)
@@ -237,7 +242,7 @@ void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 		check_dead_vr(scp, mcs, mc.s1);
 		check_dead_vr(scp, mcs, mc.s2);
 
-		if (declare_record.ast[mc.dst]->symb->use_cnt > 0)
+		if (vr_symb(mc.dst)->use_cnt > 0)
 			mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
 
 		mcs.push_back(mc);
@@ -300,9 +305,9 @@ void ra_wave_regular_scope(Scope *scp)
 		}
 	}
 
-	for (int i = 0; i < bb->x64mc_schedu.size(); i++)
+	for (int i = 0; i < bb->mc_schedu.size(); i++)
 	{
-		const X64mc &mc = bb->x64mc_schedu[i];
+		const X64mc &mc = bb->mc_schedu[i];
 
 		ra_wave__mc(scp, bb, mc, i);
 //		update_mc_consume_cnt(scp, mc);
@@ -323,7 +328,7 @@ void ra_wave_scope(Scope *scp)
 	scp->consume_cnt_in_bb.clear();
 	scp->consume_cnt_in_bb.resize(vr_size);
 	BasicBlock *bb = scp->bb;
-	bb->x64mc_alloc_wave.clear();
+	bb->mc_alloc_wave.clear();
 
 	init_wave(bb);
 	gen_wave(bb);
@@ -342,7 +347,7 @@ void ra_wave_scope(Scope *scp)
 static void elimicate_copy(Scope *scp)
 {
 	BasicBlock *bb = scp->bb;
-	auto &mcs = bb->x64mc_alloc_wave;
+	auto &mcs = bb->mc_alloc_wave;
 
 	for (int i = 0; i < mcs.size(); i++)
 	{

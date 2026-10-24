@@ -222,14 +222,14 @@ struct X64mc {
 
 struct BasicBlock {
 	bool is_entry_label = 0;
-	vector<Tac> tac;
-	vector<X64mc> x64mc;
-	vector<X64mc> x64mc_alloc_O0;
+	vector<Tac> tacO0;
+	vector<X64mc> mcO0;
+	vector<X64mc> mc_alloc_O0;
 
-	vector<Tac> tac_O1;
-	vector<X64mc> x64mc_O1;
-	vector<X64mc> x64mc_schedu;
-	vector<X64mc> x64mc_alloc_wave;
+	vector<Tac> tacO1;
+	vector<X64mc> mcO1;
+	vector<X64mc> mc_schedu;
+	vector<X64mc> mc_alloc_wave;
 	vector<int> vr_unique;
 
 //	Scope *exit_jmp = 0;

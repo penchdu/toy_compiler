@@ -99,7 +99,7 @@ static bool gen_tac(Scope *scp)
 	}
 
 	for (auto *p : scp->asts)
-		trace_ast_down_up_gen_3_address_code(scp->bb->tac, p);
+		trace_ast_down_up_gen_3_address_code(scp->bb->tacO0, p);
 
 	bool bb_terminated = 0;
 	for (Scope *p : scp->clds)
@@ -125,7 +125,7 @@ static void dump_tac(Scope *scp)
 	if (scp->jmp_in.size() > 0)
 		printf("\nlabel %d:\n", scp->id);
 
-	for (Tac &r : scp->bb->tac)
+	for (Tac &r : scp->bb->tacO0)
 	{
 		Ast *p = r.ast;
 
@@ -202,8 +202,9 @@ static void u(int a, int b)
 }
 static void gen_tac_O1(Scope *scp)
 {
-	scp->bb->tac_O1 = scp->bb->tac;
-	vector<Tac> &tac = scp->bb->tac_O1;
+	BasicBlock *bb = scp->bb;
+	bb->tacO1 = bb->tacO0;
+	vector<Tac> &tac = bb->tacO1;
 
 	vr_union.clear();
 	vr_union.resize(vr_size, -1);
@@ -311,8 +312,8 @@ static void gen_tac_O1(Scope *scp)
 
 static void elimicate_transient_vr(Scope *scp)
 {
-	scp->bb->tac_O1 = scp->bb->tac;
-	vector<Tac> &tac = scp->bb->tac_O1;
+	scp->bb->tacO1 = scp->bb->tacO0;
+	vector<Tac> &tac = scp->bb->tacO1;
 
 	for (int i = 0; i < tac.size();)
 	{

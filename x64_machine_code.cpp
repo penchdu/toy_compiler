@@ -166,13 +166,13 @@ static void gen_mc(Scope *scp, Optimize_level level)
 	vector<X64mc> *mcs = 0;
 	if(level == O0)
 	{
-		tac = &bb->tac;
-		mcs = &bb->x64mc;
+		tac = &bb->tacO0;
+		mcs = &bb->mcO0;
 	}
 	else if(level == O1)
 	{
-		tac = &bb->tac_O1;
-		mcs = &bb->x64mc_O1;
+		tac = &bb->tacO1;
+		mcs = &bb->mcO1;
 	}
 
 	X64mc mc;
@@ -291,9 +291,9 @@ void dump_mc(Scope *scp, string mc_list_name)
 
 	vector<X64mc> *mc_list;
 	if (mc_list_name == "x64mc")
-		mc_list = &bb->x64mc;
+		mc_list = &bb->mcO0;
 	else if (mc_list_name == "x64mc_schedu")
-		mc_list = &bb->x64mc_schedu;
+		mc_list = &bb->mc_schedu;
 	else
 		ERR("%s", mc_list_name.c_str());
 

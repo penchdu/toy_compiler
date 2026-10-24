@@ -26,7 +26,7 @@ void init_wave(BasicBlock *bb)
 	std::sort(v.begin(), v.end());
 	v.erase(std::unique(v.begin(), v.end()), v.end());
 
-	int mc_list_size = bb->x64mc_schedu.size();
+	int mc_list_size = bb->mc_schedu.size();
 
 	for (int vr : bb->vr_unique)
 	{
@@ -37,7 +37,7 @@ void init_wave(BasicBlock *bb)
 
 	for (int mc_idx = 0; mc_idx < mc_list_size; mc_idx++)
 	{
-		X64mc &mc = bb->x64mc_schedu[mc_idx];
+		X64mc &mc = bb->mc_schedu[mc_idx];
 		for (int i = 0; i < 3; i++)
 		{
 			int vr = mc.vr_list[i];
