@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+trap 'echo "[FAIL] line $LINENO: $BASH_COMMAND" >&2' ERR
 
 current_branch=$(git rev-parse --abbrev-ref HEAD)
 if [[ "$current_branch" != "dev" ]]; then
@@ -23,4 +24,3 @@ git status
 git add .
 git commit -m "$*"
 git push
-

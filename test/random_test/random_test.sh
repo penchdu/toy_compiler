@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+trap 'echo "[FAIL] line $LINENO: $BASH_COMMAND" >&2' ERR
 
 # Default to 1000 cases; an optional first argument overrides the count.
 CASES="${1:-1000}"
@@ -28,4 +29,3 @@ python3 vsl_diff_fuzz.py \
 #    --vsc ../../build/vsc \
 #    --cases 1000 \
 #    --seed 2
-

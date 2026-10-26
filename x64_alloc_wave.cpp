@@ -192,7 +192,6 @@ void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 		break;
 
 	case MC_ADD:
-		case MC_SUB:
 		case MC_IMUL:
 		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
 		mc.pr2 = get_pr(bb, i, mc.s2, VR_USAGE_READ);
@@ -206,22 +205,48 @@ void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 
 		if(mc.pr_dst == mc.pr2)
 		{
-			/*
-			* s2 is dead
-			*/
-			if(mc.stamp == MC_SUB)
-			{
-				X64mc neg_mc(MC_NEG, mc.s2);
-				neg_mc.pr1 = mc.pr2;
-				mcs.push_back(neg_mc);
-
-				mc.stamp = MC_ADD;
-
-				LOG("swap sub, %s=%%%d %s=%%%d", vr_name(mc.s1), mc.s1, vr_name(mc.s2), mc.s2);
-			}
-			assert(mc.stamp == MC_ADD || mc.stamp == MC_IMUL);
 			LOG("swap %s=%%%d %s=%%%d", vr_name(mc.s1), mc.s1, vr_name(mc.s2), mc.s2);
+			swap_operand(mc);
+		}
 
+		mcs.push_back(mc);
+		break;
+
+	case MC_SUB:
+		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
+		mc.pr2 = get_pr(bb, i, mc.s2, VR_USAGE_READ);
+
+		update_vr_consume_cnt(scp, mc.s1);
+		update_vr_consume_cnt(scp, mc.s2);
+		check_dead_vr(scp, mcs, mc.s1);
+		check_dead_vr(scp, mcs, mc.s2);
+
+		mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
+
+		if(mc.pr_dst == mc.pr2)
+		{
+			if(mc.pr1 == mc.pr2)
+			{
+				/*
+				 * s1 and s2 share the same register: s1 - s2 == 0.
+				 * The neg+add trick would clobber s1, so emit
+				 *   mov pr_dst, 0
+				 * directly.
+				 */
+				X64mc li_mc(MC_LI, mc.dst);
+				li_mc.pr1 = mc.pr_dst;
+				li_mc.const_num = 0;
+				li_mc.ori_sem = "li 0 (s1-s2)";
+				mcs.push_back(li_mc);
+				break;
+			}
+			X64mc neg_mc(MC_NEG, mc.s2);
+			neg_mc.pr1 = mc.pr2;
+			mcs.push_back(neg_mc);
+
+			mc.stamp = MC_ADD;
+
+			LOG("swap sub, %s=%%%d %s=%%%d", vr_name(mc.s1), mc.s1, vr_name(mc.s2), mc.s2);
 			swap_operand(mc);
 		}
 

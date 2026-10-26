@@ -102,7 +102,7 @@ extern Tokens tokens;
 
 
 enum SymbolStamp {
-	SYMB_CONST = 1 << 0,
+	SYMB_IMMEDIATE = 1 << 0,
 	SYMB_PRIVATE = 1 << 1,
 	SYMB_PRIVATE_transient = 1 << 2,
 	SYMB_OUTER = 1 << 3,

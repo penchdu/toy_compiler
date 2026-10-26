@@ -10,16 +10,16 @@
 
 const McInfo mc_info[MC_INVALID + 1] = {
     [MC_LI] = {1, "mov"},
-    [MC_LD] = {3, "mov"},
+    [MC_LD] = {4, "mov"},
     [MC_victim] = {0, "victim"},
-    [MC_ST] = {3, "mov"},
+    [MC_ST] = {1, "mov"},
 
     [MC_ASSIGN] = {1, "mov"},
     [MC_NEG] = {1, "neg"},
     [MC_ADD] = {1, "add"},
     [MC_SUB] = {1, "sub"},
     [MC_IMUL] = {3, "imul"},
-    [MC_DIV] = {10, "div"},
+    [MC_DIV] = {15, "div"},
 
     [MC_CMP] = {1, "cmp"},
 
@@ -159,9 +159,7 @@ static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 static void gen_mc(Scope *scp, Optimize_level level)
 {
 	assert(scp->bb != 0);
-
 	BasicBlock *bb = scp->bb;
-
 	vector<Tac> *tac = 0;
 	vector<X64mc> *mcs = 0;
 	if(level == O0)

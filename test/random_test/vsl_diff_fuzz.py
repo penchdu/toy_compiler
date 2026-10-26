@@ -14,6 +14,9 @@ Failing cases are preserved with generated source and logs.
 """
 from __future__ import annotations
 
+import sys
+sys.dont_write_bytecode = True
+
 import argparse
 import json
 import os
@@ -473,17 +476,42 @@ def write_logs(folder: Path, logs: dict[str, str]) -> None:
         (folder / name).write_text(content, encoding="utf-8", errors="replace")
 
 
-def save_failure(tmp_dir: Path, output_dir: Path, label: str, category: str, detail: str) -> Path:
+
+def save_failure(
+    tmp_dir: Path,
+    output_dir: Path,
+    label: str,
+    category: str,
+    detail: str,
+) -> Path:
+    # 保留原有的独立失败目录及其诊断文件
     dest = output_dir / label
     dest.mkdir(parents=True, exist_ok=True)
+
     for item in tmp_dir.iterdir():
         target = dest / item.name
         if item.is_dir():
             shutil.copytree(item, target, dirs_exist_ok=True)
         else:
             shutil.copy2(item, target)
-    (dest / "FAILURE.txt").write_text(f"category: {category}\n{detail}\n", encoding="utf-8")
+
+    # 将失败用例的源文件集中复制到 failed_case/
+    source = tmp_dir / "case.c"
+    if source.is_file():
+        failed_cases_dir = output_dir / "failed_case"
+        failed_cases_dir.mkdir(parents=True, exist_ok=True)
+
+        failed_source = failed_cases_dir / f"{label}.c"
+        shutil.copy2(source, failed_source)
+
+    # 保存失败原因
+    (dest / "FAILURE.txt").write_text(
+        f"category: {category}\n{detail}\n",
+        encoding="utf-8",
+    )
+
     return dest
+
 
 
 DEFAULT_CONFIG = {
@@ -634,15 +662,38 @@ def main() -> int:
     if not tokens["while"] and (tokens["break"] or tokens["continue"]):
         print("NOTE: while is disabled, so break/continue cannot be generated even if enabled.")
 
+    
     config_dir = config_path.parent
+    script_dir = Path(__file__).resolve().parent
+
+    # 原始 VSC 路径：优先使用命令行参数，否则读取配置文件
     if args.vsc is not None:
-        vsc = Path(args.vsc).expanduser().resolve()
+        source_vsc = Path(args.vsc).expanduser().resolve()
     else:
-        vsc = resolve_path(str(tool_cfg["vsc"]), config_dir)
-    if not generate_only and not vsc.exists():
-        print(f"ERROR: VSC executable not found: {vsc}", file=sys.stderr)
-        print("Set tools.vsc in the config or pass --vsc /absolute/path/to/build/vsc.", file=sys.stderr)
-        return 2
+        source_vsc = resolve_path(str(tool_cfg["vsc"]), config_dir)
+
+    # 将 VSC 复制到 Python 脚本所在目录
+    vsc = script_dir / "vsc"
+
+    if not generate_only:
+        if not source_vsc.is_file():
+            print(
+                f"ERROR: Original VSC executable not found: {source_vsc}",
+                file=sys.stderr,
+            )
+            return 2
+
+        try:
+            shutil.copy2(source_vsc, vsc)
+
+            # 确保复制后的文件具有执行权限
+            vsc.chmod(vsc.stat().st_mode | 0o100)
+        except OSError as exc:
+            print(f"ERROR: Could not copy VSC: {exc}", file=sys.stderr)
+            return 2
+
+    print(f"Using copied VSC: {vsc}")
+
 
     if args.out is not None:
         output_dir = Path(args.out).expanduser().resolve()
@@ -713,7 +764,7 @@ def main() -> int:
         if generate_only:
             case_dir = output_dir / label
             case_dir.mkdir(parents=True, exist_ok=True)
-            (case_dir / "case.cpp").write_text(generated.source, encoding="utf-8")
+            (case_dir / "case.c").write_text(generated.source, encoding="utf-8")
             (case_dir / "run_settings.json").write_text(json.dumps(run_settings, indent=2) + "\n", encoding="utf-8")
             (case_dir / "seed.txt").write_text(str(case_seed) + "\n", encoding="utf-8")
             (case_dir / "control_flow.txt").write_text(
@@ -731,7 +782,7 @@ def main() -> int:
             continue
 
         temp_path = Path(tempfile.mkdtemp(prefix="vsl_diff_fuzz_"))
-        source_path = temp_path / "case.cpp"
+        source_path = temp_path / "case.c"
         reference_path = temp_path / "reference.cpp"
         (temp_path / "run_settings.json").write_text(json.dumps(run_settings, indent=2) + "\n", encoding="utf-8")
         source_path.write_text(generated.source, encoding="utf-8")
@@ -789,8 +840,8 @@ def main() -> int:
                         category = "bad_output"
                         detail = "Could not parse `Result: <integer>` from host output."
                     else:
-                        vsc_run = run_cmd([str(vsc), "case.cpp"], temp_path, timeout)
-                        logs["vsc_compile.log"] = f"$ {vsc} case.cpp\nexit={vsc_run.returncode}\nSTDOUT:\n{vsc_run.stdout}\nSTDERR:\n{vsc_run.stderr}"
+                        vsc_run = run_cmd([str(vsc), "case.c"], temp_path, timeout)
+                        logs["vsc_compile.log"] = f"$ {vsc} case.c\nexit={vsc_run.returncode}\nSTDOUT:\n{vsc_run.stdout}\nSTDERR:\n{vsc_run.stderr}"
                         if vsc_run.returncode != 0 or not (temp_path / "a1.s").exists():
                             category = "vsc_failed"
                             detail = "VSC failed or did not produce a1.s. Check vsc_compile.log."
@@ -880,8 +931,8 @@ def main() -> int:
             print(f"{key}: {counts[key]}")
     if failure_paths:
         print(f"Failure artifacts: {output_dir}")
-        print("Each failing directory includes case.cpp, reference.cpp, a1.s if produced, and command logs.")
-        print("To reproduce a case, run VSC manually on that directory's case.cpp and compare reference.cpp.")
+        print("Each failing directory includes case.c, reference.cpp, a1.s if produced, and command logs.")
+        print("To reproduce a case, run VSC manually on that directory's case.c and compare reference.cpp.")
         return 1
     print("No differences or compile failures found.")
     return 0

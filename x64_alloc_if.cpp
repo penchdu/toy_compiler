@@ -53,7 +53,7 @@ void ra_wave_if(Scope *if_scp)
 	then_pre_work(else_branch);
 	ra_wave_scope(then_branch);
 
-	int after_then_swap_pr = get_swap_pr(then_branch->bb);
+	int after_then_swap_pr = get_swap_pr(then_tail->bb);
 	assert(after_then_swap_pr != X64PR_MAX);
 	vector<VrState> after_then_vr_state = vr_state;
 	vector<PrState> after_then_pr_state = pr_state;
@@ -65,7 +65,7 @@ void ra_wave_if(Scope *if_scp)
 	// else
 	ra_wave_scope(else_branch);
 
-	int after_else_swap_pr = get_swap_pr(else_branch->bb);
+	int after_else_swap_pr = get_swap_pr(else_tail->bb);
 	assert(after_else_swap_pr != X64PR_MAX);
 
 	int after_then_pr = 0;
@@ -89,7 +89,7 @@ void ra_wave_if(Scope *if_scp)
 		    after_then_swap_pr,
 		    vr_state,
 		    pr_state,
-		    get_inner_tail_of_scope(else_branch));
+		    else_tail);
 	}
 	else
 	{
@@ -99,7 +99,7 @@ void ra_wave_if(Scope *if_scp)
 		    after_else_swap_pr,
 		    after_then_vr_state,
 		    after_then_pr_state,
-		    get_inner_tail_of_scope(then_branch));
+		    then_tail);
 	}
 
 	for (int vr = 0; vr < vr_size; vr++)

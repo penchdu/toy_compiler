@@ -120,12 +120,22 @@ static bool gen_tac(Scope *scp)
 	return false;
 }
 
-static void dump_tac(Scope *scp)
+static void dump_tac(Scope *scp, Optimize_level level)
 {
+	assert(scp->bb != 0);
+	BasicBlock *bb = scp->bb;
+	vector<Tac> *tac = 0;
+
+	if(level == O0)
+		tac = &bb->tacO0;
+	else if(level == O1)
+		tac = &bb->tacO1;
+
+
 	if (scp->jmp_in.size() > 0)
 		printf("\nlabel %d:\n", scp->id);
 
-	for (Tac &r : scp->bb->tacO0)
+	for (Tac &r : *tac)
 	{
 		Ast *p = r.ast;
 
@@ -168,7 +178,7 @@ static void dump_tac(Scope *scp)
 		printf("%d->%d:\n\n", scp->id, scp->jmp_out->id);
 
 	for (Scope *p : scp->clds)
-		dump_tac(p);
+		dump_tac(p, level);
 }
 
 static vector<int> vr_union;
@@ -204,6 +214,7 @@ static void gen_tac_O1(Scope *scp)
 {
 	BasicBlock *bb = scp->bb;
 	bb->tacO1 = bb->tacO0;
+
 	vector<Tac> &tac = bb->tacO1;
 
 	vr_union.clear();
@@ -303,6 +314,15 @@ static void gen_tac_O1(Scope *scp)
 			tac.erase(tac.begin() + i);
 			continue;
 		}
+
+//		if (t.ast->op == OP_SUB && t.s1 == t.s2)
+//		{
+//			t. li_mc(MC_LI, mc.dst);
+//			li_mc.pr1 = mc.pr_dst;
+//			li_mc.const_num = 0;
+//							li_mc.ori_sem = "li 0 (s1-s2)";
+//		}
+
 		i++;
 	}
 
@@ -312,7 +332,6 @@ static void gen_tac_O1(Scope *scp)
 
 static void elimicate_transient_vr(Scope *scp)
 {
-	scp->bb->tacO1 = scp->bb->tacO0;
 	vector<Tac> &tac = scp->bb->tacO1;
 
 	for (int i = 0; i < tac.size();)
@@ -335,6 +354,23 @@ static void elimicate_transient_vr(Scope *scp)
 		    //			&& a.dst != a.s2
 		    && b.s1 == a.dst)
 		{
+			assert(b.s2 < 0);
+
+			bool used_after = false;
+			for (int m = i + 2; m < tac.size(); m++)
+			{
+				if (tac[m].s1 == a.dst || tac[m].s2 == a.dst)
+				{
+					used_after = true;
+					break;
+				}
+			}
+			if (used_after)
+			{
+				i++;
+				continue;
+			}
+
 			a.dst = b.dst;
 			tac.erase(tac.begin() + i + 1);
 			continue;
@@ -347,17 +383,27 @@ static void elimicate_transient_vr(Scope *scp)
 		elimicate_transient_vr(p);
 }
 
+static void gen_tac_O1_fake(Scope *scp)
+{
+	BasicBlock *bb = scp->bb;
+	bb->tacO1 = bb->tacO0;
+
+	for (Scope *p : scp->clds)
+		gen_tac_O1_fake(p);
+}
+
 void gen_three_address_code()
 {
 	gen_tac(&file_scp);
 	dump_ast();
 
-	printf("\n========== tac ==========\n");
-	dump_tac(&file_scp);
+	printf("\n========== tac O0 ==========\n");
+	dump_tac(&file_scp, O0);
 
+	gen_tac_O1_fake(&file_scp);
 	gen_tac_O1(&file_scp);
 	elimicate_transient_vr(&file_scp);
 
-	printf("\n========== tac ==========\n");
-	dump_tac(&file_scp);
+	printf("\n========== tac O1==========\n");
+	dump_tac(&file_scp, O1);
 }

@@ -486,8 +486,12 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			break;
 
 		case MC_ASSIGN:
-			PRINT_ASM("%s %s, %s", mc_info[stamp].mc_code, pr_name_asm(mc.pr_dst, mc.dst), pr_name_asm(mc.pr1, mc.s1));
-			PRINT_ASM_sem
+			if (mc.pr_dst != mc.pr1)
+			{
+				PRINT_ASM("%s %s, %s", mc_info[stamp].mc_code, pr_name_asm(mc.pr_dst, mc.dst),
+				    pr_name_asm(mc.pr1, mc.s1));
+				PRINT_ASM_sem
+			}
 			break;
 
 		case MC_NEG:

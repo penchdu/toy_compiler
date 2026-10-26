@@ -29,7 +29,7 @@ vector<ScheduleScore> ready;
 vector<int> running;
 
 const int reg_limit = X64PR_MAX;
-const int alu_unit = 2;
+const int alu_unit = 4;
 const int imul_unit = 1;
 const int div_unit = 1;
 

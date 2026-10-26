@@ -234,12 +234,17 @@ static Symbol* new_private_transient_symb(Ast *p)
 	symb->vr = p->vr;
 
 	if(p->sem_stamp == SEM_IMMEDIATE)
+	{
+		symb->stamp = SYMB_IMMEDIATE;
 		symb->src = p->tk.src;
+	}
 	else
+	{
+		symb->stamp = SYMB_PRIVATE_transient;
 		symb->src = p->tk.src; // + "%" + to_string(p->vr);
+	}
 
 	symb->unique_name = symb->src;
-	symb->stamp = SYMB_PRIVATE_transient;
 	symb->depth = p->scope->depth;
 //	symb->use_cnt = 1;
 
@@ -284,7 +289,7 @@ static int case_op(Ast *p)
 		p->vr = p->left->vr;
 		return p->vr;
 
-// todo gen a assign inst
+// todo gen a assign mc
 	case OP_TEST:
 		p->type = p->left->type;
 		p->vr = declare_record.new_vr(p);
@@ -360,8 +365,7 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 
 	case SEM_IMMEDIATE:
 		p->vr = declare_record.new_vr(p);
-		p->symb = new_private_transient_symb(p);
-		p->symb->stamp = SYMB_CONST;
+		new_private_transient_symb(p);
 		return p->vr;
 
 	case SEM_OPERATOR:

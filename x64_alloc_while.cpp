@@ -181,7 +181,8 @@ void recover_pr_state(
 	LOG("scp %s spilled: %d, swap_pr=%d %s", tail_scope_to_gen_mc->name.c_str(),
 		spilled, swap_pr, pr_name(swap_pr));
 
-	if (now_pr_state[swap_pr].vr != INVALID_VR)
+	int vr = now_pr_state[swap_pr].vr;
+	if (vr != INVALID_VR)
 	{
 		int free_pr = X64PR_MAX;
 		for (int i = 0; i < X64PR_MAX; i++)
@@ -192,9 +193,9 @@ void recover_pr_state(
 				break;
 			}
 		}
-		assert(free_pr != X64PR_MAX /* && free_pr != swap_pr */);
+		if(free_pr == X64PR_MAX /* && free_pr != swap_pr */)
+			ERR("%%%d %d", vr, swap_pr);
 
-		int vr = now_pr_state[swap_pr].vr;
 		const string &name = vr_name(vr);
 
 		mc = X64mc(MC_ASSIGN);
@@ -600,15 +601,16 @@ void while_move_victim_to_pre_cond(
 	 */
 	for (int vr = 0; vr < vr_size; vr++)
 	{
-		if (vr_victim[vr] > 0 && after_cond_vr_state[vr].pr < X64PR_MAX)
-		{
-			int pr = after_cond_vr_state[vr].pr;
-			after_cond_vr_state[vr].pr = X64PR_MAX;
-			after_cond_vr_state[vr].u = VR_USAGE_INVALID;
-			after_cond_vr_state[vr].dirty = 0;
+		if (vr_victim[vr] == 0)
+			continue;
+		assert(after_cond_vr_state[vr].pr < X64PR_MAX);
 
-			after_cond_pr_state[pr].vr = INVALID_VR;
-		}
+		int pr = after_cond_vr_state[vr].pr;
+		after_cond_vr_state[vr].pr = X64PR_MAX;
+		after_cond_vr_state[vr].u = VR_USAGE_INVALID;
+		after_cond_vr_state[vr].dirty = 0;
+
+		after_cond_pr_state[pr].vr = INVALID_VR;
 	}
 }
 void move_ld_to_pre_cond(
@@ -619,7 +621,7 @@ void move_ld_to_pre_cond(
     vector<int> &vr_reference,
     vector<int> &pr_reference,
     vector<int> &vr_ld,
-    int reserved_pr)
+    int swap_pr)
 {
 	auto &mcs_while = while_scp->bb->mc_alloc_wave;
 	auto &mcs = cond_or_body->bb->mc_alloc_wave;
@@ -627,33 +629,29 @@ void move_ld_to_pre_cond(
 	for (int i = 0; i < mcs.size(); i++)
 	{
 		auto &mc = mcs[i];
+		int vr = mc.s1;
+		int pr = mc.pr1;
 
-		if (mc.stamp == MC_LD && vr_reference[mc.s1] == 0)
+		if (mc.stamp == MC_LD
+			&& vr_reference[mc.s1] == 0
+			&& pr_reference[pr] == 0
+			&& pr != swap_pr
+			&& pre_cond_pr_state[pr].vr == INVALID_VR)
 		{
-			int vr = mc.s1;
-			int pr = mc.pr1;
+			pre_cond_vr_state[vr].pr = pr;
+			pre_cond_vr_state[vr].u = VR_USAGE_READ;
+			pre_cond_vr_state[vr].dirty = 0;
+			pre_cond_pr_state[pr].vr = vr;
 
-			if (pr != reserved_pr
-			    && pr_reference[pr] == 0
-			    && pre_cond_pr_state[pr].vr == INVALID_VR)
-			{
-				pre_cond_vr_state[vr].pr = pr;
-				pre_cond_vr_state[vr].u = VR_USAGE_READ;
-				pre_cond_vr_state[vr].dirty = 0;
-				pre_cond_pr_state[pr].vr = vr;
+			mcs_while.push_back(mc);
+			vr_ld[mc.s1]++;
+			mc.stamp = MC_INVALID;
 
-				mcs_while.push_back(mc);
-				vr_ld[mc.s1]++;
-				mc.stamp = MC_INVALID;
-
-				int free_pr = get_free_pr_num(pre_cond_pr_state, reserved_pr);
-				LOG("ok");
-				LOG("%d, pr_reference[%s]=%d, pre_cond_pr_state[%s].vr=%%%d, free_pr=%d",
-				    pr != reserved_pr,
-				    pr_name(pr), pr_reference[pr],
-				    pr_name(pr), pre_cond_pr_state[pr].vr,
-				    free_pr);
-			}
+			LOG("%d, pr_reference[%s]=%d, pre_cond_pr_state[%s].vr=%%%d, free_pr=%d",
+			    pr != swap_pr,
+			    pr_name(pr), pr_reference[pr],
+			    pr_name(pr), pre_cond_pr_state[pr].vr,
+			    get_free_pr_num(pre_cond_pr_state, swap_pr));
 		}
 
 		if (mc.s1 >= 0)
@@ -685,7 +683,8 @@ void while_move_ld_to_pre_cond(
     vector<PrState> &pre_cond_pr_state,
     vector<VrState> &after_cond_vr_state,
     vector<PrState> &after_cond_pr_state,
-    int pre_cond_reserved_pr)
+    int pre_cond_swap_pr,
+    int after_cond_swap_pr)
 {
 	Scope *cond = while_scp->clds[0];
 	Scope *body = while_scp->clds[1];
@@ -702,7 +701,7 @@ void while_move_ld_to_pre_cond(
 	    vr_reference,
 	    pr_reference,
 	    vr_ld,
-	    pre_cond_reserved_pr);
+	    pre_cond_swap_pr);
 
 	vr_ld.clear();
 	vr_ld.resize(vr_size, 0);
@@ -715,29 +714,33 @@ void while_move_ld_to_pre_cond(
 	    vr_reference,
 	    pr_reference,
 	    vr_ld,
-	    pre_cond_reserved_pr);
+	    pre_cond_swap_pr);
 
 	/*
-	 * if move_ld_to_pre_cond happened in body, vr have no pr in pre_cond
-	 * and cond and after_cond, and have no op in cond
+	 * if move_ld_to_pre_cond happened in body,
+	 * vr have no pr in pre_cond, cond and after_cond,
+	 * vr have no op in cond
 	 *
 	 */
-	for (int vr = 0; vr < vr_size; vr++)
-	{
-		if (vr_ld[vr] > 0)
-		{
-			int pr = pre_cond_vr_state[vr].pr;
-
-			assert(after_cond_vr_state[vr].pr == X64PR_MAX);
-			assert(after_cond_pr_state[pr].vr == INVALID_VR);
-
-			after_cond_vr_state[vr].pr = pr;
-			after_cond_vr_state[vr].u = VR_USAGE_READ;
-			after_cond_vr_state[vr].dirty = 0;
-
-			after_cond_pr_state[pr].vr = vr;
-		}
-	}
+//	for (int vr = 0; vr < vr_size; vr++)
+//	{
+//		if (vr_ld[vr] > 0)
+//		{
+//			int pr = pre_cond_vr_state[vr].pr;
+//
+//			if (pr == after_cond_swap_pr)
+//				continue;
+//
+//			assert(after_cond_vr_state[vr].pr == X64PR_MAX);
+//			assert(after_cond_pr_state[pr].vr == INVALID_VR);
+//
+//			after_cond_vr_state[vr].pr = pr;
+//			after_cond_vr_state[vr].u = VR_USAGE_READ;
+//			after_cond_vr_state[vr].dirty = 0;
+//
+//			after_cond_pr_state[pr].vr = vr;
+//		}
+//	}
 }
 
 void ra_wave_while(Scope *while_scp)
@@ -827,7 +830,8 @@ void ra_wave_while(Scope *while_scp)
 	    pre_cond_pr_state,
 	    after_cond_vr_state,
 	    after_cond_pr_state,
-	    pre_cond_swap_pr);
+	    pre_cond_swap_pr,
+	    after_cond_swap_pr);
 
 	vr_state = after_cond_vr_state;
 	pr_state = after_cond_pr_state;
@@ -838,13 +842,15 @@ void ra_wave_while(Scope *while_scp)
 	dump_vr_state(after_cond_vr_state, "after cond " + to_string(while_scp->id));
 	dump_vr_state(after_body_vr_state, "after body " + to_string(while_scp->id));
 
+	Scope *body_inner_tail = get_inner_tail_of_scope(body);
+
 	recover_pr_state(
 	    pre_cond_vr_state,
 	    pre_cond_pr_state,
 	    pre_cond_swap_pr,
 	    after_body_vr_state,
 	    after_body_pr_state,
-	    get_inner_tail_of_scope(body));
+	    body_inner_tail);
 
 	dump_vr_state(after_body_vr_state, "after body swaped " + to_string(while_scp->id));
 	dump_vr_state(vr_state, "vr_state " + to_string(while_scp->id));
@@ -852,13 +858,12 @@ void ra_wave_while(Scope *while_scp)
 
 	////////////////////////////////////////////////////////////////////////////////////////
 
-	Scope *body_inner_tail = get_inner_tail_of_scope(body);
-
 	st_additional_dirty(cond, pre_cond_vr_state, body_inner_tail, after_body_vr_state);
 
 	for (Scope *p : body->continue_list)
 	{
-		ra_wave__continue_break(cond,
+		ra_wave__continue_break(
+			cond,
 		    pre_cond_vr_state,
 		    pre_cond_pr_state,
 		    pre_cond_swap_pr,
@@ -867,7 +872,8 @@ void ra_wave_while(Scope *while_scp)
 
 	for (Scope *p : body->break_list)
 	{
-		ra_wave__continue_break(cond,
+		ra_wave__continue_break(
+			cond,
 		    after_cond_vr_state,
 		    after_cond_pr_state,
 		    after_cond_swap_pr,

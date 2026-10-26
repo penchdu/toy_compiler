@@ -115,4 +115,5 @@ done
 
 END="$(date +%s.%N)"
 ELAPSED="$(awk "BEGIN {printf \"%.3f\", $END - $START}")"
+echo
 echo "result: all=$total | pass=$pass | fail=$fail | time=${ELAPSED}s"
