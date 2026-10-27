@@ -44,6 +44,13 @@ void init_wave(BasicBlock *bb)
 			if (vr >= 0)
 				bb_vr_wave[vr].appear_cnt[mc_idx]++;
 		}
+
+		int dst = mc.vr_list[0];
+		if(dst >= 0)
+		{
+
+		}
+
 	}
 }
 void dump_wave(BasicBlock *bb)

@@ -29,6 +29,7 @@ int get_free_pr_num(const vector<PrState> &prst, int reserved_pr)
 
 int get_pr_wave(BasicBlock *bb, int mc_idx)
 {
+	LOG();
 	X64mc &mc = bb->mc_schedu[mc_idx];
 
 	for (int pr = 0; pr < X64PR_MAX; pr++)
@@ -55,13 +56,21 @@ int get_pr_wave(BasicBlock *bb, int mc_idx)
 		else
 			score = bb_vr_wave[vr].score[mc_idx];
 
+		if(vr_state[vr].dirty)
+			score += 0.5;
+
 		if (score < min_score)
 		{
 			min_score = score;
 			min_score_vr = vr;
 		}
+
+		LOG("%s=%%%d score=%f", vr_name(vr), vr, score);
+
 	}
 	assert(min_score_vr != INVALID_VR);
+
+	LOG("min_score_vr %s=%%%d score=%.2f \n", vr_name(min_score_vr), min_score_vr, min_score);
 
 	int pr = vr_state[min_score_vr].pr;
 	spill_vr(min_score_vr, bb->mc_alloc_wave);

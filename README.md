@@ -1,6 +1,6 @@
 # VSC - Very Simple Compiler
 
-After studying the book *Engineering a Compiler 3E*, I found that compiler theory was simpler than I had supposed. Before that, I thought it was very difficult, or even impossible, to understand. So I decided to write a toy compiler to kill some time and have fun.
+After going through Engineering a Compiler 3E, I realized compiler theory isn’t as hard as I thought. I once believed it was nearly impossible to understand, so now I want to build a toy compiler.
 
 Before I start coding I thought it will be very simple, when I am coding I found it is not that simple even it is a toy compiler.
 

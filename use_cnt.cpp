@@ -347,7 +347,7 @@ void rm_dead_code(Scope *scp)
 	for (int i = mcs.size() - 1; i >= 0; i--)
 	{
 		auto &mc = mcs[i];
-		if (mc.dst < 0 || declare_record.ast[mc.dst]->symb->use_cnt > 0)
+		if (mc.dst < 0 || vr_symb(mc.dst)->use_cnt > 0)
 			continue;
 
 		MachineCodeStamp stamp = mcs[i].stamp;

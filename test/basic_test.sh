@@ -4,12 +4,17 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
 TEST_DIRS=(
-	../vsc_test/time_compare/case
 	case1
 	case4
 	case2
 	case3_vsl_alloc_cases
 )
+if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case" ]; then
+    TEST_DIRS+=("../vsc_test/time_compare/case")
+fi
+if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case2" ]; then
+    TEST_DIRS+=("../vsc_test/time_compare/case2")
+fi
 
 VSC="$PROJECT_DIR/build/vsc"
 

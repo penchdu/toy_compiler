@@ -243,6 +243,7 @@ struct Wave {
 	int mc_list_size;		// == score.size() == appear_cnt.size()
 	vector<float> score;
 	vector<int> appear_cnt;		// one vr use cnt in a mc, 0 ~ 3,  3->"a = a + a"; 2->"b = a + a"
+	int dirty;
 };
 extern vector<Wave> bb_vr_wave;
 
