@@ -291,10 +291,11 @@ static int case_op(Ast *p)
 
 // todo gen a assign mc
 	case OP_TEST:
-		p->type = p->left->type;
-		p->vr = declare_record.new_vr(p);
-		new_private_transient_symb(p);
-		return p->vr;
+//		p->type = p->left->type;
+//		p->vr = declare_record.new_vr(p);
+//		new_private_transient_symb(p);
+//		return p->vr;
+		return -1;
 
 	case OP_ADD:
 		case OP_SUB:
@@ -343,7 +344,6 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 
 	int b = trace_ast_down_up_gen_vr(p->right);
 	int a = trace_ast_down_up_gen_vr(p->left);
-	Symbol *symb = 0;
 	(void) a;
 	(void) b;
 
@@ -354,14 +354,13 @@ static int trace_ast_down_up_gen_vr(Ast *p)
 
 	// leaf node
 	case SEM_VAR:
-		symb = p->symb;
-		assert(symb);
-		if (symb->vr < 0)
-			symb->vr = declare_record.new_vr(p);
+		assert(p->symb);
+		if (p->symb->vr < 0)
+			p->symb->vr = declare_record.new_vr(p);
 
 		// todo symb->vr to be defined in "new =" to gen ssa
-		p->vr = symb->vr;
-		return symb->vr;
+		p->vr = p->symb->vr;
+		return p->symb->vr;
 
 	case SEM_IMMEDIATE:
 		p->vr = declare_record.new_vr(p);
