@@ -48,12 +48,12 @@ Next steps: SSA, -O1 register allocation.
 
 ### 2026.9.29
 
-**score based inst-selecter & wavefront reg-alloc (-O1)**
+**score based inst-selecter & wave reg-alloc (-O1)**
 
-Implemented an innovative wavefront based reg-alloc method for -O1 optimization:
+Implemented an innovative wave based reg-alloc method for -O1 optimization:
 
-- **Wavefront Score Model**: Introduced an asymmetric decay wave model for virtual registers. It simulates usage peaks and rapid post-use decay, dynamically scoring registers for allocation choices.  The idea is that for a virtual register (VR), if it is used continuously or near-continuously in the near future, it generates a smoothly rising peak to signal to the allocator that this VR should not be spilled. If it remains unused beyond a certain range, it rapidly drops into a trough, indicating that this VR can be spilled. The allocator compares the peak values of all VRs at the current position to decide which VR to spill.
-- Wavefront Register Allocator: driven by wavefront scores (`a1.s`), reducing unnecessary spill compared to the baseline -O0 strategy (`a0.s`). Not spill on every vr use, but spill all vr at the end of every BasicBlock.
+- **Wave Score Model**: Introduced an asymmetric decay wave model for virtual registers. It simulates usage peaks and rapid post-use decay, dynamically scoring registers for allocation choices.  The idea is that for a virtual register (VR), if it is used continuously or near-continuously in the near future, it generates a smoothly rising peak to signal to the allocator that this VR should not be spilled. If it remains unused beyond a certain range, it rapidly drops into a trough, indicating that this VR can be spilled. The allocator compares the peak values of all VRs at the current position to decide which VR to spill.
+- Wave Register Allocator: driven by wave scores (`a1.s`), reducing unnecessary spill compared to the baseline -O0 strategy (`a0.s`). Not spill on every vr use, but spill all vr at the end of every BasicBlock.
 - Score-Driven Instruction Scheduler : BasicBlock level, consider critical path latency, functional unit availability (ALU/IMUL/DIV), consumption scores, transient variable, last use, single-line, seems not bad.
 
 Next steps: global-Inst-select and global-reg-alloc
@@ -118,9 +118,9 @@ Current merge algorithm is too simple. an improve is: consider future VR use aft
 - [x] x64 Inst-schedule (BasicBlock-level, use score)
 - [ ] x64 Inst-schedule (global, use score)
 - [x] x64 -O0 reg-alloc	(spill/reload)
-- [x] x64 -O1 reg-alloc (BasicBlock-level Wavefront)
+- [x] x64 -O1 reg-alloc (BasicBlock-level wave)
 - [x] x64 -O1 reg-alloc (local register state reconciliation on control-flow edges)
-- [ ] x64 -O1 reg-alloc (global Wavefront)
+- [ ] x64 -O1 reg-alloc (global wave)
 - [x] x64 asm
 
 

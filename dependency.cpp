@@ -19,7 +19,7 @@ void create_dependcy_RAW(int a, int b)
 	if (b < 0)
 		return;
 
-	if(a == b)
+	if (a == b)
 		return;
 
 	auto &pred = mcs_predecessor[a].mcs;
@@ -40,7 +40,7 @@ void create_dependcy_WAR(int a, vector<int> &_prev_read)
 		create_dependcy_RAW(a, b);
 }
 
-void gen_use_def_chain(vector<X64mc> &x64mc)
+void gen_use_def_chain(vector<X64mc> &x64mc, Scope *scp)
 {
 	prev_write.clear();
 	prev_write.resize(vr_size, -1);
@@ -52,7 +52,44 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 	mcs_successor.clear();
 	mcs_successor.resize(x64mc.size());
 
-//	LOG("%zu, %zu\n", x64mc.size(), prev_write.size());
+	// ---- SSA version ordering: higher versions depend on all lower versions ----
+	// prevents scheduler from interleaving different SSA versions of the same variable,
+	// which would increase simultaneous live range overlap and cause extra spills.
+	// NOTE: disabled — out_base_vr lives in parent BB, not reachable within single BB.
+	//       No measurable benefit on time_compare, one case even regressed.
+#if 0
+	if (scp && scp->outer_symb_table_ptr)
+	{
+		for (Symbol *symb : *scp->outer_symb_table_ptr)
+		{
+			auto &ssa = symb->ssa;
+			for (int i = ssa.size() - 1; i >= 0; i--)
+			{
+				int b_vr = ssa[i];
+				int a_vr = (i == 0) ? symb->out_base_vr : ssa[i - 1];
+
+				for (int idx_b = 0; idx_b < x64mc.size(); idx_b++)
+				{
+					if (x64mc[idx_b].dst == b_vr)
+					{
+						for (int idx_a = 0; idx_a < x64mc.size(); idx_a++)
+						{
+							auto &mc_a = x64mc[idx_a];
+							if (mc_a.dst == a_vr || mc_a.s1 == a_vr || mc_a.s2 == a_vr)
+							{
+								// skip cp_ssa: writes a_vr(base) by reading an SSA version
+								if (mc_a.dst == a_vr && std::find(ssa.begin(), ssa.end(), mc_a.s1) != ssa.end())
+									continue;
+								create_dependcy_RAW(idx_b, idx_a);
+							}
+						}
+						break;
+					}
+				}
+			}
+		}
+	}
+#endif
 
 	for (int idx = 0; idx < x64mc.size(); idx++)
 	{
@@ -81,7 +118,7 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 			case MC_SUB:
 			case MC_IMUL:
 			case MC_DIV:
-//			create_dependcy_RAW(idx, prev_write[s1]);
+			//			create_dependcy_RAW(idx, prev_write[s1]);
 //			create_dependcy_WAR(idx, prev_read[s1]);
 //			prev_write[s1] = idx;
 //			prev_read[s1].clear();
@@ -109,8 +146,8 @@ void gen_use_def_chain(vector<X64mc> &x64mc)
 			break;
 
 		case MC_TEST:
-		case MC_SAVE_RET:
-//			printf("MC_SAVE_RET_VALUE %d %d, %lu\n", s1, s2, prev_read.size());
+			case MC_SAVE_RET:
+			//			printf("MC_SAVE_RET_VALUE %d %d, %lu\n", s1, s2, prev_read.size());
 			create_dependcy_RAW(idx, prev_write[s1]);
 			prev_read[s1].push_back(idx);
 			break;
@@ -141,10 +178,10 @@ static void print_mc_err(int a, int b, const X64mc &mc)
 	MachineCodeStamp stamp = mc.stamp;
 
 	printf("%d %d, %s %s(%%%d) %s(%%%d) %s(%%%d) \n", a, b,
-		mc_info[stamp].mc_code,
-		dst >= 0 ? declare_record.ast[dst]->tk.src.c_str() : "", dst,
-		s1 >= 0 ? declare_record.ast[s1]->tk.src.c_str() : "", s1,
-			s2 >= 0 ? declare_record.ast[s2]->tk.src.c_str() : "", s2);
+	    mc_info[stamp].mc_code,
+	    dst >= 0 ? declare_record.ast[dst]->tk.src.c_str() : "", dst,
+	    s1 >= 0 ? declare_record.ast[s1]->tk.src.c_str() : "", s1,
+	    s2 >= 0 ? declare_record.ast[s2]->tk.src.c_str() : "", s2);
 }
 void dump_chain(vector<X64mc> &x64mc)
 {

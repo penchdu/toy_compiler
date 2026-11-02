@@ -36,7 +36,8 @@ static Scope* new_cld_scp(bool is_virtual)
 	if(is_virtual)
 	{
 //		assert(current_scope_pointer->parent->is_virtual == false);
-		current_scope_pointer->symb_table = parent->symb_table;
+		current_scope_pointer->symb_table_ptr = parent->symb_table_ptr;
+		current_scope_pointer->outer_symb_table_ptr = parent->outer_symb_table_ptr;
 		current_scope_pointer->func_table = parent->func_table;
 		current_scope_pointer->depth = parent->depth;
 	}
@@ -139,7 +140,7 @@ static int case_tk_func()
 	Scope *cur_file_scope = current_scope_pointer;
 	assert(cur_file_scope->sem_stamp == SEM_FILE_SCOPE);
 
-	for (auto symb : *(cur_file_scope->symb_table))
+	for (auto symb : *(cur_file_scope->symb_table_ptr))
 	{
 		if (symb->src == func_name)
 			ERR("%s already declared", func_name.c_str());
@@ -498,11 +499,13 @@ void case_tk_right_brace(bool eat)
 	exit_current_scope();
 
 	Token tk = tokens.peek();
-	if (!(tk.stamp == TK_BRACE_L || tk.stamp == TK_BRACE_R
-	        || tk.stamp == TK_EOF
-	        //	    || tk.type == TK_INVALID
-	        || tk.stamp == TK_IF || tk.stamp == TK_ELSE
-	        || tk.stamp == TK_WHILE
+	if (!(tk.stamp == TK_BRACE_L
+	    || tk.stamp == TK_BRACE_R
+	    || tk.stamp == TK_EOF
+	    // || tk.type == TK_INVALID
+	    || tk.stamp == TK_IF
+	    || tk.stamp == TK_ELSE
+	    || tk.stamp == TK_WHILE
 	))
 	{
 		new_virtual_scope_and_drop_in();

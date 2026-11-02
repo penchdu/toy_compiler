@@ -120,7 +120,7 @@ void spill_vr(
 	if (method == O0 ||
 	    (/*p->sem_stamp != SEM_CONST_NUM &&*/
 	    method == O1 && dirty
-	        && p->symb->consume_cnt < p->symb->use_cnt))
+	        && ssa_consume_cnt[vr] < ssa_use_cnt[vr]))
 	{
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;
@@ -155,7 +155,7 @@ static void spill_vr(const X64mc &mc, vector<X64mc> &mcs)
 		spill_vr(mc.s2, mcs);
 }
 
-int get_pr_o0()
+int get_pr_O0()
 {
 	for (int i = 0; i < X64PR_MAX; i++)
 	{
@@ -205,11 +205,12 @@ int get_pr(enum Optimize_level method,
 		int pr = X64PR_MAX;
 
 		if (method == O0)
-			pr = get_pr_o0();
+			pr = get_pr_O0();
 		else if (method == O1)
 			pr = get_pr_wave(bb, mc_idx);
 		else
 			ERR();
+
 		assert(pr != X64PR_MAX);
 
 		vr_state[vr].pr = pr;
@@ -228,7 +229,7 @@ int get_pr(enum Optimize_level method,
 		/*
 		 * it will be not ok in a=a+1,
 		 * but now,  a=a+1;  ->  t=a+1;  a=t;
-		 * error will happen when delete t, unless alloc the 2nd a first
+		 * error will happen when not use t, unless alloc the 2nd a first
 		 *
 		 */
 //			need_load = 1;
@@ -255,6 +256,7 @@ int get_pr(enum Optimize_level method,
 			mc.ori_sem = "memory ld";
 			mcs.push_back(mc);
 
+			// TODO ld is not dirty
 //			vr_state[vr].dirty = 0;
 		}
 	}
@@ -590,7 +592,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		PRINT_ASM_HEAD(".section .note.GNU-stack,\"\",@progbits");
 	}
 }
-static void dump_asm(const string &asm_file)
+void dump_asm(const string &asm_file)
 {
 	FILE *fp = fopen(asm_file.c_str(), "w");
 	assert(fp);
@@ -613,14 +615,11 @@ static void dump_asm(const string &asm_file)
 #undef PRINT_ASM
 #undef PRINT_ASM_sem
 
-void x64_reg_alloc()
+void x64_reg_alloc_O0()
 {
+	vr_state.clear();
 	vr_state.resize(vr_size);
 
 	x64_reg_alloc_o0(&file_scp);
 	dump_asm("a0.s");
-
-	usleep(1000);
-	x64_reg_alloc_wave();
-	dump_asm("a1.s");
 }

@@ -45,6 +45,7 @@ const char *TokenStamp_string[TK_EOF + 1] = {
 
 const char *Operator_string[OP_ALL + 1] = {
 	[OP_ASSIGN] = "OP_ASSIGN",
+	[OP_COPY_SSA] = "OP_COPY_SSA",
 	[OP_ADD] = "OP_ADD",
 	[OP_SUB] = "OP_SUB",
 	[OP_MUL] = "OP_MUL",
@@ -62,6 +63,7 @@ const char *Operator_string[OP_ALL + 1] = {
 	[OP_LOGIC_AND] = "OP_LOGIC_AND",
 	[OP_LOGIC_OR] = "OP_LOGIC_OR",
 
+	[OP_SAVE_RET_VALUE] = "OP_SAVE_RET_VALUE",
 	[OP_ALL] = "OP_ALL",
 };
 
@@ -87,8 +89,6 @@ const char *Semantic_string[SEM_INVALID + 1] = {
 	[SEM_FUNC_DECLARE] = "SEM_FUNC_DECLARE",
 	[SEM_FUNC_DEFINE] = "SEM_FUNC_DEFINE",
 	[SEM_FUNC_CALL] = "SEM_FUNC_CALL",
-
-	[SEM_SAVE_RET_VALUE] = "SEM_SAVE_RET_VALUE",
 
 	[SEM_bb_terminate] = "SEM_bb_terminate",
 	[SEM_UNNAMED_SCOPE] = "SEM_UNNAMED_SCOPE",

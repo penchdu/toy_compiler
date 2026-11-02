@@ -286,6 +286,7 @@ void make_bb_terminate()
 	scp_terminate->sem_stamp = SEM_bb_terminate;
 	scp_terminate->name += "_SEM_bb_terminate";
 	exit_current_scope();
+	new_virtual_scope_and_drop_in();
 }
 static Scope* case_tk_continue_break(Semantic sem_stamp)
 {
@@ -311,10 +312,11 @@ static Scope* case_tk_continue_break(Semantic sem_stamp)
 		while_body->break_list.push_back(scp);
 	}
 
+	scp->temp_symb_table = *scp->symb_table_ptr;
+	scp->temp_outer_symb_table = *scp->outer_symb_table_ptr;
+
 	exit_current_scope();
-
 	make_bb_terminate();
-
 	new_virtual_scope_and_drop_in();
 	return scp;
 }

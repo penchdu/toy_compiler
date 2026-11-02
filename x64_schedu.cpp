@@ -170,12 +170,14 @@ static bool is_private_transient(Scope *scp, int vr)
 	if (vr < 0)
 		return false;
 
-	for (Symbol *p : *scp->symb_table)
-	{
-		if (p->vr == vr && p->stamp == SYMB_PRIVATE_transient)
-			return true;
-	}
-	return false;
+	return vr_ast(vr)->symb_stamp == SYMB_PRIVATE_transient;
+
+//	for (Symbol *p : *scp->symb_table)
+//	{
+//		if (p->vr == vr && p->stamp == SYMB_PRIVATE_transient)
+//			return true;
+//	}
+//	return false;
 }
 
 static int select_pulled = 0;
@@ -449,8 +451,8 @@ static void mc_schdu(Scope *scp)
 		if (use != consume)
 		{
 			Ast *ast = declare_record.ast[i];
-			LOG("MISMATCH vr=%d use=%d consume=%d stamp=%d scp=%s",
-				i, use, consume, ast->symb_stamp, scp->name.c_str());
+			LOG("MISMATCH vr=%d use=%d consume=%d scp=%s",
+				i, use, consume, scp->name.c_str());
 			ERR("%%%d, %d %d", i, use, consume);
 		}
 	}
@@ -474,8 +476,8 @@ static void _mc_schedule(Scope *scp)
 
 	if (bb->mcO1.size())
 	{
-		gen_use_def_chain(bb->mcO1);
-//		dump_chain(bb->x64mc_O1);
+		gen_use_def_chain(bb->mcO1, scp);
+//		dump_chain(bb->mcO1);
 		gen_schdu_chain_latency(bb->mcO1);
 
 		mc_schdu(scp);
@@ -491,5 +493,5 @@ void mc_schedule()
 	_mc_schedule(&file_scp);
 
 	printf("\n========== mc schedu ==========\n");
-	dump_mc(&file_scp, "x64mc_schedu");
+	dump_mc(&file_scp, "O1_schedu");
 }

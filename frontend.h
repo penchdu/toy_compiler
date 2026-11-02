@@ -15,6 +15,7 @@
 #include <limits.h>
 #include <unistd.h>
 
+#include <cstdio>
 #include <iostream>
 #include <vector>
 #include <string>
@@ -100,20 +101,24 @@ private:
 };
 extern Tokens tokens;
 
-
 enum SymbolStamp {
 	SYMB_IMMEDIATE = 1 << 0,
 	SYMB_PRIVATE = 1 << 1,
 	SYMB_PRIVATE_transient = 1 << 2,
 	SYMB_OUTER = 1 << 3,
-	SYMB_ALL = SYMB_PRIVATE | SYMB_PRIVATE_transient | SYMB_OUTER ,
+	SYMB_PRIVATE_ssa_of_outer_symb = 1 << 4,
+	SYMB_ALL = SYMB_PRIVATE | SYMB_PRIVATE_transient | SYMB_OUTER,
 	SYMB_INVALID = 0,
 };
 
 struct Scope;
+struct Ast;
 struct Symbol
 {
 //	Semantic_type semty;
+	SymbolStamp stamp = SYMB_INVALID;
+	Symbol *outer_symb = 0;
+	int out_base_vr = -1;
 	Type type = INT;
 	//	int value;
 
@@ -122,16 +127,18 @@ struct Symbol
 	string explicit_unique_name;	// global explicit unique
 	int depth = 0;
 
-	int vr = -1;
-	int use_cnt = 0;
-	int consume_cnt = 0;
+	vector<int> ssa;
+	vector<Scope *> new_ssa_scp;
+	//	int vr = -1;
+//	int use_cnt = 0;
+//	int consume_cnt = 0;
 
-	int reference_cnt = 0;
-//	int cld_use_cnt = 0;
+//	int reference_cnt = 0;
+	//	int cld_use_cnt = 0;
 //	int cld_consume_cnt = 0;
 
-	SymbolStamp stamp = SYMB_INVALID;
 	Scope *scp = 0;
+	Ast *ast;
 	vector<Symbol*> cld;
 };
 struct SymbolFunc
@@ -229,6 +236,11 @@ public:
 			op_prio = OP_LOGIC_AND_PRIORITY;
 			break;
 
+		case TK_RETURN:
+			op = OP_SAVE_RET_VALUE;
+			op_prio = OP_SAVE_RET_VALUE_PRIORITY;
+			break;
+
 		case TK_IF:
 			sem_stamp = SEM_IF_cond;
 			break;
@@ -256,11 +268,6 @@ public:
 			sem_stamp = SEM_NONE;
 			break;
 
-		case TK_RETURN:
-			sem_stamp = SEM_SAVE_RET_VALUE;
-//			op = OP_SAVE_RET_VALUE;
-			break;
-
 		default:
 			ERR("unexpect token %s", _token.src.c_str());
 			break;
@@ -274,9 +281,16 @@ public:
 struct Tac {
 	Tac(Ast *p = 0)
 	{
-		ast = p;
+		if(p)
+		{
+			ast = p;
+			sem_stamp = p->sem_stamp;
+			op = p->op;
+		}
 	}
 	Ast *ast = 0;
+	Semantic sem_stamp = SEM_INVALID;
+	enum Operator op = OP_ALL;
 
 	int dst = -1;
 	int s1 = -1;
@@ -308,9 +322,12 @@ public:
 	vector<Ast*> asts;
 
 	int depth;
-	vector<Symbol*> scope_symb_table;
-	vector<Symbol*> *symb_table = &scope_symb_table;
-	Symbol *fake_outer_symb = 0;
+	vector<Symbol*> symb_table;
+	vector<Symbol*> *symb_table_ptr = &symb_table;
+	vector<Symbol*> temp_symb_table;
+	vector<Symbol*> outer_symb_table;
+	vector<Symbol*> *outer_symb_table_ptr = &outer_symb_table;
+	vector<Symbol*> temp_outer_symb_table;
 
 	Scope *parent;
 	int idx;
@@ -324,7 +341,7 @@ public:
 	Scope *jmp_out = 0;
 	Scope *fallthrough = 0;
 	int visitor = 0;
-//	vector<int> outer_symb_used;
+	//	vector<int> outer_symb_used;
 
 	vector<int> outer_symb_read;
 	vector<int> outer_symb_write;
@@ -376,9 +393,36 @@ struct VrDeclareRecord
 	int new_vr(Ast *p, int size = 4)
 	{
 		id++;
+
+		assert(p->symb);
+		int off;
+
 		offset += size;
-		vr_off.push_back(offset);
+		off = offset;
+
+		// if (p->symb->stamp == SYMB_OUTER || p->symb->stamp == SYMB_PRIVATE_ssa_of_outer_symb)
+		// {
+		// 	int vr = p->symb->out_base_vr;
+		// 	off = vr_off[vr];
+		// }
+		// else
+		// {
+		// 	if (p->symb->ssa.size() == 0)
+		// 	{
+		// 		offset += size;
+		// 		off = offset;
+		// 	}
+		// 	else
+		// 	{
+		// 		int vr = p->symb->ssa[0];
+		// 		off = vr_off[vr];
+		// 	}
+		// }
+
+		vr_off.push_back(off);
 		ast.push_back(p);
+
+		LOG("%s=%%%d", p->symb->unique_name.c_str(), id);
 		return id;
 	}
 
@@ -402,6 +446,7 @@ struct VrDeclareRecord
 	vector<Ast*> ast;
 };
 extern VrDeclareRecord declare_record;
+#define vr_ast(vr) declare_record.ast[vr]
 #define vr_name(vr) declare_record.ast[vr]->symb->unique_name.c_str()
 #define vr_off(vr) declare_record.get_vr_off(vr)
 #define vr_symb(vr) declare_record.ast[vr]->symb
@@ -423,6 +468,10 @@ extern VrDeclareRecord declare_record;
 //{
 //	return vr_declare_manager.declare_at[vr]->symb->unique_name.c_str();
 //}
+
+extern vector<int> ssa_use_cnt;
+extern vector<int> ssa_consume_cnt;
+extern vector<int> ssa_reference_cnt;
 
 extern bool in_func_define;
 
@@ -447,8 +496,10 @@ int lexer(FILE *fp);
 void dump_ast();
 void parser();
 void sem_analysis();
-void gen_three_address_code();
+void gen_three_address_code_O0();
+void gen_three_address_code_O1();
 void gen_use_cnt();
-
+void find_while_used_outer_symb(Scope *scp);
+void dump_while_used_outer_symb(Scope *scp);
 
 #endif /* FRONTEND_H_ */

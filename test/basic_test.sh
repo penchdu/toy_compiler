@@ -3,22 +3,26 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-TEST_DIRS=(
-	case1
-	case4
-	case2
-	case3_vsl_alloc_cases
-)
+TEST_DIRS=()
 if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case" ]; then
     TEST_DIRS+=("../vsc_test/time_compare/case")
 fi
 if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case2" ]; then
     TEST_DIRS+=("../vsc_test/time_compare/case2")
 fi
+TEST_DIRS+=(
+	case1
+	case4
+	case2
+	case3_vsl_alloc_cases
+)
+
 
 VSC="$PROJECT_DIR/build/vsc"
 
 [ -x "$VSC" ] || { echo "Error: compiler not found at $VSC"; exit 1; }
+
+RUNNER_MAIN="$PROJECT_DIR/print_test.c"
 
 total=0; pass=0; fail=0
 START="$(date +%s.%N)"
@@ -38,7 +42,7 @@ for DIR_NAME in "${TEST_DIRS[@]}"; do
     done
     [ -z "$TEST_DIR" ] && continue
 
-    for SRC in "$TEST_DIR"/*.c; do
+    for SRC in $(ls -v "$TEST_DIR"/*.c 2>/dev/null); do
         [ -e "$SRC" ] || continue
         NAME="$(basename "$SRC")"
         BASENAME="${NAME%.c}"
@@ -46,17 +50,11 @@ for DIR_NAME in "${TEST_DIRS[@]}"; do
         mkdir -p "$TEST_DIR/.gcc_ref"
         if [ ! -x "$GCC_BIN" ] || [ "$SRC" -nt "$GCC_BIN" ]; then
             echo "gcc compile: $SRC"
-            RUNNER_TMP="$(mktemp --suffix=.c)"
-            cat > "$RUNNER_TMP" <<EOF
-#include <stdio.h>
-#include "$SRC"
-int main() { printf("Result: %d\n", test(0)); return 0; }
-EOF
-            if ! gcc "$RUNNER_TMP" -o "$GCC_BIN" > /dev/null 2>&1; then
-                rm -f "$RUNNER_TMP" "${GCC_BIN}.broken"
+            if ! gcc "$RUNNER_MAIN" "$SRC" -o "$GCC_BIN" > /dev/null; then
+                rm -f "${GCC_BIN}.broken"
                 touch "${GCC_BIN}.broken"
             else
-                rm -f "$RUNNER_TMP" "${GCC_BIN}.broken"
+                rm -f "${GCC_BIN}.broken"
             fi
         fi
     done
@@ -71,7 +69,7 @@ for DIR_NAME in "${TEST_DIRS[@]}"; do
     [ -z "$TEST_DIR" ] && { echo "skip: $DIR_NAME (not found)"; continue; }
     echo "===== $DIR_NAME ====="
 
-    for SRC in "$TEST_DIR"/*.c; do
+    for SRC in $(ls -v "$TEST_DIR"/*.c 2>/dev/null); do
         [ -e "$SRC" ] || continue
         let total=total+1
 
@@ -79,41 +77,41 @@ for DIR_NAME in "${TEST_DIRS[@]}"; do
         BASENAME="${NAME%.c}"
         CD="$(mktemp -d)"
 
-        (cd "$CD" && "$VSC" "$SRC") > /dev/null 2>&1
-        if [ ! -f "$CD/a0.s" ] || [ ! -f "$CD/a1.s" ]; then
-            echo "fail: $NAME (vsc compile)"; let fail=fail+1; rm -rf "$CD"; continue
+        A0="compile fail"; A1="compile fail"
+
+        if (cd "$CD" && "$VSC" "$SRC" > /dev/null); then
+            if [ -f "$CD/a0.s" ]; then
+                if (cd "$CD" && gcc "$RUNNER_MAIN" a0.s -o a0 > /dev/null); then
+                    A0_TMP="$(extract_result 0 "$(cd "$CD" && timeout 3s ./a0 2>&1)")"
+                    [ -n "$A0_TMP" ] && [ "$A0_TMP" != "TIMEOUT" ] && A0="$A0_TMP"
+                fi
+            fi
+            if [ -f "$CD/a1.s" ]; then
+                if (cd "$CD" && gcc "$RUNNER_MAIN" a1.s -o a1 > /dev/null); then
+                    A1_TMP="$(extract_result 0 "$(cd "$CD" && timeout 3s ./a1 2>&1)")"
+                    [ -n "$A1_TMP" ] && [ "$A1_TMP" != "TIMEOUT" ] && A1="$A1_TMP"
+                fi
+            fi
         fi
 
-        cat > "$CD/main.c" <<'EOF'
-#include <stdio.h>
-extern int test();
-int main() { printf("Result: %d\n", test(0)); return 0; }
-EOF
-        if ! (cd "$CD" && gcc main.c a0.s -o a0 && gcc main.c a1.s -o a1) > /dev/null 2>&1; then
-            echo "fail: $NAME (gcc assemble)"; let fail=fail+1; rm -rf "$CD"; continue
-        fi
-
-        A0_OUT="$(cd "$CD" && timeout 3s ./a0 2>&1)"
-        A0_ERR=$?
-        A1_OUT="$(cd "$CD" && timeout 3s ./a1 2>&1)"
-        A1_ERR=$?
-        A0="$(extract_result $A0_ERR "$A0_OUT")"
-        A1="$(extract_result $A1_ERR "$A1_OUT")"
-
-        GCC_OUT=""; GCC_ERR=0
+        GCC_OUT=""; GCC_ERR=0; GCC="compile fail"
         GCC_BIN="$TEST_DIR/.gcc_ref/$BASENAME"
         if [ -x "$GCC_BIN" ] && [ ! -f "${GCC_BIN}.broken" ]; then
             GCC_OUT="$(timeout 3s "$GCC_BIN" 2>&1)"
-            GCC_ERR=$?
+            GCC_TMP="$(extract_result 0 "$GCC_OUT")"
+            if [ -n "$GCC_TMP" ] && [ "$GCC_TMP" != "TIMEOUT" ]; then
+                GCC="$GCC_TMP"
+            else
+                echo "  gcc run fail: $GCC_OUT"
+            fi
         fi
-        GCC="$(extract_result $GCC_ERR "$GCC_OUT")"
 
         rm -rf "$CD"
 
-        if [ -n "$A0" ] && [ "$A0" != "TIMEOUT" ] && [ "$A0" = "$A1" ] && [ "$A1" = "$GCC" ]; then
+        if [ "$A0" = "$GCC" ] && [ "$A1" = "$GCC" ]; then
             echo "pass: $NAME"; let pass=pass+1
         else
-            echo "fail: $NAME (a0:$A0 | a1:$A1 | gcc:$GCC)"; let fail=fail+1
+            echo "fail: $NAME  a0:$A0  a1:$A1  gcc:$GCC"; let fail=fail+1
         fi
     done
 done

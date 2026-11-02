@@ -20,15 +20,19 @@ int main(int argc, char **argv)
 
 	FILE *fp = fopen(file, "r");
 	assert(fp);
+	setbuf((FILE *)stdout, 0);
 
 	lexer(fp);
 	parser();
 	sem_analysis();
-	gen_three_address_code();
-	gen_machine_code();
-	gen_use_cnt();
+	gen_three_address_code_O0();
+	gen_machine_code_O0();
+	x64_reg_alloc_O0();		// create a.s in current location
+
+	gen_three_address_code_O1();
+	gen_machine_code_O1();
 	mc_schedule();
-	x64_reg_alloc();		// create a.s in current location
+	x64_reg_alloc_O1();
 
 	if (argc == 1)
 	{

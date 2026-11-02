@@ -9,6 +9,10 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
+vector<int> ssa_use_cnt;
+vector<int> ssa_consume_cnt;
+vector<int> ssa_reference_cnt;
+
 struct ScopeUsedOuterSymb {
 	Scope *while_scp;
 };
@@ -30,36 +34,52 @@ void reset_scope_symb_consume_cnt(Scope *scp, int value)
 }
 void clear_all_vr_consume_cnt(Scope *scp)
 {
-	for (auto *p : scp->scope_symb_table)
-		p->consume_cnt = 0;
+	ssa_consume_cnt.assign(vr_size, 0);
 
-	for (Scope *p : scp->clds)
-		clear_all_vr_consume_cnt(p);
+//	for (Symbol *p : scp->symb_table_ptr)
+//		p->consume_cnt = 0;
+//
+//	for (Scope *p : scp->clds)
+//		clear_all_vr_consume_cnt(p);
 }
 void check_vr_consume_cnt(Scope *scp)
 {
-	for (Symbol *p : scp->scope_symb_table)
-	{
-		if (p->consume_cnt != p->use_cnt)
-			ERR("%s %%%d %d %d", p->src.c_str(), p->vr, p->use_cnt, p->consume_cnt);
-	}
+	assert(ssa_use_cnt.size() == ssa_consume_cnt.size());
 
-	for (Scope *p : scp->clds)
-		check_vr_consume_cnt(p);
+	for(int i = 0; i < ssa_use_cnt.size(); i++)
+	{
+		if(ssa_use_cnt[i] != ssa_consume_cnt[i])
+			ERR("%s %%%d %d %d", vr_name(i), i, ssa_use_cnt[i], ssa_consume_cnt[i]);
+	}
+//	for (Symbol *p : scp->symb_table_ptr)
+//	{
+//		if (p->consume_cnt != p->use_cnt)
+//			ERR("%s %%%d %d %d", p->src.c_str(), p->vr, p->use_cnt, p->consume_cnt);
+//	}
+//
+//	for (Scope *p : scp->clds)
+//		check_vr_consume_cnt(p);
 }
 bool is_private_symb(Scope *scp, int vr)
 {
-	Ast *declare_at = declare_record.ast[vr];
-	Symbol *symb = declare_at->symb;
+	Ast *ast = declare_record.ast[vr];
+	Symbol *symb = ast->symb;
 
-	for (auto p : *(scp->symb_table))
-	{
-		if (p->vr == vr)
-		{
-			assert(p == symb);
-			return true;
-		}
-	}
+	if(symb->depth == scp->depth)
+		return true;
+	else if(symb->depth < scp->depth)
+		return false;
+	else
+		ERR("%d > %d", symb->depth, scp->depth);
+
+//	for (Symbol *p : *(scp->symb_table))
+//	{
+//		if (p->vr == vr)
+//		{
+//			assert(p == symb);
+//			return true;
+//		}
+//	}
 
 	return false;
 }
@@ -74,7 +94,7 @@ void update_vr_consume_cnt(Scope *scp, int vr, int update_value)
 	Symbol *symb = declare_at->symb;
 	bool is_private = is_private_symb(scp, vr);
 
-	symb->consume_cnt += update_value;
+	ssa_consume_cnt[vr] += update_value;
 	scp->consume_cnt_in_bb[vr] += update_value;
 
 	if (!is_private)
@@ -85,9 +105,11 @@ void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value)
 	switch (mc.stamp)
 	{
 	case MC_LD:
+		ERR();
 		break;
 
 	case MC_ST:
+		ERR();
 		update_vr_consume_cnt(scp, mc.s1, update_value);
 		break;
 
@@ -138,60 +160,112 @@ static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 
 	if (usage & VR_USAGE_READ)
 	{
-		symb->use_cnt++;
+//		symb->use_cnt++;
+		ssa_use_cnt[vr]++;
 		scp->use_cnt_in_bb[vr]++;
 	}
 
-	symb->reference_cnt++;
+//	symb->reference_cnt++;
+	ssa_reference_cnt[vr]++;
 	scp->reference_cnt_in_bb[vr]++;
 }
 
+//static void _gen_use_cnt(Scope *scp)
+//{
+//	BasicBlock *bb = scp->bb;
+//	scp->use_cnt_in_bb.clear();
+//	scp->use_cnt_in_bb.resize(vr_size);
+//	scp->reference_cnt_in_bb.clear();
+//	scp->reference_cnt_in_bb.resize(vr_size);
+//
+//	for (auto &mc : bb->mcO1)
+//	{
+//		switch (mc.stamp)
+//		{
+//		case MC_LD:
+//			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_WRITE);
+//			break;
+//
+//		case MC_ST:
+//			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
+//			break;
+//
+//		case MC_ASSIGN:
+//			gen_vr_use_cnt(scp, mc.dst, VR_USAGE_WRITE);
+//			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
+//			break;
+//
+//		case MC_ADD:
+//			case MC_SUB:
+//			case MC_IMUL:
+//			case MC_DIV:
+//
+//		case MC_CMP_E:
+//			case MC_CMP_NE:
+//			case MC_CMP_L:
+//			case MC_CMP_LE:
+//			case MC_CMP_G:
+//			case MC_CMP_GE:
+//			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
+//			gen_vr_use_cnt(scp, mc.s2, VR_USAGE_READ);
+//			gen_vr_use_cnt(scp, mc.dst, VR_USAGE_WRITE);
+//			break;
+//
+//		case MC_TEST:
+//			case MC_SAVE_RET:
+//			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
+//			break;
+//
+//		default:
+//			ERR("%d \n", mc.stamp);
+//			break;
+//		}
+//	}
+//
+//	for (Scope *p : scp->clds)
+//		_gen_use_cnt(p);
+//}
 static void _gen_use_cnt(Scope *scp)
 {
 	BasicBlock *bb = scp->bb;
+	scp->use_cnt_in_bb.clear();
 	scp->use_cnt_in_bb.resize(vr_size);
+	scp->reference_cnt_in_bb.clear();
 	scp->reference_cnt_in_bb.resize(vr_size);
 
-	for (auto &mc : bb->mcO1)
+	for (auto &tac : bb->tacO1)
 	{
-		switch (mc.stamp)
+		switch (tac.op)
 		{
-		case MC_LD:
-			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_WRITE);
+		case OP_ASSIGN:
+		case OP_COPY_SSA:
+			gen_vr_use_cnt(scp, tac.dst, VR_USAGE_WRITE);
+			gen_vr_use_cnt(scp, tac.s1, VR_USAGE_READ);
 			break;
 
-		case MC_ST:
-			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
+		case OP_ADD:
+			case OP_SUB:
+			case OP_MUL:
+			case OP_DIV:
+
+		case OP_CMP_E:
+			case OP_CMP_NE:
+			case OP_CMP_L:
+			case OP_CMP_LE:
+			case OP_CMP_G:
+			case OP_CMP_GE:
+			gen_vr_use_cnt(scp, tac.s1, VR_USAGE_READ);
+			gen_vr_use_cnt(scp, tac.s2, VR_USAGE_READ);
+			gen_vr_use_cnt(scp, tac.dst, VR_USAGE_WRITE);
 			break;
 
-		case MC_ASSIGN:
-			gen_vr_use_cnt(scp, mc.dst, VR_USAGE_WRITE);
-			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
-			break;
-
-		case MC_ADD:
-			case MC_SUB:
-			case MC_IMUL:
-			case MC_DIV:
-
-		case MC_CMP_E:
-			case MC_CMP_NE:
-			case MC_CMP_L:
-			case MC_CMP_LE:
-			case MC_CMP_G:
-			case MC_CMP_GE:
-			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
-			gen_vr_use_cnt(scp, mc.s2, VR_USAGE_READ);
-			gen_vr_use_cnt(scp, mc.dst, VR_USAGE_WRITE);
-			break;
-
-		case MC_TEST:
-			case MC_SAVE_RET:
-			gen_vr_use_cnt(scp, mc.s1, VR_USAGE_READ);
+		case OP_TEST:
+		case OP_SAVE_RET_VALUE:
+			gen_vr_use_cnt(scp, tac.s1, VR_USAGE_READ);
 			break;
 
 		default:
-			ERR("%d \n", mc.stamp);
+			ERR("%d \n", tac.sem_stamp);
 			break;
 		}
 	}
@@ -225,8 +299,6 @@ static void _check_while_used_outer_symb(int vr, int usage)
 static void check_while_used_outer_symb(Scope *scp)
 {
 	BasicBlock *bb = scp->bb;
-	scp->use_cnt_in_bb.resize(vr_size);
-	scp->reference_cnt_in_bb.resize(vr_size);
 
 	for (auto &mc : bb->mcO1)
 	{
@@ -272,7 +344,7 @@ static void check_while_used_outer_symb(Scope *scp)
 		}
 	}
 }
-static void find_while_used_outer_symb(Scope *scp)
+void find_while_used_outer_symb(Scope *scp)
 {
 	if (scp->sem_stamp == SEM_WHILE
 	    || scp->sem_stamp == SEM_WHILE_COND
@@ -337,58 +409,13 @@ void dump_while_used_outer_symb(Scope *scp)
 		dump_while_used_outer_symb(p);
 }
 
-void rm_dead_code(Scope *scp)
-{
-	for (int i = scp->clds.size() - 1; i >= 0; i--)
-		rm_dead_code(scp->clds[i]);
-
-	vector<X64mc> &mcs = scp->bb->mcO1;
-
-	for (int i = mcs.size() - 1; i >= 0; i--)
-	{
-		auto &mc = mcs[i];
-		if (mc.dst < 0 || vr_symb(mc.dst)->use_cnt > 0)
-			continue;
-
-		MachineCodeStamp stamp = mcs[i].stamp;
-		if (stamp == MC_CMP
-			|| stamp == MC_CMP_E
-		    || stamp == MC_CMP_NE
-		    || stamp == MC_CMP_L
-		    || stamp == MC_CMP_LE
-		    || stamp == MC_CMP_G
-		    || stamp == MC_CMP_GE
-		    || stamp == MC_TEST)
-		{
-			continue;
-		}
-
-		if (mc.s1 >= 0)
-		{
-			declare_record.ast[mc.s1]->symb->use_cnt--;
-			scp->use_cnt_in_bb[mc.s1]--;
-		}
-		if (mc.s2 >= 0)
-		{
-			declare_record.ast[mc.s2]->symb->use_cnt--;
-			scp->use_cnt_in_bb[mc.s2]--;
-		}
-
-		LOG("rm %s %%%d", vr_name(mc.dst), mc.dst);
-		mcs.erase(mcs.begin() + i);
-	}
-}
 void gen_use_cnt()
 {
+	ssa_use_cnt.assign(vr_size, 0);
+	ssa_reference_cnt.assign(vr_size, 0);
+
 	_gen_use_cnt(&file_scp);
 
-	rm_dead_code(&file_scp);
-
-	find_while_used_outer_symb(&file_scp);
-
-	printf("========== while_outer_use_cnt ==========\n");
-	dump_while_used_outer_symb(&file_scp);
-	printf("====================\n");
 //	mc_list_name = "x64mc";
 //	PRINT_ASM_HEAD("========== mc ==========");
 //	dump_mc(&file_scp);

@@ -52,6 +52,7 @@ const McInfo mc_info[MC_INVALID + 1] = {
 
 MachineCodeStamp op_to_mc[] = {
     [OP_ASSIGN] = MC_ASSIGN,
+    [OP_COPY_SSA] = MC_ASSIGN,
     [OP_ADD]= MC_ADD,
     [OP_SUB] = MC_SUB,
     [OP_MUL] = MC_IMUL,
@@ -107,15 +108,15 @@ static void gen_op_add_sub_mul_div_mc(vector<X64mc> &x64mc, MachineCodeStamp mc,
 static void gen_op_cmp_mc(vector<X64mc> &x64mc, MachineCodeStamp stamp, const string &ori_sem,
     int tac_dst, int tac_s1, int tac_s2)
 {
-	X64mc inst;
+	X64mc mc;
 
-	inst = X64mc(stamp, tac_dst, tac_s1, tac_s2);
-	inst.ori_sem = ori_sem;
-	x64mc.push_back(inst);
+	mc = X64mc(stamp, tac_dst, tac_s1, tac_s2);
+	mc.ori_sem = ori_sem;
+	x64mc.push_back(mc);
 }
-static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
+static void gen_op_mc(vector<X64mc> &mcs, Tac &tac)
 {
-	Operator op = tac.ast->op;
+	Operator op = tac.op;
 	MachineCodeStamp stamp;
 	X64mc mc;
 
@@ -124,7 +125,13 @@ static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 	case OP_ASSIGN:
 		mc = X64mc(MC_ASSIGN, tac.dst, tac.s1);
 		mc.ori_sem = "assign";
-		x64mc.push_back(mc);
+		mcs.push_back(mc);
+		break;
+
+	case OP_COPY_SSA:
+		mc = X64mc(MC_ASSIGN, tac.dst, tac.s1);
+		mc.ori_sem = "cp_ssa";
+		mcs.push_back(mc);
 		break;
 
 	case OP_CMP_E:
@@ -134,14 +141,14 @@ static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 		case OP_CMP_G:
 		case OP_CMP_GE:
 		stamp = op_to_mc[op];
-		gen_op_cmp_mc(x64mc, stamp, mc_info[stamp].mc_code, tac.dst, tac.s1, tac.s2);
+		gen_op_cmp_mc(mcs, stamp, mc_info[stamp].mc_code, tac.dst, tac.s1, tac.s2);
 		break;
 
 	case OP_TEST:
 		stamp = op_to_mc[op];
 		mc = X64mc(stamp, tac.s1);
 		mc.ori_sem = mc_info[stamp].mc_code;
-		x64mc.push_back(mc);
+		mcs.push_back(mc);
 		break;
 
 	case OP_ADD:
@@ -149,7 +156,13 @@ static void gen_op_mc(vector<X64mc> &x64mc, Tac &tac)
 		case OP_MUL:
 		case OP_DIV:
 		stamp = op_to_mc[op];
-		gen_op_add_sub_mul_div_mc(x64mc, stamp, mc_info[stamp].mc_code, tac.dst, tac.s1, tac.s2);
+		gen_op_add_sub_mul_div_mc(mcs, stamp, mc_info[stamp].mc_code, tac.dst, tac.s1, tac.s2);
+		break;
+
+	case OP_SAVE_RET_VALUE:
+		mc = X64mc(MC_SAVE_RET, tac.s1);
+		mc.ori_sem = "save_ret";
+		mcs.push_back(mc);
 		break;
 
 	default:
@@ -160,16 +173,16 @@ static void gen_mc(Scope *scp, Optimize_level level)
 {
 	assert(scp->bb != 0);
 	BasicBlock *bb = scp->bb;
-	vector<Tac> *tac = 0;
+	vector<Tac> *tacs = 0;
 	vector<X64mc> *mcs = 0;
 	if(level == O0)
 	{
-		tac = &bb->tacO0;
+		tacs = &bb->tacO0;
 		mcs = &bb->mcO0;
 	}
 	else if(level == O1)
 	{
-		tac = &bb->tacO1;
+		tacs = &bb->tacO1;
 		mcs = &bb->mcO1;
 	}
 
@@ -183,16 +196,16 @@ static void gen_mc(Scope *scp, Optimize_level level)
 	    || scp->sem_stamp == SEM_WHILE_BODY
 	    || scp->sem_stamp == SEM_CONTINUE
 	    || scp->sem_stamp == SEM_BREAK
-	    || (scp->sem_stamp == SEM_UNNAMED_SCOPE && tac->size())
+	    || (scp->sem_stamp == SEM_UNNAMED_SCOPE && tacs->size())
 	    || scp->jmp_in.size() > 0
 	    || scp->asts.size() > 0)
 	{
 		bb->is_entry_label = true;
 	}
 
-	for (Tac &code : *tac)
+	for (Tac &code : *tacs)
 	{
-		Semantic sem = code.ast->sem_stamp;
+		Semantic sem = code.sem_stamp;
 		if (sem == SEM_OPERATOR)
 		{
 			gen_op_mc(*mcs, code);
@@ -201,11 +214,18 @@ static void gen_mc(Scope *scp, Optimize_level level)
 
 		switch (sem)
 		{
-		case SEM_SAVE_RET_VALUE:
-			mc = X64mc(MC_SAVE_RET, code.s1);
-			mc.ori_sem = "save_ret";
-			mcs->push_back(mc);
-			break;
+//		case SEM_COPY_SSA:
+//			assert(code.op == OP_ASSIGN);
+//			mc = X64mc(MC_ASSIGN, code.dst, code.s1);
+//			mc.ori_sem = "cp_ssa";
+//			mcs->push_back(mc);
+//			break;
+
+//		case SEM_SAVE_RET_VALUE:
+//			mc = X64mc(MC_SAVE_RET, code.s1);
+//			mc.ori_sem = "save_ret";
+//			mcs->push_back(mc);
+//			break;
 
 			// todo
 		case SEM_FUNC_CALL:
@@ -250,9 +270,9 @@ static void gen_mc(Scope *scp, Optimize_level level)
 		}
 	}
 
-	if (tac->size() != mcs->size())
+	if (tacs->size() != mcs->size())
 	{
-		LOG("%lu %lu", tac->size(), mcs->size());
+		LOG("%lu %lu", tacs->size(), mcs->size());
 	}
 
 	for (Scope *p : scp->clds)
@@ -288,9 +308,11 @@ void dump_mc(Scope *scp, string mc_list_name)
 		PRINT_ASM_HEAD("\n%s:", scp->name.c_str());
 
 	vector<X64mc> *mc_list;
-	if (mc_list_name == "x64mc")
+	if (mc_list_name == "O0")
 		mc_list = &bb->mcO0;
-	else if (mc_list_name == "x64mc_schedu")
+	else if (mc_list_name == "O1")
+		mc_list = &bb->mcO1;
+	else if (mc_list_name == "O1_schedu")
 		mc_list = &bb->mc_schedu;
 	else
 		ERR("%s", mc_list_name.c_str());
@@ -367,10 +389,6 @@ void dump_mc(Scope *scp, string mc_list_name)
 			PRINT_MORE
 			break;
 
-//		case MC_LI:
-			//			PRINT_ASM("%s %%%d, num %d", mc_info[stamp].mc_code, mc.s1, mc.const_num);
-//			PRINT_MORE
-//			break;
 		default:
 			ERR("%d \n", stamp);
 			break;
@@ -387,13 +405,19 @@ void dump_mc(Scope *scp, string mc_list_name)
 		dump_mc(p, mc_list_name);
 }
 
-void gen_machine_code()
+void gen_machine_code_O0()
 {
 	gen_mc(&file_scp, O0);
+
+//	PRINT_ASM_HEAD("========== mc O0 ==========");
+//	dump_mc(&file_scp, "O0");
+}
+void gen_machine_code_O1()
+{
 	gen_mc(&file_scp, O1);
 
-	PRINT_ASM_HEAD("========== mc ==========");
-	dump_mc(&file_scp, "x64mc");
+	PRINT_ASM_HEAD("========== mc O1 ==========");
+	dump_mc(&file_scp, "O1");
 }
 
 #undef PRINT_ASM_HEAD

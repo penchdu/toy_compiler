@@ -41,20 +41,20 @@ static void dump_ast_node(Ast *p, const string &prefix, bool is_last)
 		if (!p->symb)
 			printf("[var %s]\n", p->tk.src.c_str());
 		else
-			printf("[var %s %%%d]\n", p->symb->unique_name.c_str(), p->symb->vr);
+			printf("[var %s %%%d]\n", p->symb->unique_name.c_str(), p->vr);
 	}
 	else if (p->sem_stamp == SEM_IMMEDIATE)
 	{
 		if (!p->symb)
 			printf("[num %d]\n", p->const_value);
 		else
-			printf("[num %d %%%d]\n", p->const_value, p->symb->vr);
+			printf("[num %d %%%d]\n", p->const_value, p->vr);
 	}
 	else if (p->sem_stamp == SEM_FUNC_CALL)
 		printf("[func_call %s]\n", p->tk.src.c_str());
 
-	else if (p->sem_stamp == SEM_SAVE_RET_VALUE)
-		printf("[save-ret(%s) %%%d]\n", p->tk.src.c_str(), p->vr);
+//	else if (p->sem_stamp == SEM_SAVE_RET_VALUE)
+//		printf("[save-ret(%s) %%%d]\n", p->tk.src.c_str(), p->vr);
 
 	else if (p->sem_stamp == SEM_NONE)
 		printf("[none %s]\n", p->tk.src.c_str());
@@ -108,10 +108,10 @@ static void dump_scope(Scope *s, int depth)
 		printf(" virtual");
 	printf("\n");
 
-	for (auto p : s->scope_symb_table)
+	for (auto p : s->symb_table)
 	{
 		print_blank(depth);
-		printf("symbol: %s %d\n", p->unique_name.c_str(), p->vr);
+		printf("symbol: %s %s\n", p->unique_name.c_str(), p->unique_name.c_str());
 	}
 
 	for (auto ast : s->asts)

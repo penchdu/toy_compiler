@@ -14,20 +14,20 @@ TOTAL=0
 # 重跑 x64_reg_alloc 里的流程，直接分别执行 ./a0 和 ./a1
 run_both() {
     # 重新生成汇编并分别运行
-    make -s clean && make -s 2>/dev/null || return 1
+    make -s clean && make -s || return 1
 
     # 从 main.cpp 知道：x64_reg_alloc() 会同时生成 a0.s 和 a1.s
     # 但我们只运行了 build/a。需要确保 a0.s 和 a1.s 已经在目录里
-    make -s clean && make -s 2>/dev/null
-    ./build/a > /dev/null 2>&1   # 生成 a0.s a1.s 并运行一次（会打印两次 Result 到终端）
+    make -s clean && make -s
+    ./build/a > /dev/null   # 生成 a0.s a1.s 并运行一次
 
     # 现在 a0.s 和 a1.s 应该已经存在
-    [ -f a0.s ] && { gcc a0.s -o /tmp/a0_test 2>/dev/null || return 1; } || return 1
-    [ -f a1.s ] && { gcc a1.s -o /tmp/a1_test 2>/dev/null || return 1; } || return 1
+    [ -f a0.s ] && { gcc a0.s -o /tmp/a0_test || return 1; } || return 1
+    [ -f a1.s ] && { gcc a1.s -o /tmp/a1_test || return 1; } || return 1
 
     local r1 r2
-    r1=$(/tmp/a0_test 2>/dev/null | grep -oP 'Result:\s*\K\d+')
-    r2=$(/tmp/a1_test 2>/dev/null | grep -oP 'Result:\s*\K\d+')
+    r1=$(/tmp/a0_test | grep -oP 'Result:\s*\K\d+')
+    r2=$(/tmp/a1_test | grep -oP 'Result:\s*\K\d+')
 
     echo "$r1 $r2"
 }
@@ -46,19 +46,19 @@ TESTEOF
 
     # --- 分别运行 -O0 和 wave ---
     # 先让 build/a 跑一遍（会生成 a0.s 和 a1.s）
-    make -s clean && make -s 2>/dev/null
+    make -s clean && make -s
     if [ $? -ne 0 ]; then
         echo -e "${RED}[FAIL]${NC} #$TOTAL $name — 编译失败"
         FAIL=$((FAIL + 1))
         return
     fi
 
-    ./build/a > /dev/null 2>&1   # 内部会调 system("gcc a0.s -o a0; ./a0") 和 system("gcc a1.s -o a1; ./a1")
+    ./build/a > /dev/null   # 内部会调 system("gcc a0.s -o a0; ./a0") 和 system("gcc a1.s -o a1; ./a1")
 
     # 直接运行生成的 a0 和 a1，捕获 Result
     local r1 r2
-    r1=$(./a0 2>/dev/null | grep -oP 'Result:\s*\K\d+' | head -1)
-    r2=$(./a1 2>/dev/null | grep -oP 'Result:\s*\K\d+' | head -1)
+    r1=$(./a0 | grep -oP 'Result:\s*\K\d+' | head -1)
+    r2=$(./a1 | grep -oP 'Result:\s*\K\d+' | head -1)
 
     # 验证
     if [ "$r1" = "$r2" ] && [ "$r1" = "$expected" ]; then

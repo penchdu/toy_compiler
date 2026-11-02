@@ -256,10 +256,11 @@ void dump_wave_gnuplot(Wave &w, int vr);
 //void spill_pr(vector<X64mc> &x64mc_alloced, int vr);
 //void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2);
 
-void gen_machine_code();
+void gen_machine_code_O0();
+void gen_machine_code_O1();
 void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx);
 
-void gen_use_def_chain(vector<X64mc> &x64mc);
+void gen_use_def_chain(vector<X64mc> &x64mc, Scope *scp);
 void dump_chain(vector<X64mc> &x64mc);
 void gen_schdu_chain_latency(vector<X64mc> &x64mc);
 
@@ -282,7 +283,7 @@ void spill_vr(
     int vr, vector<X64mc> &mcs,
     const string &tag = "");
 
-int get_pr_o0();
+int get_pr_O0();
 int get_pr_wave(BasicBlock *bb, int mc_idx);
 int get_pr(enum Optimize_level method,
     vector<X64mc> &mcs,
@@ -292,7 +293,9 @@ int get_pr(enum Optimize_level method,
 
 int get_pr_alloc_imm(enum Optimize_level method, vector<X64mc> &mcs, BasicBlock *bb, int mc_idx, int vr);
 
-void x64_reg_alloc();
+void dump_asm(const string &asm_file);
+void x64_reg_alloc_O0();
+void x64_reg_alloc_O1();
 
 void dump_vr_state(const vector<VrState> &vp, const string &tag);
 void check_pr_vr_consistency();
@@ -301,7 +304,7 @@ void init_wave(BasicBlock *bb);
 
 int get_free_pr_num(const vector<PrState> &prst, int reserved_pr = X64PR_MAX);
 void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i);
-void x64_reg_alloc_wave();
+
 void ra_wave_regular_scope(Scope *scp);
 void ra_wave_scope(Scope *scp);
 

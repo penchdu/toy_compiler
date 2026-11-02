@@ -92,14 +92,17 @@ void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr)
 //	    symb->use_cnt, symb->consume_cnt);
 
 	if (vr_state[vr].pr != X64PR_MAX
-	    && symb->consume_cnt >= symb->use_cnt)
+	    && ssa_consume_cnt[vr] >= ssa_use_cnt[vr])
 	{
-		assert(symb->consume_cnt == symb->use_cnt);
+		if(ssa_consume_cnt[vr] != ssa_use_cnt[vr])
+			ERR("%s, %s=%%%d, bb: %d %d, ssa_cnt: %d %d", scp->name.c_str(), vr_name(vr), vr,
+			    scp->use_cnt_in_bb[vr], scp->consume_cnt_in_bb[vr],
+			    ssa_use_cnt[vr], ssa_consume_cnt[vr]);
 
 		if (scp->use_cnt_in_bb[vr] != scp->consume_cnt_in_bb[vr])
-			ERR("%s, %%%d, bb: %d %d, symb %d %d", scp->name.c_str(), vr,
+			ERR("%s, %%%d, bb: %d %d, ssa_cnt: %d %d", scp->name.c_str(), vr,
 			    scp->use_cnt_in_bb[vr], scp->consume_cnt_in_bb[vr],
-			    symb->use_cnt, symb->consume_cnt);
+			    ssa_use_cnt[vr], ssa_consume_cnt[vr]);
 
 		spill_vr(vr, mcs, " check_dead_vr");
 	}
@@ -276,7 +279,7 @@ void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 		check_dead_vr(scp, mcs, mc.s1);
 		check_dead_vr(scp, mcs, mc.s2);
 
-		if (vr_symb(mc.dst)->use_cnt > 0)
+		if (ssa_use_cnt[mc.dst] > 0)
 			mc.pr_dst = get_pr(bb, i, mc.dst, VR_USAGE_WRITE);
 
 		mcs.push_back(mc);
@@ -399,11 +402,19 @@ static void elimicate_copy(Scope *scp)
 		elimicate_copy(p);
 }
 
-void x64_reg_alloc_wave()
+void x64_reg_alloc_O1()
 {
+	find_while_used_outer_symb(&file_scp);
+
+	printf("========== while_outer_use_cnt ==========\n");
+	dump_while_used_outer_symb(&file_scp);
+	printf("====================\n");
+
+	////////////////////////////
 	LOG("\n======================== wave ========================\n");
 
 	clear_all_vr_consume_cnt(&file_scp);
+	bb_vr_wave.clear();
 	bb_vr_wave.resize(vr_size);
 
 	vr_state.clear();
@@ -415,4 +426,6 @@ void x64_reg_alloc_wave()
 
 	elimicate_copy(&file_scp);
 	check_vr_consume_cnt(&file_scp);
+
+	dump_asm("a1.s");
 }
