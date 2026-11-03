@@ -254,17 +254,11 @@ static Symbol* new_private_transient_vr(Ast *p)
 	symb->type = p->type;
 
 	if(p->sem_stamp == SEM_IMMEDIATE)
-	{
 		p->symb_stamp = symb->stamp = SYMB_IMMEDIATE;
-		symb->src = p->tk.src;
-	}
 	else
-	{
 		p->symb_stamp = symb->stamp = SYMB_PRIVATE_transient;
-		symb->src = p->tk.src; // + "%" + to_string(p->vr);
-	}
 
-	symb->unique_name = symb->src;
+	symb->src = p->tk.src;
 	symb->depth = p->scope->depth;
 //	symb->use_cnt = 1;
 
@@ -272,6 +266,11 @@ static Symbol* new_private_transient_vr(Ast *p)
 	symb->ssa.push_back(declare_record.new_vr(p));
 	p->vr = symb->ssa.back();
 	p->scope->symb_table_ptr->push_back(symb);
+
+	if(p->sem_stamp == SEM_IMMEDIATE)
+		symb->unique_name = p->tk.src;
+	else
+		symb->unique_name = "%" + to_string(p->vr);
 
 	return symb;
 }

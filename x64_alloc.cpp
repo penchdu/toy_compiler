@@ -397,13 +397,21 @@ static void print_asm_sem(FILE *fp, X64mc &mc)
 	fprintf(fp, "%*s#%s", (_asm_len < 48) ? (48 - _asm_len) : 2, "", mc.ori_sem.c_str());
 
 	if (mc.dst >= 0)
-		fprintf(fp, ", %s %%%d", vr_name(mc.dst), mc.dst);
+		fprintf(fp, ", %s", vr_name(mc.dst));
 	if (mc.s1 >= 0)
-		fprintf(fp, ", %s %%%d", vr_name(mc.s1), mc.s1);
+		fprintf(fp, " %s", vr_name(mc.s1));
 	if (mc.s2 >= 0)
-		fprintf(fp, ", %s %%%d", vr_name(mc.s2), mc.s2);
+		fprintf(fp, " %s", vr_name(mc.s2));
+
+	if (mc.dst >= 0)
+		fprintf(fp, ", %%%d", mc.dst);
+	if (mc.s1 >= 0)
+		fprintf(fp, " %%%d", mc.s1);
+	if (mc.s2 >= 0)
+		fprintf(fp, " %%%d", mc.s2);
+
 	if (mc.start_cycle >= 0)
-		fprintf(fp, "  cyc %d", mc.start_cycle);
+		fprintf(fp, ", cyc %d", mc.start_cycle);
 	fprintf(fp, "\n");
 }
 

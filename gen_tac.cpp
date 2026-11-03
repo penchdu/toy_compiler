@@ -103,12 +103,12 @@ static void insert_copy_ssa(vector<Symbol*> &outer_symb_table)
 		t.dst = symb->out_base_vr;
 		t.s1 = symb->ssa.back();
 
-		LOG("new_ssa_scp %s",  symb->new_ssa_scp.back()->name.c_str());
+		LOG("new_ssa_scp %s", symb->new_ssa_scp.back()->name.c_str());
 		vector<Tac> &tacs = symb->new_ssa_scp.back()->bb->tacO0;
 		bool ok = 0;
 		for (int k = 0; k < tacs.size(); k++)
 		{
-			if(tacs[k].dst == t.s1)
+			if (tacs[k].dst == t.s1)
 			{
 				tacs.insert(tacs.begin() + k + 1, t);
 				ok = 1;
@@ -196,13 +196,27 @@ static void dump_tac(Scope *scp, Optimize_level level)
 
 		case SEM_OPERATOR:
 			if (r.op == OP_ASSIGN)
-				printf("%%%d %s %%%d		#assign \n", r.dst, p->tk.src.c_str(), r.s1);
+			{
+				printf("%%%d %s %%%d \t\t #%s %s %s \n",
+				    r.dst, p->tk.src.c_str(), r.s1,
+				    vr_name(r.dst), p->tk.src.c_str(), vr_name(r.s1));
+			}
 			else if (r.op == OP_COPY_SSA)
-				printf("%%%d = %%%d		#cp_ssa \n", r.dst, r.s1);
+			{
+				printf("%%%d = %%%d \t\t #cp_ssa %s = %s \n",
+				    r.dst, r.s1,
+				    vr_name(r.dst), vr_name(r.s1));
+			}
 			else if (r.op == OP_SAVE_RET_VALUE)
+			{
 				printf("save_ret:\t %s %%%d\n", p->tk.src.c_str(), r.s1);
+			}
 			else
-				printf("%%%d = %%%d %s %%%d\n", r.dst, r.s1, p->tk.src.c_str(), r.s2);
+			{
+				printf("%%%d = %%%d %s %%%d \t\t #%s = %s %s %s \n",
+				    r.dst, r.s1, p->tk.src.c_str(), r.s2,
+				    vr_name(r.dst), vr_name(r.s1), p->tk.src.c_str(), vr_name(r.s2));
+			}
 			break;
 
 		case SEM_VAR_DECLARE:
@@ -399,7 +413,7 @@ static void copy_propagation(Scope *scp)
 	for (int i = tac.size() - 1; i >= 0; i--)
 	{
 		Tac &t = tac[i];
-		if(t.op == OP_ASSIGN)
+		if (t.op == OP_ASSIGN)
 		{
 			t.op = OP_ALL;
 			int s1 = t.s1;
@@ -427,7 +441,6 @@ static void copy_propagation(Scope *scp)
 		}
 	}
 
-
 	for (Scope *p : scp->clds)
 		copy_propagation(p);
 }
@@ -450,8 +463,8 @@ static void elimicate_transient_vr(Scope *scp)
 		}
 
 		if (vr_symb(a.dst)->stamp == SYMB_PRIVATE_transient
-		    && b.op == OP_ASSIGN
-		    && b.s1 == a.dst)
+		&& b.op == OP_ASSIGN
+		&& b.s1 == a.dst)
 		{
 			a.dst = b.dst;
 			tac.erase(tac.begin() + i + 1);
@@ -507,7 +520,7 @@ void rm_dead_code(Scope *scp)
 	}
 }
 static void collect_add_operands(vector<Tac> &tacs, vector<int> &def_idx, int vr,
-                                 vector<int> &ops, vector<int> &idxs)
+    vector<int> &ops, vector<int> &idxs)
 {
 	int di = def_idx[vr];
 	if (di < 0)
@@ -524,14 +537,14 @@ static void collect_add_operands(vector<Tac> &tacs, vector<int> &def_idx, int vr
 	idxs.push_back(di);
 
 	if (ssa_use_cnt[t.s1] == 1 && vr_symb(t.s1)->stamp == SYMB_PRIVATE_transient)
-		collect_add_operands(tacs, def_idx, t.s1, ops, idxs);
+	collect_add_operands(tacs, def_idx, t.s1, ops, idxs);
 	else
-		ops.push_back(t.s1);
+	ops.push_back(t.s1);
 
 	if (ssa_use_cnt[t.s2] == 1 && vr_symb(t.s2)->stamp == SYMB_PRIVATE_transient)
-		collect_add_operands(tacs, def_idx, t.s2, ops, idxs);
+	collect_add_operands(tacs, def_idx, t.s2, ops, idxs);
 	else
-		ops.push_back(t.s2);
+	ops.push_back(t.s2);
 }
 void reassociate(Scope *scp)
 {
@@ -548,11 +561,11 @@ void reassociate(Scope *scp)
 		for (auto &t : tacs)
 		{
 			if (t.op != OP_ADD || vr_symb(t.dst)->stamp != SYMB_PRIVATE_transient)
-				continue;
+			continue;
 			if (t.s1 >= 0 && vr_symb(t.s1)->stamp == SYMB_PRIVATE_transient)
-				use_in_add[t.s1]++;
+			use_in_add[t.s1]++;
 			if (t.s2 >= 0 && vr_symb(t.s2)->stamp == SYMB_PRIVATE_transient)
-				use_in_add[t.s2]++;
+			use_in_add[t.s2]++;
 		}
 
 		for (int i = tacs.size() - 1; i >= 0; i--)
@@ -561,7 +574,7 @@ void reassociate(Scope *scp)
 			if (t.op != OP_ADD)
 				continue;
 			if (vr_symb(t.dst)->stamp != SYMB_PRIVATE_transient)
-				continue;
+			continue;
 			if (use_in_add[t.dst] > 0)
 				continue;
 
@@ -584,17 +597,19 @@ void reassociate(Scope *scp)
 				int max_cnt = 0;
 				for (int o : ops)
 					max_cnt = std::max(max_cnt, ssa_use_cnt[o]);
-				std::sort(ops.begin(), ops.end(), [&](int a, int b) {
+				std::sort(ops.begin(), ops.end(), [&](int a, int b)
+				{
 					int ca = ssa_use_cnt[a], cb = ssa_use_cnt[b];
 					if (ca != cb)
-						return ca > cb;
+					return ca > cb;
 					bool hi = (ca == max_cnt);
 					return hi ? (a < b) : (a > b);
 				});
 			}
 			else
 			{
-				std::stable_sort(ops.begin(), ops.end(), [&](int a, int b) {
+				std::stable_sort(ops.begin(), ops.end(), [&](int a, int b)
+				{
 					bool ta = vr_symb(a)->stamp == SYMB_PRIVATE_transient;
 					bool tb = vr_symb(b)->stamp == SYMB_PRIVATE_transient;
 					return ta && !tb;
@@ -632,7 +647,7 @@ void gen_three_address_code_O1()
 	copy_propagation(&file_scp);
 	gen_use_cnt();
 	rm_dead_code(&file_scp);
-	reassociate(&file_scp);
+//	reassociate(&file_scp);
 
 	gen_use_cnt();
 

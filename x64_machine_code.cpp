@@ -280,25 +280,22 @@ static void gen_mc(Scope *scp, Optimize_level level)
 }
 
 static int _asm_len = 0;
+static void print_asm_sem(X64mc &mc)
+{
+	Ast *p = vr_ast(mc.dst);
+
+	printf("%*s", (_asm_len < 48) ? (48 - _asm_len) : 2, "");
+
+	if (mc.stamp >= MC_ADD && mc.stamp <= MC_DIV)
+	{
+		printf("#%s = %s %s %s",
+			vr_name(mc.dst), vr_name(mc.s1), mc_info[mc.stamp].mc_code, vr_name(mc.s2));
+	}
+	printf("\n");
+}
 #define PRINT_ASM_HEAD(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
 #define PRINT_ASM(fmt, ...) _asm_len = 8 + printf("\t" fmt , ##__VA_ARGS__)
-#define PRINT_ASM_sem	printf("%*s#%s %s=%%%d, %s=%%%d,  cyc %d", \
-        (_asm_len < 48) ? (48 - _asm_len) : 2, "", \
-        mc.ori_sem.c_str(),	\
-        mc.s1 >= 0 ? vr_declare_manager.declare_at[mc.s1]->tk.src.c_str() : "", mc.s1,	\
-        	mc.s2 >= 0 ? vr_declare_manager.declare_at[mc.s2]->tk.src.c_str() : "", mc.s2, 	\
-			mc.start_cycle);	\
-        printf("\n");
-
-#if 1
-#define PRINT_MORE	\
-			printf("%*s#%s, cyc %d\n", \
-				(_asm_len < 48) ? (48 - _asm_len) : 2, "", \
-				mc.ori_sem.c_str(), mc.start_cycle);
-#else
-	#define PRINT_MORE	\
-	//		printf("\n");
-#endif
+#define PRINT_ASM_sem	print_asm_sem(mc);
 
 void dump_mc(Scope *scp, string mc_list_name)
 {
@@ -326,22 +323,22 @@ void dump_mc(Scope *scp, string mc_list_name)
 		{
 		case MC_LD:
 			PRINT_ASM("%s %%%d, dword ptr [%d]", mc_info[stamp].mc_code, mc.s1, vr_off(mc.s1));
-			PRINT_MORE
+			PRINT_ASM_sem
 			break;
 
 		case MC_ST:
 			PRINT_ASM("%s dword ptr [%d], %%%d", mc_info[stamp].mc_code, vr_off(mc.s1), mc.s1);
-			PRINT_MORE
+			PRINT_ASM_sem
 			break;
 
 		case MC_ASSIGN:
 			PRINT_ASM("%s %%%d, %%%d", mc_info[stamp].mc_code, mc.dst, mc.s1);
-			PRINT_MORE
+			PRINT_ASM_sem
 			break;
 
 		case MC_NEG:
 			PRINT_ASM("%s %%%d", mc_info[stamp].mc_code, mc.s1);
-			PRINT_MORE
+			PRINT_ASM_sem
 			break;
 
 //		case MC_ADD:
@@ -376,17 +373,17 @@ void dump_mc(Scope *scp, string mc_list_name)
 
 //			set_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_set;
 //			PRINT_ASM("%s %%%d", mc_info[set_mc].mc_code, mc.dst);
-			PRINT_MORE
+			PRINT_ASM_sem
 			break;
 
 		case MC_TEST:
 			PRINT_ASM("%s %%%d", mc_info[stamp].mc_code, mc.s1);
-			PRINT_MORE
+			PRINT_ASM_sem
 			break;
 
 		case MC_SAVE_RET:
 			PRINT_ASM("mov eax, %%%d", mc.s1);
-			PRINT_MORE
+			PRINT_ASM_sem
 			break;
 
 		default:
