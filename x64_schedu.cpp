@@ -19,6 +19,8 @@ struct ScheduleScore {
 	int critical_path = 0;
 
 	bool can_use_alu = 0;
+	bool is_bottleneck = 0;
+	int succ_pending_preds = 0;
 
 //	int left_use = -1;
 	float score = 0;
@@ -37,6 +39,8 @@ int free_reg = reg_limit;
 int free_alu_unit = alu_unit;
 int free_imul_unit = imul_unit;
 int free_div_unit = div_unit;
+
+static int live_reg_cnt = 0;
 
 bool has_function_unit(MachineCodeStamp stamp)
 {
@@ -161,25 +165,22 @@ void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx)
 	    prefix ? prefix : "",
 	    scp ? scp->name.c_str() : "unknown scp", idx,
 	    mc_info[stamp].mc_code,
-	    dst >= 0 ? declare_record.ast[dst]->tk.src.c_str() : "", dst,
-	    s1 >= 0 ? declare_record.ast[s1]->tk.src.c_str() : "", s1,
-	    s2 >= 0 ? declare_record.ast[s2]->tk.src.c_str() : "", s2);
+	    dst >= 0 ? vr_tk_src(dst) : "", dst,
+	    s1 >= 0 ? vr_tk_src(s1) : "", s1,
+	    s2 >= 0 ? vr_tk_src(s2) : "", s2);
 }
 static int last_use(Scope *scp, int vr)
 {
 	if (vr < 0 || scp->use_cnt_in_bb[vr] == 0)
 		return 0;
 
+	Ast *ast = vr_ast(vr);
+	if (ast->symb_stamp & SYMB_IMMEDIATE)
+		return 0;
+
 	if(scp->use_cnt_in_bb[vr] - scp->consume_cnt_in_bb[vr] == 1)
 		return 1;
 
-//	return vr_ast(vr)->symb_stamp == SYMB_PRIVATE_transient;
-
-//	for (Symbol *p : *scp->symb_table)
-//	{
-//		if (p->vr == vr && p->stamp == SYMB_PRIVATE_transient)
-//			return true;
-//	}
 	return false;
 }
 static float consumed_ratio_score(Scope *scp, int vr)
@@ -187,6 +188,10 @@ static float consumed_ratio_score(Scope *scp, int vr)
 	float score = 1.0;
 
 	if (vr < 0 || scp->use_cnt_in_bb[vr] == 0)
+		return 0;
+
+	Ast *ast = vr_ast(vr);
+	if (ast->symb_stamp & SYMB_IMMEDIATE)
 		return 0;
 
 	return score * ((float) scp->consume_cnt_in_bb[vr] / scp->use_cnt_in_bb[vr]);
@@ -212,7 +217,30 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 	}
 
 	if (can_emit_cnt == 1)
+	{
+		int mc_idx = ready[idx_emit].idx_in_mc_list;
+		int s1 = x64mc[mc_idx].s1;
+		int s2 = x64mc[mc_idx].s2;
+		int pressure_delta = 1 - last_use(scp, s1) - last_use(scp, s2);
+		bool is_succ_run = false;
+		for (int i = 0; i < mcs_predecessor[mc_idx].mcs.size(); i++)
+		{
+			int pred = mcs_predecessor[mc_idx].mcs[i];
+			for (int r_mc : running)
+				if (r_mc == pred) { is_succ_run = true; break; }
+			if (is_succ_run) break;
+		}
+		bool high_pressure = live_reg_cnt >= reg_limit - 1;
+		bool mid_pressure = live_reg_cnt >= reg_limit - 2;
+		if (!running.empty())
+		{
+			if (mid_pressure && !is_succ_run)
+				return -1;
+			if (high_pressure && (pressure_delta > 0 || !is_succ_run))
+				return -1;
+		}
 		goto end;
+	}
 	if (can_emit_cnt == 0)
 		return -1;
 
@@ -234,27 +262,97 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 			continue;
 
 		int mc_idx = r.idx_in_mc_list;
+
+		bool is_succ_run = false;
+		for (int i = 0; i < mcs_predecessor[mc_idx].mcs.size(); i++)
+		{
+			int pred = mcs_predecessor[mc_idx].mcs[i];
+			for (int r_mc : running)
+				if (r_mc == pred) { is_succ_run = true; break; }
+			if (is_succ_run) break;
+		}
+
+		bool is_bottleneck = false;
+		int bottleneck_succ = -1;
+		int succ_pending_preds = 0;
+		if (mcs_successor[mc_idx].edges == 1)
+		{
+			int succ = mcs_successor[mc_idx].mcs[0];
+			if (mcs_predecessor[succ].edges > 1)
+			{
+				is_bottleneck = true;
+				bottleneck_succ = succ;
+				succ_pending_preds = mcs_predecessor[succ].edges;
+			}
+		}
+		r.is_bottleneck = is_bottleneck;
+		r.succ_pending_preds = succ_pending_preds;
+
+		bool high_pressure = live_reg_cnt >= reg_limit - 1;
+		bool mid_pressure = live_reg_cnt >= reg_limit - 2;
+		if (!running.empty() && mid_pressure)
+		{
+			if (!is_succ_run)
+			{
+				r.can_use_alu = false;
+				continue;
+			}
+		}
+		else if (!is_succ_run && !running.empty())
+		{
+			if (high_pressure)
+			{
+				r.can_use_alu = false;
+				continue;
+			}
+			r.score -= 3.0f;
+		}
+
 		MachineCodeStamp mc_stamp = x64mc[mc_idx].stamp;
 		int s1 = x64mc[mc_idx].s1;
 		int s2 = x64mc[mc_idx].s2;
 
 		float last_use_score = 2.0;
-		r.score += last_use_score * last_use(scp, s1);
-		r.score += last_use_score * last_use(scp, s2);
+		float lu_mult = is_bottleneck ? 0.5f : 1.0f;
+		r.score += last_use_score * last_use(scp, s1) * lu_mult;
+		r.score += last_use_score * last_use(scp, s2) * lu_mult;
 		if(mc_stamp == MC_ASSIGN)
 			r.score -= last_use_score;
 
-		r.score += consumed_ratio_score(scp, s1);
-		r.score += consumed_ratio_score(scp, s2);
+		r.score += 0.1f * consumed_ratio_score(scp, s1);
+		r.score += 0.1f * consumed_ratio_score(scp, s2);
 
-		float single_line_score = 1.0;
+		float single_line_score = 0.3f;
 		if (mcs_successor[mc_idx].edges == 1)
 		{
 			int succ = mcs_successor[mc_idx].mcs[0];
-//			printf("succ %d\n", succ);
 			if (mcs_predecessor[succ].edges == 1)
 				r.score += single_line_score;
 		}
+
+		float bottleneck_score = 0.5f;
+		if (is_bottleneck)
+		{
+			bool other_pred_ready = false;
+			for (int pred : mcs_predecessor[bottleneck_succ].mcs)
+			{
+				if (pred == mc_idx) continue;
+				for (auto &rr : ready)
+					if (rr.idx_in_mc_list == pred) { other_pred_ready = true; break; }
+				if (other_pred_ready) break;
+				for (int r_mc : running)
+					if (r_mc == pred) { other_pred_ready = true; break; }
+				if (other_pred_ready) break;
+			}
+			if (!other_pred_ready)
+				r.score -= bottleneck_score * succ_pending_preds;
+			else
+				r.score -= bottleneck_score;
+		}
+
+		int pressure_delta = 1 - last_use(scp, s1) - last_use(scp, s2);
+		if (pressure_delta > 0 && !running.empty())
+			r.score -= 5.0f;
 
 		if (s1 >= 0 && scp->use_cnt_in_bb[s1] <= 0 && scp->reference_cnt_in_bb[s1] <= 0)
 			print_mc_err("select1", scp, x64mc[mc_idx], mc_idx);
@@ -264,6 +362,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 
 	float mx_score;
 	mx_score = -1;
+	idx_emit = -1;
 
 	for (int i = 0; i < ready.size(); i++)
 	{
@@ -285,12 +384,17 @@ end:
 	bool r = get_function_unit(x64mc[mc_idx].stamp);
 	assert(r);
 
-#if 0
+#if 1
 	auto mc = x64mc[mc_idx];
-	printf("%d: size %lu, emit %d [%s %%%d %%%d %%%d], score: ",
-	    select_pulled++, ready.size(), mc_idx, mc.ori_sem.c_str(), mc.dst, mc.s1, mc.s2);
+		printf("%d: size %lu emit %d [%s %%%d %%%d %%%d] cp=%d sc=%.3f run=%lu live=%d bn=%d sp=%d |",
+		    select_pulled++, ready.size(), mc_idx, mc.ori_sem.c_str(), mc.dst, mc.s1, mc.s2,
+		    ready[idx_emit].critical_path, ready[idx_emit].score, running.size(), live_reg_cnt,
+		    ready[idx_emit].is_bottleneck, ready[idx_emit].succ_pending_preds);
 	for (auto &r : ready)
-		printf("  %d=%.3f", r.idx_in_mc_list, r.score);
+	{
+		if (!r.can_use_alu) continue;
+		printf(" %d=%.3f(cp%d)", r.idx_in_mc_list, r.score, r.critical_path);
+	}
 	printf("\n");
 #endif
 
@@ -379,6 +483,7 @@ static void mc_schdu(Scope *scp)
 	scp->consume_cnt_in_bb.clear();
 	scp->consume_cnt_in_bb.resize(vr_size);
 
+	live_reg_cnt = 0;
 	int cycle = 0;
 	init_ready_queue(x64mc);
 
@@ -416,6 +521,10 @@ static void mc_schdu(Scope *scp)
 			int mc = mc_select(scp, x64mc);
 			if (mc < 0)
 				break;
+
+			int s1 = x64mc[mc].s1;
+			int s2 = x64mc[mc].s2;
+			live_reg_cnt += 1 - last_use(scp, s1) - last_use(scp, s2);
 
 			x64mc[mc].start_cycle = cycle;
 			x64mc_schedu.push_back(x64mc[mc]);

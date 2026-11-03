@@ -447,6 +447,7 @@ struct VrDeclareRecord
 };
 extern VrDeclareRecord declare_record;
 #define vr_ast(vr) declare_record.ast[vr]
+#define vr_tk_src(vr) declare_record.ast[vr]->tk.src.c_str()
 #define vr_name(vr) declare_record.ast[vr]->symb->unique_name.c_str()
 #define vr_off(vr) declare_record.get_vr_off(vr)
 #define vr_symb(vr) declare_record.ast[vr]->symb
