@@ -1,21 +1,18 @@
 int test(int n)
 {
-	int v0 = n + 1;
-	int v1 = n + 2;
-	int v2 = n + 3;
-	int v3 = n + 4;
-	int v4 = n + 5;
-	int v5 = n + 6;
+	int a = 1;
+	int b = 2;
+	int c = 3;
 
-	v0 = v1 + v2 + v3 * v5 + v4;
-//	v1 = v2 * v3 + v4 * v0 - v5;
-//	v2 = v3 * v4 + v5 * v1 + v0;
-//	v3 = v4 * v5 + v0 * v2 - v1;
-//	v4 = v5 * v0 + v1 * v3 - v2;
-//	v5 = v0 * v1 + v2 * v4 + v3;
+	int i0 = n * 250000;
+	while ((i0 = i0 - 1) > 0)
+	{
+		a = b + c;
+		b = c + a;
+		c = a + b;
+	}
 
-	//return v1 + v2 + v3 + v4 + v5 + v0;
-	return v0 + v1 + v2 + v3 + v4 + v5;
+	return a + b + c;
 }
 
 
