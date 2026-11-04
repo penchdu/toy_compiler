@@ -288,25 +288,8 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		r.is_bottleneck = is_bottleneck;
 		r.succ_pending_preds = succ_pending_preds;
 
-		bool high_pressure = live_reg_cnt >= reg_limit - 1;
-		bool mid_pressure = live_reg_cnt >= reg_limit - 2;
-		if (!running.empty() && mid_pressure)
-		{
-			if (!is_succ_run)
-			{
-				r.can_use_alu = false;
-				continue;
-			}
-		}
-		else if (!is_succ_run && !running.empty())
-		{
-			if (high_pressure)
-			{
-				r.can_use_alu = false;
-				continue;
-			}
+		if (!is_succ_run && !running.empty())
 			r.score -= 3.0f;
-		}
 
 		MachineCodeStamp mc_stamp = x64mc[mc_idx].stamp;
 		int s1 = x64mc[mc_idx].s1;
