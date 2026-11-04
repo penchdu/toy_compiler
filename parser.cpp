@@ -634,7 +634,7 @@ void parser()
 
 	parse_file__gen_ast();
 
-	sweep_dead_virtual_scope(&file_scp);
+//	sweep_dead_virtual_scope(&file_scp);
 //	dump_ast();
 
 }

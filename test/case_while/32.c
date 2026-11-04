@@ -42,9 +42,6 @@ int test(int dummy)
 	    + d2 - d2
 	    + d3 - d3 > 0)
 	{
-		/*
-		 * body 故意极轻，只改一�?outer-cond 使用�?VR�?
-		 */
 		a0 = a0 + 1;
 
 		i1 = 3;
@@ -67,9 +64,6 @@ int test(int dummy)
 		    + d2 - d2
 		    + d3 - d3 > 0)
 		{
-			/*
-			 * 同样只改一�?cond 使用�?VR�?
-			 */
 			b0 = b0 + 1;
 
 			i2 = 2;
@@ -92,9 +86,6 @@ int test(int dummy)
 			    + d2 - d2
 			    + d3 - d3 > 0)
 			{
-				/*
-				 * 最深层 body 几乎空，只改一�?VR�?
-				 */
 				c0 = c0 + 1;
 			}
 		}

@@ -216,6 +216,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		}
 	}
 
+//	LOG("can_emit_cnt=%d", can_emit_cnt);
 	if (can_emit_cnt == 1)
 	{
 		int mc_idx = ready[idx_emit].idx_in_mc_list;
@@ -242,7 +243,10 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		goto end;
 	}
 	if (can_emit_cnt == 0)
+	{
+		LOG("can_emit_cnt == 0");
 		return -1;
+	}
 
 	assert(max_critical_path > 0);
 
@@ -344,7 +348,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 	}
 
 	float mx_score;
-	mx_score = -1;
+	mx_score = running.empty() ? -1e9f : -1.0f;
 	idx_emit = -1;
 
 	for (int i = 0; i < ready.size(); i++)
@@ -361,15 +365,18 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 
 end:
 	if (idx_emit < 0)
+	{
+		LOG("idx_emit=%d", idx_emit);
 		return -1;
+	}
 
 	int mc_idx = ready[idx_emit].idx_in_mc_list;
 	bool r = get_function_unit(x64mc[mc_idx].stamp);
 	assert(r);
 
-#if 1
+#if 0
 	auto mc = x64mc[mc_idx];
-		printf("%d: size %lu emit %d [%s %%%d %%%d %%%d] cp=%d sc=%.3f run=%lu live=%d bn=%d sp=%d |",
+		printf("schedu %d: size %lu emit %d [%s %%%d %%%d %%%d] cp=%d sc=%.3f run=%lu live=%d bn=%d sp=%d |",
 		    select_pulled++, ready.size(), mc_idx, mc.ori_sem.c_str(), mc.dst, mc.s1, mc.s2,
 		    ready[idx_emit].critical_path, ready[idx_emit].score, running.size(), live_reg_cnt,
 		    ready[idx_emit].is_bottleneck, ready[idx_emit].succ_pending_preds);

@@ -295,7 +295,31 @@ static int case_arg(Ast *p)
 	p->vr = p->symb->ssa.back();
 	return p->vr;
 }
+static int new_private_ssa_of_outer_symb(Ast *p, Symbol *symb)
+{
+	Scope *scp = p->scope;
 
+	if (symb->ssa.size() == 0)
+		symb->ssa.push_back(declare_record.new_vr(symb->ast));
+
+	Symbol *outer_symb = new Symbol;
+	p->symb = outer_symb;
+
+	outer_symb->stamp = SYMB_PRIVATE_ssa_of_outer_symb;
+	outer_symb->outer_symb = symb;
+	outer_symb->out_base_vr = symb->ssa.back();
+	outer_symb->type = symb->type;
+	outer_symb->src = symb->src;
+	outer_symb->unique_name = symb->unique_name;
+	outer_symb->explicit_unique_name = symb->explicit_unique_name;
+	outer_symb->depth = scp->depth;
+	outer_symb->ssa.push_back(declare_record.new_vr(p));
+	outer_symb->new_ssa_scp.push_back(scp);
+
+	p->vr = outer_symb->ssa.back();
+	scp->outer_symb_table_ptr->push_back(outer_symb);
+	return p->vr;
+}
 static int new_ssa(Ast *p)
 {
 	Scope *scp = p->scope;
@@ -326,54 +350,13 @@ static int new_ssa(Ast *p)
 		for (auto symb : *(parent->symb_table_ptr))
 		{
 			if (symb->src == p->tk.src)
-			{
-				if (symb->ssa.size() == 0)
-					symb->ssa.push_back(declare_record.new_vr(symb->ast));
-
-				Symbol *outer_symb = new Symbol;
-				p->symb = outer_symb;
-
-				outer_symb->stamp = SYMB_PRIVATE_ssa_of_outer_symb;
-				outer_symb->outer_symb = symb;
-				outer_symb->out_base_vr = symb->ssa.back();
-				outer_symb->type = symb->type;
-				outer_symb->src = symb->src;
-				outer_symb->unique_name = symb->unique_name;
-				outer_symb->explicit_unique_name = symb->explicit_unique_name;
-				outer_symb->depth = scp->depth;
-				outer_symb->ssa.push_back(declare_record.new_vr(p));
-				outer_symb->new_ssa_scp.push_back(p->scope);
-
-				p->vr = outer_symb->ssa.back();
-				scp->outer_symb_table_ptr->push_back(outer_symb);
-				return p->vr;
-			}
+				return new_private_ssa_of_outer_symb(p, symb);
 		}
 
 		for (auto symb : *(parent->outer_symb_table_ptr))
 		{
 			if (symb->src == p->tk.src)
-			{
-				if (symb->ssa.size() == 0)
-					symb->ssa.push_back(declare_record.new_vr(symb->ast));
-
-				Symbol *outer_symb = new Symbol;
-				p->symb = outer_symb;
-
-				outer_symb->stamp = SYMB_PRIVATE_ssa_of_outer_symb;
-				outer_symb->outer_symb = symb;
-				outer_symb->out_base_vr = symb->ssa.back();
-				outer_symb->type = symb->type;
-				outer_symb->src = symb->src;
-				outer_symb->unique_name = symb->unique_name;
-				outer_symb->explicit_unique_name = symb->explicit_unique_name;
-				outer_symb->depth = scp->depth;
-				outer_symb->ssa.push_back(declare_record.new_vr(p));
-
-				p->vr = outer_symb->ssa.back();
-				scp->outer_symb_table_ptr->push_back(outer_symb);
-				return p->vr;
-			}
+				return new_private_ssa_of_outer_symb(p, symb);
 		}
 	}
 

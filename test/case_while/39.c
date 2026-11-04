@@ -67,19 +67,19 @@ int test(int dummy)
 
 				while (i3 > 0)
 				{
-					/* 第一轮：制造一组寄存器占用 */
+
 					a0 = a0 + c3;
 					c3 = c3 + b2;
 					b2 = b2 + d4;
 					d4 = d4 + a0;
 
-					/* 第二轮：马上换手 */
+	
 					a2 = a2 + d2;
 					d2 = d2 + b4;
 					b4 = b4 + c1;
 					c1 = c1 + a2;
 
-					/* 第三轮：重新抢之前的�?*/
+		
 					a4 = a4 + b0;
 					b0 = b0 + c0;
 					c0 = c0 + d1;
@@ -89,10 +89,7 @@ int test(int dummy)
 
 					while (i4 > 0)
 					{
-						/*
-						 * 这里故意按照“旧 VR 被新 VR 顶掉�?
-						 * �?VR 又立即回来”的顺序访问�?
-						 */
+					
 						a0 = a0 + d1;
 						b1 = b1 + a2;
 						c2 = c2 + a3;
@@ -108,9 +105,7 @@ int test(int dummy)
 						c1 = c1 + a0;
 						d1 = d1 + b1;
 
-						/*
-						 * 再把前面已经被频繁换手的 VR 拉回来�?
-						 */
+						
 						a3 = a3 + d3;
 						b4 = b4 + c2;
 						c0 = c0 + a1;
@@ -119,10 +114,7 @@ int test(int dummy)
 						i4 = i4 - 1;
 					}
 
-					/*
-					 * inner recover 后再立即使用这些变量�?
-					 * 强迫 loop-carried state 继续参与分配�?
-					 */
+					
 					a4 = a4 + d2;
 					b0 = b0 + c0;
 					c4 = c4 + b4;

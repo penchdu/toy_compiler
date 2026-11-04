@@ -265,7 +265,7 @@ static void _gen_use_cnt(Scope *scp)
 			break;
 
 		default:
-			ERR("%d \n", tac.sem_stamp);
+			ERR("%d %d, %%%d %%%d %%%d \n", tac.sem_stamp ,tac.op, tac.dst, tac.s1, tac.s2);
 			break;
 		}
 	}

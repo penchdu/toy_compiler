@@ -38,11 +38,6 @@ int test(int dummy)
 		c0 = c0 + d0;
 		c1 = c1 + d1;
 
-		/*
-		 * 故意让这�?while 一次都不进�?
-		 * 每次 outer iteration 都重新设�?1�?
-		 * condition 执行后直接变�?0�?
-		 */
 		i1 = 1;
 
 		while ((i1 = i1 - 1)
@@ -53,16 +48,9 @@ int test(int dummy)
 			b2 = b2 + c2;
 		}
 
-		/*
-		 * zero-iteration while 结束后，
-		 * 继续修改长生命周期变量�?
-		 */
 		d0 = d0 + a0;
 		d1 = d1 + b1;
 
-		/*
-		 * 这个 while 每次 outer iteration 执行两次�?
-		 */
 		i2 = 3;
 
 		while ((i2 = i2 - 1)
@@ -78,9 +66,6 @@ int test(int dummy)
 			d2 = d2 + c2;
 			d3 = d3 + c3;
 
-			/*
-			 * 再嵌一个必�?0 次执行的 while�?
-			 */
 			i3 = 1;
 
 			while ((i3 = i3 - 1)

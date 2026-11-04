@@ -107,7 +107,9 @@ static Scope* new_jmp_tail_for_cond_jmp()
 }
 Scope* get_inner_tail_of_scope(Scope *scope)
 {
-	assert(scope->clds.size());
+	if(scope->clds.size() == 0)
+		return scope;
+
 	Scope *inner_tail = scope->clds.back();	// then_branch.cld.back()
 	assert(inner_tail->is_virtual);
 	assert(inner_tail->sem_stamp == SEM_UNNAMED_SCOPE);

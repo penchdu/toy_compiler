@@ -802,8 +802,8 @@ void ra_wave_while(Scope *while_scp)
 
 	ra_wave_scope(cond);
 
-	int after_cond_swap_pr = get_swap_pr(cond->bb);	// while_scp->basic_block ?
-	assert(after_cond_swap_pr != X64PR_MAX);
+//	int after_cond_swap_pr = get_swap_pr(cond->bb);	// while_scp->basic_block ?
+//	assert(after_cond_swap_pr != X64PR_MAX);
 
 	vector<VrState> after_cond_vr_state = vr_state;
 	vector<PrState> after_cond_pr_state = pr_state;
@@ -817,21 +817,21 @@ void ra_wave_while(Scope *while_scp)
 
 	////////////////////////////////////////////////////////////
 
-	while_move_victim_to_pre_cond(
-	    while_scp,
-	    pre_cond_vr_state,
-	    pre_cond_pr_state,
-	    after_cond_vr_state,
-	    after_cond_pr_state);
-
-	while_move_ld_to_pre_cond(
-	    while_scp,
-	    pre_cond_vr_state,
-	    pre_cond_pr_state,
-	    after_cond_vr_state,
-	    after_cond_pr_state,
-	    pre_cond_swap_pr,
-	    after_cond_swap_pr);
+//	while_move_victim_to_pre_cond(
+//	    while_scp,
+//	    pre_cond_vr_state,
+//	    pre_cond_pr_state,
+//	    after_cond_vr_state,
+//	    after_cond_pr_state);
+//
+//	while_move_ld_to_pre_cond(
+//	    while_scp,
+//	    pre_cond_vr_state,
+//	    pre_cond_pr_state,
+//	    after_cond_vr_state,
+//	    after_cond_pr_state,
+//	    pre_cond_swap_pr,
+//	    after_cond_swap_pr);
 
 	vr_state = after_cond_vr_state;
 	pr_state = after_cond_pr_state;
@@ -858,27 +858,27 @@ void ra_wave_while(Scope *while_scp)
 
 	////////////////////////////////////////////////////////////////////////////////////////
 
-	st_additional_dirty(cond, pre_cond_vr_state, body_inner_tail, after_body_vr_state);
+//	st_additional_dirty(cond, pre_cond_vr_state, body_inner_tail, after_body_vr_state);
 
-	for (Scope *p : body->continue_list)
-	{
-		ra_wave__continue_break(
-			cond,
-		    pre_cond_vr_state,
-		    pre_cond_pr_state,
-		    pre_cond_swap_pr,
-		    p);
-	}
-
-	for (Scope *p : body->break_list)
-	{
-		ra_wave__continue_break(
-			cond,
-		    after_cond_vr_state,
-		    after_cond_pr_state,
-		    after_cond_swap_pr,
-		    p);
-	}
+//	for (Scope *p : body->continue_list)
+//	{
+//		ra_wave__continue_break(
+//			cond,
+//		    pre_cond_vr_state,
+//		    pre_cond_pr_state,
+//		    pre_cond_swap_pr,
+//		    p);
+//	}
+//
+//	for (Scope *p : body->break_list)
+//	{
+//		ra_wave__continue_break(
+//			cond,
+//		    after_cond_vr_state,
+//		    after_cond_pr_state,
+//		    after_cond_swap_pr,
+//		    p);
+//	}
 
 	while__end_work(while_scp);
 }

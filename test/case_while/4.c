@@ -1,8 +1,7 @@
 int test(int dummy)
 {
-    // 6 个变量填满所�?pr
     int a0 = 100;
-    int a1 = 200;   // �?外层 get_swap_pr �?spill 这个
+    int a1 = 200; 
     int a2 = 300;
     int a3 = 400;
     int a4 = 500;
@@ -13,25 +12,18 @@ int test(int dummy)
 
     while (i0 > 0)
     {
-        // 外层 cond �?a1（被 spill 到栈），wave allocator reload 后可能放 swap_pr
-        // 外层 body...
         a0 = a0 + a1;
         a2 = a2 + a3;
 
         int i1 = 2;
         while (i1 > 0)
         {
-            // 内层 get_swap_pr 又要 spill 某个...
-            // 内层 cond/body 里的临时变量可能又占了外层的 swap_pr
-            a1 = a1 + a2;    // 内层�?a1
+            a1 = a1 + a2;  
             a3 = a3 + a4;
 
             int i2 = 2;
             while (i2 > 0)
             {
-                // 最深层密集操作，制造最大寄存器压力
-                // 多个临时变量同时存活，spill 循环释放后，
-                // recover 主循环需要连续做 3 寄存器交�?
                 int t0 = a0 + a1;
                 int t1 = a2 + a3;
                 int t2 = a4 + a5;

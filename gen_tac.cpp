@@ -92,7 +92,7 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 	return -1;
 }
 
-static void insert_copy_ssa(vector<Symbol*> &outer_symb_table)
+static void insert_copy_ssa(vector<Symbol*> &outer_symb_table, Scope *tail)
 {
 	for (int i = 0; i < outer_symb_table.size(); i++)
 	{
@@ -104,18 +104,10 @@ static void insert_copy_ssa(vector<Symbol*> &outer_symb_table)
 		t.s1 = symb->ssa.back();
 
 		LOG("new_ssa_scp %s", symb->new_ssa_scp.back()->name.c_str());
-		vector<Tac> &tacs = symb->new_ssa_scp.back()->bb->tacO0;
+//		vector<Tac> &tacs = symb->new_ssa_scp.back()->bb->tacO0;
+		vector<Tac> &tacs = tail->bb->tacO0;
 		bool ok = 0;
-		for (int k = 0; k < tacs.size(); k++)
-		{
-			if (tacs[k].dst == t.s1)
-			{
-				tacs.insert(tacs.begin() + k + 1, t);
-				ok = 1;
-				break;
-			}
-		}
-		assert(ok);
+		tacs.push_back(t);
 	}
 }
 
@@ -155,8 +147,8 @@ static bool gen_tac_O0(Scope *scp)
 	if (!scp->is_virtual && scp->depth > 1)
 	{
 		LOG("scp %s %lu", scp->name.c_str(), scp->outer_symb_table.size());
-//		Scope *tail = get_inner_tail_of_scope(scp);
-		insert_copy_ssa(scp->outer_symb_table);
+		Scope *tail = get_inner_tail_of_scope(scp);
+		insert_copy_ssa(scp->outer_symb_table, tail);
 	}
 
 	return false;
@@ -477,7 +469,7 @@ static void elimicate_transient_vr(Scope *scp)
 	for (Scope *p : scp->clds)
 		elimicate_transient_vr(p);
 }
-void rm_dead_code(Scope *scp)
+static void rm_dead_code(Scope *scp)
 {
 	for (int i = scp->clds.size() - 1; i >= 0; i--)
 		rm_dead_code(scp->clds[i]);
@@ -546,7 +538,7 @@ static void collect_add_operands(vector<Tac> &tacs, vector<int> &def_idx, int vr
 	else
 	ops.push_back(t.s2);
 }
-void reassociate(Scope *scp)
+static void reassociate(Scope *scp)
 {
 	vector<Tac> &tacs = scp->bb->tacO1;
 
@@ -644,7 +636,7 @@ void gen_three_address_code_O1()
 //	union_transient_vr(&file_scp);
 
 	elimicate_transient_vr(&file_scp);
-	copy_propagation(&file_scp);
+//	copy_propagation(&file_scp);
 	gen_use_cnt();
 	rm_dead_code(&file_scp);
 //	reassociate(&file_scp);

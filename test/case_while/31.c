@@ -42,16 +42,9 @@ int test(int dummy)
 		+ d2 - d2
 		+ d3 - d3 > 0)
 	{
-		/*
-		 * a0 / b0 都同时是 outer cond 的读取对象，
-		 * 又在 body 中被修改�?
-		 */
 		a0 = a0 + b0;
 		b0 = b0 + c0;
 
-		/*
-		 * 再制造一批活跃值，增加 cond spill/reload 压力�?
-		 */
 		a1 = a1 + d1;
 		a2 = a2 + d2;
 		a3 = a3 + d3;
@@ -80,9 +73,6 @@ int test(int dummy)
 			+ d2 - d2
 			+ d3 - d3 > 0)
 		{
-			/*
-			 * 再次修改 outer cond 里的 VR�?
-			 */
 			a0 = a0 + d0;
 			b0 = b0 + d0;
 
@@ -101,9 +91,6 @@ int test(int dummy)
 				+ c1 - c1
 				+ d1 - d1 > 0)
 			{
-				/*
-				 * 最深层继续�?cond 相关 VR 改脏�?
-				 */
 				a0 = a0 + c0;
 				b0 = b0 + d0;
 

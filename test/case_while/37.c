@@ -46,13 +46,6 @@ int test(int dummy)
 	    + (a0 = a0 + 1)
 	    - (b0 = b0 + 1)) > 0)
 	{
-		/*
-		 * 外层 cond 用到 a0/b0�?
-		 * 这里先不�?a0/b0�?
-		 * 真正修改它们的是下面的深�?while�?
-		 *
-		 * 另外先改一些无关变量，制�?register pressure�?
-		 */
 		a7 = a7 + b7;
 		b7 = b7 + c7;
 		c7 = c7 + d7;
@@ -62,9 +55,6 @@ int test(int dummy)
 		    + (c0 = c0 + 1)
 		    - (d0 = d0 + 1)) > 0)
 		{
-			/*
-			 * 这里开始真正修�?outer-cond �?a0/b0�?
-			 */
 			a0 = a0 + c0;
 			b0 = b0 + d0;
 
@@ -75,10 +65,6 @@ int test(int dummy)
 			    + (a1 = a1 + 1)
 			    - (b1 = b1 + 1)) > 0)
 			{
-				/*
-				 * a0/b0 又被继续使用�?
-				 * 同时再制造一轮寄存器交换�?
-				 */
 				c0 = c0 + a0;
 				d0 = d0 + b0;
 
@@ -99,10 +85,6 @@ int test(int dummy)
 					    + (a2 = a2 + 1)
 					    - (b2 = b2 + 1)) > 0)
 					{
-						/*
-						 * 最深层一次性重新扰动多�?
-						 * outer / middle loop 都依赖的数据�?
-						 */
 						a0 = a0 + c0 + 1;
 						b0 = b0 + d0 + 2;
 
@@ -127,11 +109,7 @@ int test(int dummy)
 						c3 = c3 + a4 + 15;
 						d3 = d3 + b4 + 16;
 					}
-
-					/*
-					 * 故意�?child while 退出后继续修改
-					 * 与祖先状态相关的数据�?
-					 */
+					
 					c4 = c4 + d4;
 					d4 = d4 + c4;
 				}
@@ -144,9 +122,6 @@ int test(int dummy)
 			d5 = d5 + c5;
 		}
 
-		/*
-		 * 最外层 backedge 前再次修改变量�?
-		 */
 		a5 = a5 + c5;
 		b5 = b5 + d5;
 	}
