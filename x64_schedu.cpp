@@ -19,8 +19,6 @@ struct ScheduleScore {
 	int critical_path = 0;
 
 	bool can_use_alu = 0;
-	bool is_bottleneck = 0;
-	int succ_pending_preds = 0;
 
 //	int left_use = -1;
 	float score = 0;
@@ -165,9 +163,9 @@ void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx)
 	    prefix ? prefix : "",
 	    scp ? scp->name.c_str() : "unknown scp", idx,
 	    mc_info[stamp].mc_code,
-	    dst >= 0 ? vr_tk_src(dst) : "", dst,
-	    s1 >= 0 ? vr_tk_src(s1) : "", s1,
-	    s2 >= 0 ? vr_tk_src(s2) : "", s2);
+	    dst >= 0 ? declare_record.ast[dst]->tk.src.c_str() : "", dst,
+	    s1 >= 0 ? declare_record.ast[s1]->tk.src.c_str() : "", s1,
+	    s2 >= 0 ? declare_record.ast[s2]->tk.src.c_str() : "", s2);
 }
 static int last_use(Scope *scp, int vr)
 {
@@ -231,14 +229,8 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 			if (is_succ_run) break;
 		}
 		bool high_pressure = live_reg_cnt >= reg_limit - 1;
-		bool mid_pressure = live_reg_cnt >= reg_limit - 2;
-		if (!running.empty())
-		{
-			if (mid_pressure && !is_succ_run)
-				return -1;
-			if (high_pressure && (pressure_delta > 0 || !is_succ_run))
-				return -1;
-		}
+		if (!running.empty() && high_pressure && (pressure_delta > 0 || !is_succ_run))
+			return -1;
 		goto end;
 	}
 	if (can_emit_cnt == 0)
@@ -271,34 +263,24 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 				if (r_mc == pred) { is_succ_run = true; break; }
 			if (is_succ_run) break;
 		}
-
-		bool is_bottleneck = false;
-		int bottleneck_succ = -1;
-		int succ_pending_preds = 0;
-		if (mcs_successor[mc_idx].edges == 1)
-		{
-			int succ = mcs_successor[mc_idx].mcs[0];
-			if (mcs_predecessor[succ].edges > 1)
-			{
-				is_bottleneck = true;
-				bottleneck_succ = succ;
-				succ_pending_preds = mcs_predecessor[succ].edges;
-			}
-		}
-		r.is_bottleneck = is_bottleneck;
-		r.succ_pending_preds = succ_pending_preds;
-
+		bool high_pressure = live_reg_cnt >= reg_limit - 1;
 		if (!is_succ_run && !running.empty())
+		{
+			if (high_pressure)
+			{
+				r.can_use_alu = false;
+				continue;
+			}
 			r.score -= 3.0f;
+		}
 
 		MachineCodeStamp mc_stamp = x64mc[mc_idx].stamp;
 		int s1 = x64mc[mc_idx].s1;
 		int s2 = x64mc[mc_idx].s2;
 
 		float last_use_score = 2.0;
-		float lu_mult = is_bottleneck ? 0.5f : 1.0f;
-		r.score += last_use_score * last_use(scp, s1) * lu_mult;
-		r.score += last_use_score * last_use(scp, s2) * lu_mult;
+		r.score += last_use_score * last_use(scp, s1);
+		r.score += last_use_score * last_use(scp, s2);
 		if(mc_stamp == MC_ASSIGN)
 			r.score -= last_use_score;
 
@@ -314,22 +296,10 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		}
 
 		float bottleneck_score = 0.5f;
-		if (is_bottleneck)
+		if (mcs_successor[mc_idx].edges == 1)
 		{
-			bool other_pred_ready = false;
-			for (int pred : mcs_predecessor[bottleneck_succ].mcs)
-			{
-				if (pred == mc_idx) continue;
-				for (auto &rr : ready)
-					if (rr.idx_in_mc_list == pred) { other_pred_ready = true; break; }
-				if (other_pred_ready) break;
-				for (int r_mc : running)
-					if (r_mc == pred) { other_pred_ready = true; break; }
-				if (other_pred_ready) break;
-			}
-			if (!other_pred_ready)
-				r.score -= bottleneck_score * succ_pending_preds;
-			else
+			int succ = mcs_successor[mc_idx].mcs[0];
+			if (mcs_predecessor[succ].edges > 1)
 				r.score -= bottleneck_score;
 		}
 
@@ -369,10 +339,9 @@ end:
 
 #if 1
 	auto mc = x64mc[mc_idx];
-		printf("%d: size %lu emit %d [%s %%%d %%%d %%%d] cp=%d sc=%.3f run=%lu live=%d bn=%d sp=%d |",
-		    select_pulled++, ready.size(), mc_idx, mc.ori_sem.c_str(), mc.dst, mc.s1, mc.s2,
-		    ready[idx_emit].critical_path, ready[idx_emit].score, running.size(), live_reg_cnt,
-		    ready[idx_emit].is_bottleneck, ready[idx_emit].succ_pending_preds);
+	printf("%d: size %lu emit %d [%s %%%d %%%d %%%d] cp=%d sc=%.3f run=%lu |",
+	    select_pulled++, ready.size(), mc_idx, mc.ori_sem.c_str(), mc.dst, mc.s1, mc.s2,
+	    ready[idx_emit].critical_path, ready[idx_emit].score, running.size());
 	for (auto &r : ready)
 	{
 		if (!r.can_use_alu) continue;
