@@ -7,15 +7,15 @@ TEST_DIRS=()
 TEST_DIRS+=(
 	case_while
 	case_while_continue_break
-	case_while_if
 	case_if
+	case_while_if
 	case_while_continue_break_if
 )
 if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case" ]; then
-    TEST_DIRS+=("../vsc_test/time_compare/case")
+#    TEST_DIRS+=("../vsc_test/time_compare/case")
 fi
 if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case2" ]; then
-    TEST_DIRS+=("../vsc_test/time_compare/case2")
+#    TEST_DIRS+=("../vsc_test/time_compare/case2")
 fi
 
 

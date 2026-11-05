@@ -27,10 +27,6 @@ int test(int dummy)
 
     while (i > 0)
     {
-        /*
-         * 这些变量�?while cond 前已经长期存在，
-         * 希望部分变量占据 before state �?PR�?
-         */
         int hold = a0 + b0;
 
         a0 = a0 + b1;
@@ -48,10 +44,6 @@ int test(int dummy)
         c2 = c2 + b4;
         c3 = c3 + b5;
 
-        /*
-         * 制造大�?body-only VR�?
-         * 让它们在 now 出现、before 不存在�?
-         */
         int d0 = a0 + c1;
         int d1 = a1 + c2;
         int d2 = a2 + c3;
@@ -70,10 +62,6 @@ int test(int dummy)
 
         hold = hold + d4 + d5;
 
-        /*
-         * 再让原来的变量继续活�?while 下一轮，
-         * 强迫 recovery 真正恢复 before state�?
-         */
         a0 = a0 + hold;
         a1 = a1 + d0;
         a2 = a2 + d1;

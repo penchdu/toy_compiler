@@ -292,7 +292,6 @@ void make_bb_terminate()
 }
 static Scope* case_tk_continue_break(Semantic sem_stamp)
 {
-	ERR();
 	Token tk = tokens.get();
 	PARSER_LOG("%s", tk.src.c_str());
 

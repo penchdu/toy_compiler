@@ -8,7 +8,6 @@ int test(int dummy)
 
     while (loop < 10)
     {
-        // 强制 12 个变量同时处�?Live 状态并进行复杂交叉计算
         a = a + b + c + d + e + f + g + h + i + j + k + l;
         b = b + a; c = c + b; d = d + c; e = e + d;
         f = f + e; g = g + f; h = h + g; i = i + h;

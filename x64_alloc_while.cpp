@@ -860,25 +860,25 @@ void ra_wave_while(Scope *while_scp)
 
 	st_additional_dirty(cond, pre_cond_vr_state, body_inner_tail, after_body_vr_state);
 
-//	for (Scope *p : body->continue_list)
-//	{
-//		ra_wave__continue_break(
-//			cond,
-//		    pre_cond_vr_state,
-//		    pre_cond_pr_state,
-//		    pre_cond_swap_pr,
-//		    p);
-//	}
-//
-//	for (Scope *p : body->break_list)
-//	{
-//		ra_wave__continue_break(
-//			cond,
-//		    after_cond_vr_state,
-//		    after_cond_pr_state,
-//		    after_cond_swap_pr,
-//		    p);
-//	}
+	for (Scope *p : body->continue_list)
+	{
+		ra_wave__continue_break(
+			cond,
+		    pre_cond_vr_state,
+		    pre_cond_pr_state,
+		    pre_cond_swap_pr,
+		    p);
+	}
+
+	for (Scope *p : body->break_list)
+	{
+		ra_wave__continue_break(
+			cond,
+		    after_cond_vr_state,
+		    after_cond_pr_state,
+		    after_cond_swap_pr,
+		    p);
+	}
 
 	while__end_work(while_scp);
 }

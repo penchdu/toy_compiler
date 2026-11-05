@@ -6,12 +6,10 @@ int test(int dummy)
 
     while (i < 20)
     {
-        // 循环开头：a 的使用密度远高于 b
         a = a + 1;
         a = a + 2;
         a = a + 3;
 
-        // 循环结尾：反转！b 的使用密度爆表，强制波浪模型�?Body 结束时将 R10 抢给 b，a 扔给 R11
         b = b + a;
         b = b + 1;
         b = b + 2;

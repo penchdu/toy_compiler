@@ -27,10 +27,6 @@ int test(int dummy)
             inner = inner - 1;
         }
 
-        /*
-         * inner 对某�?outer 值是 0�?
-         * �?allocator 仍然必须构造整�?inner body 的状态�?
-         */
         a = a + total;
         c = c + b;
         e = e + d;
