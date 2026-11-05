@@ -13,20 +13,18 @@ const char* pr_name(int pr)
 {
 	switch (pr)
 	{
-//	case R8D:
-//		return "r8b";
 	case EDI:
 		return "edi";
+	case ECX:
+		return "ecx";
+	case R8D:
+		return "r8d";
+	case R9D:
+		return "r9d";
 	case R10D:
 		return "r10d";
 	case R11D:
 		return "r11d";
-	case R12D:
-		return "r12d";
-	case R13D:
-		return "r13d";
-	case R14D:
-		return "r14d";
 //	case R15D:
 //		return "r15d";
 	case PR_IMM:
@@ -41,20 +39,18 @@ const char* pr_name_byte(int pr)
 {
 	switch (pr)
 	{
-//	case R8D:
-//		return "r8b";
 	case EDI:
 		return "dil";
+	case ECX:
+		return "cl";
+	case R8D:
+		return "r8b";
+	case R9D:
+		return "r9b";
 	case R10D:
 		return "r10b";
 	case R11D:
 		return "r11b";
-	case R12D:
-		return "r12b";
-	case R13D:
-		return "r13b";
-	case R14D:
-		return "r14b";
 //	case R15D:
 //		return "r15b";
 //	case EBX:

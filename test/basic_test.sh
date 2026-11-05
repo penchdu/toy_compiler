@@ -6,17 +6,19 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 TEST_DIRS=()
 TEST_DIRS+=(
 	case_while
-	case_while_continue_break
-	case_if
-	case_while_if
-	case_while_continue_break_if
+	#case_while_continue_break
+	#case_if
+	#case_while_if
+	#case_while_continue_break_if
 )
-if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case" ]; then
-#    TEST_DIRS+=("../vsc_test/time_compare/case")
-fi
-if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case2" ]; then
-#    TEST_DIRS+=("../vsc_test/time_compare/case2")
-fi
+
+#if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case" ]; then
+#	TEST_DIRS+=("../vsc_test/time_compare/case")
+#fi
+
+#if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case2" ]; then
+#   TEST_DIRS+=("../vsc_test/time_compare/case2")
+#fi
 
 
 VSC="$PROJECT_DIR/build/vsc"

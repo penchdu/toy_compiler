@@ -61,11 +61,11 @@
 
 enum X64PhysicReg {
 	EDI,
+	ECX,
+	R8D,
+	R9D,
 	R10D,
 	R11D,
-	R12D,
-	R13D,
-	R14D,
 	//	R15D,
 
 //	EAX,

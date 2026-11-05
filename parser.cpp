@@ -203,6 +203,17 @@ void case_tk_return()
 	p->left = expr;
 	current_scope_pointer->asts.push_back(p);
 
+	// last_ret
+	if(current_scope_pointer == func
+		|| (current_scope_pointer->is_virtual && current_scope_pointer->parent == func))
+	{
+		Token tk = tokens.peek();
+		LOG("last_ret: %s", tk.src.c_str());
+
+		if(tk.stamp == TK_BRACE_R)
+			return;
+	}
+
 	Scope *jmp = new_virtual_scope_and_drop_in();
 	jmp->name = ".L_" + jmp->name + "_jmp_to_ret";
 	jmp->jmp_out = func->return_label;
