@@ -127,7 +127,6 @@ static int case_tk_func()
 
 	tk = tokens.get();
 	Ast *arg = new_ast_node(tk);
-	arg->sem_stamp = SEM_FUNC_ARG;
 	arg_type->left = arg;
 
 	tk = tokens.get();
@@ -162,9 +161,13 @@ static int case_tk_func()
 	func->return_label->parent = func;
 
 	func->asts.push_back(arg_type);
-	func->asts.push_back(arg);
+//	func->asts.push_back(arg);
 	arg_type->scope = func;
 	arg->scope = func;
+	ariable_declare(arg_type);
+	arg->symb->ssa.push_back(declare_record.new_vr(arg));
+	arg->vr = arg->symb->ssa.back();
+	func->arg.push_back(arg->vr);
 
 	SymbolFunc *sym = new SymbolFunc;
 	sym->return_type = return_type;

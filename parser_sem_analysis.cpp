@@ -135,17 +135,19 @@ static int case_sem_var(Ast *p)
 //{
 //	return case_sem_var(p);
 //}
-static int case_sem_variable_declare(Ast *ty)
+int ariable_declare(Ast *ty)
 {
 	assert(ty->type == INT);
 	assert(ty->left);
 	assert(ty->right == nullptr);
 	assert(ty->parent == nullptr);
 
-	Scope *scp = ty->scope;
-
 	Ast *var = ty->left;
+	if(var->symb)
+		return 0;
+
 	var->type = ty->type;
+	Scope *scp = ty->scope;
 
 	for (auto symb : *(scp->symb_table_ptr))
 	{
@@ -175,19 +177,6 @@ static int case_sem_variable_declare(Ast *ty)
 	symb->explicit_unique_name = "b" + to_string(scp->id) + "_" + var->tk.src;
 
 	var->symb = symb;
-	if(var->sem_stamp == SEM_FUNC_ARG)
-	{
-		symb->ssa.push_back(declare_record.new_vr(var));
-		var->vr = symb->ssa.back();
-
-		Scope *func = var->scope;
-		while (func && func->sem_stamp != SEM_FUNC_DEFINE)
-			func = func->parent;
-
-		if (!func)
-			ERR();
-		func->arg.push_back(var->vr);
-	}
 	scp->symb_table_ptr->push_back(symb);
 	global_unique_src_name_tbl.push_back(symb);
 	return 0;
@@ -200,10 +189,9 @@ static int trace_ast_up_down__named_variable_declare(Ast *p)
 	switch (p->sem_stamp)
 	{
 	case SEM_VAR_DECLARE:
-		case_sem_variable_declare(p);
+		ariable_declare(p);
 		return 0;
 
-	case SEM_FUNC_ARG:
 	case SEM_VAR:
 		case_sem_var(p);
 		break;
@@ -275,26 +263,6 @@ static Symbol* new_private_transient_vr(Ast *p)
 	return symb;
 }
 
-static int case_arg(Ast *p)
-{
-//	Scope *func = p->scope;
-//	while (func && func->sem_stamp != SEM_FUNC_DEFINE)
-//		func = func->parent;
-//
-//	if (!func)
-//		ERR();
-
-	Symbol *symb = p->symb;
-	assert(symb);
-
-	assert(p->symb->ssa.size() > 0);
-//	{
-//		int vr = declare_record.new_vr(p);
-//		p->symb->ssa.push_back(vr);
-//	}
-	p->vr = p->symb->ssa.back();
-	return p->vr;
-}
 static int new_private_ssa_of_outer_symb(Ast *p, Symbol *symb)
 {
 	Scope *scp = p->scope;
@@ -314,7 +282,7 @@ static int new_private_ssa_of_outer_symb(Ast *p, Symbol *symb)
 	outer_symb->explicit_unique_name = symb->explicit_unique_name;
 	outer_symb->depth = scp->depth;
 	outer_symb->ssa.push_back(declare_record.new_vr(p));
-	outer_symb->new_ssa_scp.push_back(scp);
+	outer_symb->ssa_scp.push_back(scp);
 
 	p->vr = outer_symb->ssa.back();
 	scp->outer_symb_table_ptr->push_back(outer_symb);
@@ -494,9 +462,6 @@ static int trace_ast_down_up_gen_vr(Ast *p, bool new_ssa_vr = false)
 
 	switch (p->sem_stamp)
 	{
-	case SEM_FUNC_ARG:
-		return case_arg(p);
-
 	// leaf node
 	case SEM_VAR:
 		assert(p->symb);

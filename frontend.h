@@ -128,7 +128,7 @@ struct Symbol
 	int depth = 0;
 
 	vector<int> ssa;
-	vector<Scope *> new_ssa_scp;
+	vector<Scope*> ssa_scp;
 	//	int vr = -1;
 //	int use_cnt = 0;
 //	int consume_cnt = 0;
@@ -156,8 +156,6 @@ public:
 	// op
 	Operator op = OP_ALL;
 	OpPriority op_prio;
-	// for op, vr is temp vr
-	int vr = -1;
 
 	// var
 	// for op, var_type is type of temp vr
@@ -166,12 +164,13 @@ public:
 
 	SymbolStamp symb_stamp = SYMB_INVALID;
 	Symbol *symb = 0;
+	int ssa_idx = -1;
+	int vr = -1;
 
 	Token tk;
 	Ast *parent = 0;
 	Ast *left = 0;
 	Ast *right = 0;
-
 	Scope *scope = 0;
 
 	Ast(const Token &_token)
@@ -485,6 +484,7 @@ Ast* parse_stmt();
 Ast* parse_expr_with_paren();
 void parse_scope(bool eat = true);
 void case_tk_right_brace(bool eat = true);
+int ariable_declare(Ast *ty);
 
 Scope* get_inner_tail_of_scope(Scope *scope);
 void case_tk_if();

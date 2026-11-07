@@ -23,7 +23,6 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 	{
 	// leaf node
 	case SEM_VAR:
-		case SEM_FUNC_ARG:
 		assert(p->symb);
 		return p->vr;
 
@@ -103,7 +102,7 @@ static void insert_copy_ssa(vector<Symbol*> &outer_symb_table, Scope *tail)
 		t.dst = symb->out_base_vr;
 		t.s1 = symb->ssa.back();
 
-		LOG("new_ssa_scp %s", symb->new_ssa_scp.back()->name.c_str());
+		LOG("new_ssa_scp %s", symb->ssa_scp.back()->name.c_str());
 //		vector<Tac> &tacs = symb->new_ssa_scp.back()->bb->tacO0;
 		vector<Tac> &tacs = tail->bb->tacO0;
 		bool ok = 0;

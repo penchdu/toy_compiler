@@ -297,6 +297,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 
 	if (scp->sem_stamp == SEM_FUNC_DEFINE)
 	{
+		assert(scp->arg.size() <= 1);
 		if (scp->arg.size() == 1)
 		{
 			int vr = scp->arg[0];

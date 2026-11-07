@@ -4,6 +4,8 @@ int test(int n)
 	int b = 2;
 	int c = 3;
 
+	n = n + 2;
+
 	int i0 = n * 250000;
 	while ((i0 = i0 - 1) > 0)
 	{
