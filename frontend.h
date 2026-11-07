@@ -118,7 +118,9 @@ struct Symbol
 //	Semantic_type semty;
 	SymbolStamp stamp = SYMB_INVALID;
 	Symbol *outer_symb = 0;
+	int out_symb_ssa_idx = -1;
 	int out_base_vr = -1;
+
 	Type type = INT;
 	//	int value;
 

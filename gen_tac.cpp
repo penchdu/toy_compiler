@@ -91,11 +91,27 @@ static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
 	return -1;
 }
 
-static void insert_copy_ssa(vector<Symbol*> &outer_symb_table, Scope *tail)
+static void replace_ssa(Scope *scp, int a, int b)
 {
+	LOG();
+	vector<Tac> &tacs = scp->bb->tacO0;
+	for(auto &r : tacs)
+	{
+		if(r.dst == a) r.dst = b;
+		if(r.s1 == a) r.s1 = b;
+		if(r.s2 == a) r.s2 = b;
+	}
+
+	for (Scope *p : scp->clds)
+		replace_ssa(p, a, b);
+}
+static void insert_copy_ssa(Scope *scp, Scope *tail)
+{
+	vector<Symbol*> &outer_symb_table = scp->outer_symb_table;
 	for (int i = 0; i < outer_symb_table.size(); i++)
 	{
 		Symbol *symb = outer_symb_table[i];
+#if 0
 		Tac t;
 		t.sem_stamp = SEM_OPERATOR;
 		t.op = OP_COPY_SSA;
@@ -103,10 +119,13 @@ static void insert_copy_ssa(vector<Symbol*> &outer_symb_table, Scope *tail)
 		t.s1 = symb->ssa.back();
 
 		LOG("new_ssa_scp %s", symb->ssa_scp.back()->name.c_str());
-//		vector<Tac> &tacs = symb->new_ssa_scp.back()->bb->tacO0;
 		vector<Tac> &tacs = tail->bb->tacO0;
-		bool ok = 0;
 		tacs.push_back(t);
+#else
+		int a = symb->ssa.back();
+		int b = symb->out_base_vr;
+		replace_ssa(scp, a, b);
+#endif
 	}
 }
 
@@ -147,7 +166,7 @@ static bool gen_tac_O0(Scope *scp)
 	{
 		LOG("scp %s %lu", scp->name.c_str(), scp->outer_symb_table.size());
 		Scope *tail = get_inner_tail_of_scope(scp);
-		insert_copy_ssa(scp->outer_symb_table, tail);
+		insert_copy_ssa(scp, tail);
 	}
 
 	return false;
@@ -179,12 +198,6 @@ static void dump_tac(Scope *scp, Optimize_level level)
 
 		switch (r.sem_stamp)
 		{
-		case SEM_IMMEDIATE:
-			ERR();
-			PRINT_TAC("%%%d num %d", r.dst, p->const_value);
-			PRINT_TAC_SEM("#const \n");
-			break;
-
 		case SEM_OPERATOR:
 			if (r.op == OP_ASSIGN)
 			{
@@ -217,23 +230,14 @@ static void dump_tac(Scope *scp, Optimize_level level)
 			}
 			break;
 
-		case SEM_VAR_DECLARE:
-			ERR();
-			PRINT_TAC("del: %s[%s] %%%d", p->tk.src.c_str(), p->symb->unique_name.c_str(), p->vr);
-			printf("\n");
-			break;
-
-		case SEM_VAR:
-			ERR();
-			PRINT_TAC("var: %%%d %s", r.dst, p->tk.src.c_str());
-			printf("\n");
-			break;
-
 		case SEM_FUNC_CALL:
 			PRINT_TAC("func call: %s", p->tk.src.c_str());
 			printf("\n");
 			break;
 
+		case SEM_IMMEDIATE:
+		case SEM_VAR_DECLARE:
+		case SEM_VAR:
 		default:
 			ERR();
 			break;

@@ -16,9 +16,9 @@ TEST_DIRS+=(
 #	TEST_DIRS+=("../vsc_test/time_compare/case")
 #fi
 
-#if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case2" ]; then
-#   TEST_DIRS+=("../vsc_test/time_compare/case2")
-#fi
+if [ -d "$SCRIPT_DIR/../vsc_test/time_compare/case2" ]; then
+   TEST_DIRS+=("../vsc_test/time_compare/case2")
+fi
 
 
 VSC="$PROJECT_DIR/build/vsc"

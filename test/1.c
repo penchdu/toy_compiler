@@ -1,18 +1,35 @@
 int test(int n)
 {
-	int a = 1;
-	int b = 2;
-	int c = 3;
+	int a = 0;
+	int b = 1;
 
-	n = n + 2;
-
-	int i0 = n * 250000;
+	int i0 = n + 1;
 	while ((i0 = i0 - 1) > 0)
 	{
-		a = b + c;
-		b = c + a;
-		c = a + b;
+		a = a + b;
+		b = b + a;
+
+		int i1 = n + 2;
+		while ((i1 = i1 - 1) > 0)
+		{
+			a = a + b;
+			b = b + a;
+
+			int i2 = n + 3;
+			while ((i2 = i2 - 1) > 0)
+			{
+				a = b + a;
+				b = a + b;
+
+				int i3 = n + 4;
+				while ((i3 = i3 - 1) > 0)
+				{
+					a = a + b;
+					b = b + a;
+				}
+			}
+		}
 	}
 
-	return a + b + c;
+	return a + b;
 }

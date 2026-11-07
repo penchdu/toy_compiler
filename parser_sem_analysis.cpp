@@ -276,6 +276,7 @@ static int new_private_ssa_of_outer_symb(Ast *p, Symbol *symb)
 	outer_symb->stamp = SYMB_PRIVATE_ssa_of_outer_symb;
 	outer_symb->outer_symb = symb;
 	outer_symb->out_base_vr = symb->ssa.back();
+	outer_symb->out_symb_ssa_idx = symb->ssa.size() - 1;
 	outer_symb->type = symb->type;
 	outer_symb->src = symb->src;
 	outer_symb->unique_name = symb->unique_name;
