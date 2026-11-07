@@ -154,6 +154,10 @@ static bool gen_tac_O0(Scope *scp)
 	return false;
 }
 
+static int _tac_len = 0;
+#define PRINT_TAC(fmt, ...) _tac_len = printf(fmt, ##__VA_ARGS__)
+#define PRINT_TAC_SEM(...) do { printf("%*s", (28 - _tac_len) > 1 ? (28 - _tac_len) : 2, ""); printf(__VA_ARGS__); } while (0)
+
 static void dump_tac(Scope *scp, Optimize_level level)
 {
 	assert(scp->bb != 0);
@@ -178,56 +182,58 @@ static void dump_tac(Scope *scp, Optimize_level level)
 		{
 		case SEM_IMMEDIATE:
 			ERR();
-			printf("%%%d num %d		#const \n", r.dst, p->const_value);
+			PRINT_TAC("%%%d num %d", r.dst, p->const_value);
+			PRINT_TAC_SEM("#const \n");
 			break;
-
-//		case SEM_COPY_SSA:
-//			assert(r.op == OP_ASSIGN);
-//			printf("%%%d = %%%d		#cp_ssa \n", r.dst, r.s1);
-//			break;
 
 		case SEM_OPERATOR:
 			if (r.op == OP_ASSIGN)
 			{
-				printf("%%%d %s %%%d \t\t #%s %s %s \n",
-				    r.dst, p->tk.src.c_str(), r.s1,
-				    vr_name(r.dst), p->tk.src.c_str(), vr_name(r.s1));
+				PRINT_TAC("%%%d %s %%%d", r.dst, p->tk.src.c_str(), r.s1);
+				PRINT_TAC_SEM("#%s %s %s \n", vr_name(r.dst), p->tk.src.c_str(), vr_name(r.s1));
 			}
 			else if (r.op == OP_COPY_SSA)
 			{
-				printf("%%%d = %%%d \t\t #cp_ssa %s = %s \n",
-				    r.dst, r.s1,
-				    vr_name(r.dst), vr_name(r.s1));
+				PRINT_TAC("%%%d = %%%d", r.dst, r.s1);
+				PRINT_TAC_SEM("#cp_ssa %s = %s \n", vr_name(r.dst), vr_name(r.s1));
 			}
 			else if (r.op == OP_SAVE_RET_VALUE)
 			{
-				printf("save_ret:\t %s %%%d\n", p->tk.src.c_str(), r.s1);
+				PRINT_TAC("save_ret: %s %%%d", p->tk.src.c_str(), r.s1);
+				printf("\n");
+			}
+			else if (r.op == OP_TEST)
+			{
+				PRINT_TAC("test %s %%%d", vr_name(r.s1), r.s1);
+				printf("\n");
 			}
 			else
 			{
-				printf("%%%d = %%%d %s %%%d \t\t #%s = %s %s %s \n",
-				    r.dst, r.s1, p->tk.src.c_str(), r.s2,
-				    vr_name(r.dst), vr_name(r.s1), p->tk.src.c_str(), vr_name(r.s2));
+				PRINT_TAC("%%%d = %%%d %s %%%d", r.dst, r.s1, p->tk.src.c_str(), r.s2);
+				PRINT_TAC_SEM("#%s = %s %s %s \n",
+				    r.dst >= 0 ? vr_name(r.dst) : "-1",
+				    r.s1 >= 0 ? vr_name(r.s1) : "-1",
+				    p->tk.src.c_str(),
+				    r.s2 >= 0 ? vr_name(r.s2) : "-1");
 			}
 			break;
 
 		case SEM_VAR_DECLARE:
 			ERR();
-			printf("del:\t %s[%s] %%%d\n", p->tk.src.c_str(), p->symb->unique_name.c_str(), p->vr);
+			PRINT_TAC("del: %s[%s] %%%d", p->tk.src.c_str(), p->symb->unique_name.c_str(), p->vr);
+			printf("\n");
 			break;
 
 		case SEM_VAR:
 			ERR();
-			printf("var:\t %%%d %s\n", r.dst, p->tk.src.c_str());
+			PRINT_TAC("var: %%%d %s", r.dst, p->tk.src.c_str());
+			printf("\n");
 			break;
 
 		case SEM_FUNC_CALL:
-			printf("func call:\t %s\n", p->tk.src.c_str());
+			PRINT_TAC("func call: %s", p->tk.src.c_str());
+			printf("\n");
 			break;
-
-//		case SEM_SAVE_RET_VALUE:
-//			printf("save_ret:\t %s %%%d\n", p->tk.src.c_str(), r.s1);
-//			break;
 
 		default:
 			ERR();

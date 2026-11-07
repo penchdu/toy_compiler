@@ -50,7 +50,7 @@ static Scope* cond_to_negative()
 	}
 	else
 	{
-		Ast *test = new_ast_node({"fake_token_test", TK_TEST});
+		Ast *test = new_ast_node({"tk_test", TK_TEST});
 		test->left = p;
 		current_scope_pointer->asts.push_back(test);
 	}

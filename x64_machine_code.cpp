@@ -11,6 +11,7 @@
 const McInfo mc_info[MC_INVALID + 1] = {
     [MC_LI] = {1, "mov"},
     [MC_LD] = {4, "mov"},
+    [MC_ra] = {0, "ra"},
     [MC_victim] = {0, "victim"},
     [MC_ST] = {1, "mov"},
 

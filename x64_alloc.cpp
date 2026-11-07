@@ -104,13 +104,13 @@ void spill_vr(
 	if (u == VR_USAGE_INVALID || pr_st[pr].vr != vr)
 		ERR("pr=%d, u=%d, pr_st[%d].vr=%d != %d", pr, u, pr, pr_st[pr].vr, vr);
 
-	string tag = string(" ") + vr_name(vr) + " %" + to_string(vr)
-	    + " " + pr_name(pr) + " " + _tag;
+//	string tag = string(" ") + vr_name(vr) + " %" + to_string(vr)
+//	    + " " + pr_name(pr) + " " + _tag;
 
 	// MC_victim
 	X64mc mc(MC_victim, vr);
 	mc.pr1 = (int) pr;
-	mc.ori_sem = string("victim") + tag;
+	mc.ori_sem = string("victim ") + _tag + ", " + pr_name(pr);
 	mcs.push_back(mc);
 
 	if (method == O0 ||
@@ -120,7 +120,7 @@ void spill_vr(
 	{
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;
-		mc.ori_sem = string("memory spill") + tag;
+		mc.ori_sem = string("memory spill ") + _tag;
 		mcs.push_back(mc);
 	}
 
@@ -206,6 +206,13 @@ int get_pr(enum Optimize_level method,
 			pr = get_pr_wave(bb, mc_idx);
 		else
 			ERR();
+
+		// MC_ra
+		X64mc mc(MC_ra, vr);
+		mc.pr1 = pr;
+//		mc.ori_sem = string("ra ") + vr_name(vr) + " %" + to_string(vr) + " " + pr_name(pr);
+		mc.ori_sem = string("ra ") + pr_name(pr);
+		mcs.push_back(mc);
 
 		assert(pr != X64PR_MAX);
 
@@ -362,6 +369,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 			break;
 
 		case MC_victim:
+		case MC_ra:
 			default:
 			ERR("%d \n", mc_stamp);
 			break;
@@ -393,18 +401,18 @@ static void print_asm_sem(FILE *fp, X64mc &mc)
 	fprintf(fp, "%*s#%s", (_asm_len < 48) ? (48 - _asm_len) : 2, "", mc.ori_sem.c_str());
 
 	if (mc.dst >= 0)
-		fprintf(fp, ", %s", vr_name(mc.dst));
+		fprintf(fp, ", %s=%%%d", vr_name(mc.dst), mc.dst);
 	if (mc.s1 >= 0)
-		fprintf(fp, " %s", vr_name(mc.s1));
+		fprintf(fp, " %s=%%%d", vr_name(mc.s1), mc.s1);
 	if (mc.s2 >= 0)
-		fprintf(fp, " %s", vr_name(mc.s2));
+		fprintf(fp, " %s=%%%d", vr_name(mc.s2), mc.s2);
 
-	if (mc.dst >= 0)
-		fprintf(fp, ", %%%d", mc.dst);
-	if (mc.s1 >= 0)
-		fprintf(fp, " %%%d", mc.s1);
-	if (mc.s2 >= 0)
-		fprintf(fp, " %%%d", mc.s2);
+//	if (mc.dst >= 0)
+//		fprintf(fp, ", %%%d", mc.dst);
+//	if (mc.s1 >= 0)
+//		fprintf(fp, " %%%d", mc.s1);
+//	if (mc.s2 >= 0)
+//		fprintf(fp, " %%%d", mc.s2);
 
 	if (mc.start_cycle >= 0)
 		fprintf(fp, ", cyc %d", mc.start_cycle);
@@ -413,7 +421,6 @@ static void print_asm_sem(FILE *fp, X64mc &mc)
 
 #define PRINT_ASM_HEAD(fmt, ...) fprintf(fp, fmt "\n", ##__VA_ARGS__)
 #define PRINT_ASM(fmt, ...) _asm_len = 8 + fprintf(fp, "\t" fmt , ##__VA_ARGS__)
-#define PRINT_ASM_sem	print_asm_sem(fp, mc);
 
 static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 {
@@ -471,24 +478,25 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 		{
 		case MC_LI:
 			PRINT_ASM("%s %s, %d", mc_info[stamp].mc_code, pr_name_asm(mc.pr1, mc.s1), mc.const_num);
-			PRINT_ASM_sem
+			print_asm_sem(fp, mc);
 			break;
 
 		case MC_LD:
 			PRINT_ASM("%s %s, dword ptr [rbp - %d]", mc_info[stamp].mc_code,
 			    pr_name_asm(mc.pr1, mc.s1), vr_off(mc.s1));
-			PRINT_ASM_sem
+			print_asm_sem(fp, mc);
 			break;
 
 		case MC_victim:
+		case MC_ra:
 			PRINT_ASM("");
-			PRINT_ASM_sem
+			print_asm_sem(fp, mc);
 			break;
 
 		case MC_ST:
 			PRINT_ASM("%s dword ptr [rbp - %d], %s ", mc_info[stamp].mc_code,
 			    vr_off(mc.s1), pr_name_asm(mc.pr1, mc.s1));
-			PRINT_ASM_sem
+			print_asm_sem(fp, mc);
 			break;
 
 		case MC_ASSIGN:
@@ -496,13 +504,13 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			{
 				PRINT_ASM("%s %s, %s", mc_info[stamp].mc_code, pr_name_asm(mc.pr_dst, mc.dst),
 				    pr_name_asm(mc.pr1, mc.s1));
-				PRINT_ASM_sem
+				print_asm_sem(fp, mc);
 			}
 			break;
 
 		case MC_NEG:
 			PRINT_ASM("%s %s", mc_info[stamp].mc_code, pr_name_asm(mc.pr1, mc.s1));
-			PRINT_ASM_sem
+			print_asm_sem(fp, mc);
 			break;
 
 		case MC_ADD:
@@ -511,12 +519,12 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			if (mc.pr_dst != mc.pr1)
 			{
 				PRINT_ASM("mov %s, %s", pr_name_asm(mc.pr_dst, mc.dst), pr_name_asm(mc.pr1, mc.s1));
-				PRINT_ASM_sem
+				print_asm_sem(fp, mc);
 			}
 			PRINT_ASM("%s %s, %s", mc_info[stamp].mc_code,
 			    pr_name_asm(mc.pr_dst, mc.dst),
 			    pr_name_asm(mc.pr2, mc.s2));
-			PRINT_ASM_sem
+			print_asm_sem(fp, mc);
 			break;
 
 		case MC_DIV:
@@ -524,7 +532,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			PRINT_ASM("cdq \n");
 			PRINT_ASM("idiv %s \n", pr_name_asm(mc.pr2, mc.s2));
 			PRINT_ASM("mov %s, eax", pr_name_asm(mc.pr_dst, mc.dst));
-			PRINT_ASM_sem
+			print_asm_sem(fp, mc);
 			break;
 
 		case MC_CMP_E:
@@ -538,16 +546,16 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			PRINT_ASM("%s %s, %s", mc_info[mc_cmp].mc_code,
 			    pr_name_asm(mc.pr1, mc.s1),
 			    pr_name_asm(mc.pr2, mc.s2));
-			PRINT_ASM_sem
+			print_asm_sem(fp, mc);
 
 			if (mc.pr_dst != X64PR_MAX)
 			{
 				mc_set = fake_cmp_mc_to_real_mc[stamp].mc_set;
 				PRINT_ASM("%s %s", mc_info[mc_set].mc_code, pr_name_byte(mc.pr_dst));
-				PRINT_ASM_sem
+				print_asm_sem(fp, mc);
 
 				PRINT_ASM("movzx %s, %s", pr_name(mc.pr_dst), pr_name_byte(mc.pr_dst));
-				PRINT_ASM_sem
+				print_asm_sem(fp, mc);
 			}
 			break;
 
@@ -555,7 +563,7 @@ static void dump_bb_asm(FILE *fp, Scope *scp, const string &asm_file)
 			PRINT_ASM("%s %s, %s", mc_info[stamp].mc_code,
 			    pr_name_asm(mc.pr1, mc.s1),
 			    pr_name_asm(mc.pr1, mc.s1));
-			PRINT_ASM_sem
+			print_asm_sem(fp, mc);
 
 			break;
 
@@ -617,7 +625,6 @@ void dump_asm(const string &asm_file)
 }
 #undef PRINT_ASM_HEAD
 #undef PRINT_ASM
-#undef PRINT_ASM_sem
 
 void x64_reg_alloc_O0()
 {

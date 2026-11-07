@@ -244,7 +244,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 	}
 	if (can_emit_cnt == 0)
 	{
-		LOG("can_emit_cnt == 0");
+//		LOG("can_emit_cnt == 0");
 		return -1;
 	}
 
@@ -366,7 +366,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 end:
 	if (idx_emit < 0)
 	{
-		LOG("idx_emit=%d", idx_emit);
+//		LOG("idx_emit=%d", idx_emit);
 		return -1;
 	}
 

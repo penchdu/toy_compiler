@@ -101,8 +101,10 @@ struct McDepend {
 enum MachineCodeStamp {
 	MC_LI,	// reg-num
 
-	MC_LD,	// reg <- ptr
+	MC_ra,
 	MC_victim,
+
+	MC_LD,	// reg <- ptr
 	MC_ST,	// reg -> ptr
 
 	MC_ASSIGN,	// reg-reg
