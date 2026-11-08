@@ -111,7 +111,7 @@ static void insert_copy_ssa(Scope *scp, Scope *tail)
 	for (int i = 0; i < outer_symb_table.size(); i++)
 	{
 		Symbol *symb = outer_symb_table[i];
-#if 0
+#if 1
 		Tac t;
 		t.sem_stamp = SEM_OPERATOR;
 		t.op = OP_COPY_SSA;
@@ -189,8 +189,20 @@ static void dump_tac(Scope *scp, Optimize_level level)
 	else
 		ERR();
 
-	if (scp->jmp_in.size() > 0)
-		printf("\nlabel %d:\n", scp->id);
+	if (scp->sem_stamp == SEM_FUNC_DEFINE
+	    || scp->sem_stamp == SEM_IF_cond
+	    || scp->sem_stamp == SEM_IF_then
+	    || scp->sem_stamp == SEM_IF_else
+	    || scp->sem_stamp == SEM_WHILE_COND
+	    || scp->sem_stamp == SEM_WHILE_BODY
+	    || scp->sem_stamp == SEM_CONTINUE
+	    || scp->sem_stamp == SEM_BREAK
+	    || (scp->sem_stamp == SEM_UNNAMED_SCOPE && tac->size())
+	    || scp->jmp_in.size() > 0
+	    || scp->asts.size() > 0)
+	{
+		printf("\n%s: \n", scp->name.c_str());
+	}
 
 	for (const Tac &r : *tac)
 	{
@@ -245,7 +257,7 @@ static void dump_tac(Scope *scp, Optimize_level level)
 	}
 
 	if (scp->jmp_out != 0)
-		printf("%d->%d:\n\n", scp->id, scp->jmp_out->id);
+		printf("->%s:\n\n", scp->jmp_out->name.c_str());
 
 	for (Scope *p : scp->clds)
 		dump_tac(p, level);

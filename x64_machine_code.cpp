@@ -253,7 +253,7 @@ static void gen_mc(Scope *scp, Optimize_level level)
 		Semantic stamp = scp->sem_stamp;
 		if (stamp == SEM_IF_cond || stamp == SEM_WHILE_COND)
 		{
-			printf("bb.exit_jmp=%s \n", scp->name.c_str());
+//			printf("bb.exit_jmp=%s \n", scp->name.c_str());
 			assert(scp->asts.size());
 
 			Ast *cond = scp->asts[0];
@@ -287,16 +287,19 @@ static void print_asm_sem(X64mc &mc)
 
 	printf("%*s", (_asm_len < 48) ? (48 - _asm_len) : 2, "");
 
-	if (mc.stamp >= MC_ADD && mc.stamp <= MC_DIV)
+//	if (mc.stamp >= MC_ADD && mc.stamp <= MC_DIV)
 	{
-		printf("#%s = %s %s %s",
-			vr_name(mc.dst), vr_name(mc.s1), mc_info[mc.stamp].mc_code, vr_name(mc.s2));
+		printf("#%s, %s %s %s",
+		    mc.ori_sem.c_str(),
+		    mc.dst >= 0 ? vr_name(mc.dst) : "",
+//		    mc_info[mc.stamp].mc_code,
+		    mc.s1 >= 0 ? vr_name(mc.s1) : "",
+		    mc.s2 >= 0 ? vr_name(mc.s2) : "");
 	}
 	printf("\n");
 }
 #define PRINT_ASM_HEAD(fmt, ...) printf(fmt "\n", ##__VA_ARGS__)
 #define PRINT_ASM(fmt, ...) _asm_len = 8 + printf("\t" fmt , ##__VA_ARGS__)
-#define PRINT_ASM_sem	print_asm_sem(mc);
 
 void dump_mc(Scope *scp, string mc_list_name)
 {
@@ -324,22 +327,22 @@ void dump_mc(Scope *scp, string mc_list_name)
 		{
 		case MC_LD:
 			PRINT_ASM("%s %%%d, dword ptr [%d]", mc_info[stamp].mc_code, mc.s1, vr_off(mc.s1));
-			PRINT_ASM_sem
+			print_asm_sem(mc);
 			break;
 
 		case MC_ST:
 			PRINT_ASM("%s dword ptr [%d], %%%d", mc_info[stamp].mc_code, vr_off(mc.s1), mc.s1);
-			PRINT_ASM_sem
+			print_asm_sem(mc);
 			break;
 
 		case MC_ASSIGN:
 			PRINT_ASM("%s %%%d, %%%d", mc_info[stamp].mc_code, mc.dst, mc.s1);
-			PRINT_ASM_sem
+			print_asm_sem(mc);
 			break;
 
 		case MC_NEG:
 			PRINT_ASM("%s %%%d", mc_info[stamp].mc_code, mc.s1);
-			PRINT_ASM_sem
+			print_asm_sem(mc);
 			break;
 
 //		case MC_ADD:
@@ -374,17 +377,17 @@ void dump_mc(Scope *scp, string mc_list_name)
 
 //			set_mc = fake_cmp_mc_to_real_mc[mc_stamp].mc_set;
 //			PRINT_ASM("%s %%%d", mc_info[set_mc].mc_code, mc.dst);
-			PRINT_ASM_sem
+			print_asm_sem(mc);
 			break;
 
 		case MC_TEST:
 			PRINT_ASM("%s %%%d", mc_info[stamp].mc_code, mc.s1);
-			PRINT_ASM_sem
+			print_asm_sem(mc);
 			break;
 
 		case MC_SAVE_RET:
 			PRINT_ASM("mov eax, %%%d", mc.s1);
-			PRINT_ASM_sem
+			print_asm_sem(mc);
 			break;
 
 		default:
@@ -407,14 +410,14 @@ void gen_machine_code_O0()
 {
 	gen_mc(&file_scp, O0);
 
-//	PRINT_ASM_HEAD("========== mc O0 ==========");
+//	PRINT_ASM_HEAD("\n========== mc O0 ==========");
 //	dump_mc(&file_scp, "O0");
 }
 void gen_machine_code_O1()
 {
 	gen_mc(&file_scp, O1);
 
-	PRINT_ASM_HEAD("========== mc O1 ==========");
+	PRINT_ASM_HEAD("\n========== mc O1 ==========");
 	dump_mc(&file_scp, "O1");
 }
 
