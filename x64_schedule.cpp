@@ -19,8 +19,6 @@ struct ScheduleScore {
 	int critical_path = 0;
 
 	bool can_use_alu = 0;
-	bool is_bottleneck = 0;
-	int succ_pending_preds = 0;
 
 //	int left_use = -1;
 	float score = 0;
@@ -180,18 +178,49 @@ static int reamining_use_cnt(Scope *scp, const X64mc &mc, int vr)
 
 	return scp->use_cnt_in_bb[vr] - scp->consume_cnt_in_bb[vr];
 }
-static float consumed_ratio_score(Scope *scp, int vr)
+
+float last_use_score = -200;
+float critical_path_score = -200;
+float critical_path_score_rate = -200;
+float bottleneck_score = -200;
+float pressure_score = -200;
+
+static void read_config()
 {
-	float score = 1.0;
+	FILE *fp = fopen("/home/x/workspace/vsc/score_config.txt", "r");
+	if (!fp)
+		ERR("missing score_config.txt");
 
-	if (vr < 0 || scp->use_cnt_in_bb[vr] == 0)
-		return 0;
+	char line[256];
+	while (fgets(line, sizeof(line), fp))
+	{
+		char key[64];
+		float val;
+		if (sscanf(line, " %63[^=]=%f", key, &val) == 2)
+		{
+			if (strcmp(key, "last_use_score") == 0)
+				last_use_score = val;
+			else if (strcmp(key, "critical_path_score") == 0)
+				critical_path_score = val;
+			else if (strcmp(key, "critical_path_score_rate") == 0)
+				critical_path_score_rate = val;
+			else if (strcmp(key, "bottleneck_score") == 0)
+				bottleneck_score = val;
+			else if (strcmp(key, "pressure_score") == 0)
+				pressure_score = val;
+			else
+				ERR("unknown key in score_config.txt: %s", key);
+		}
+	}
+	fclose(fp);
 
-	Ast *ast = vr_ast(vr);
-	if (ast->symb_stamp & SYMB_IMMEDIATE)
-		return 0;
+	assert(last_use_score > -100);
+	assert(critical_path_score > -100);
+	assert(critical_path_score_rate > -100);
+	assert(bottleneck_score > -100);
+	assert(pressure_score > -100);
 
-	return score * ((float) scp->consume_cnt_in_bb[vr] / scp->use_cnt_in_bb[vr]);
+	LOG("%f", last_use_score);
 }
 
 static int select_pulled = 0;
@@ -218,19 +247,19 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 	{
 		int mc_idx = ready[idx_emit].idx_in_mc_list;
 
-		bool is_succ_run = false;
+		bool prede_is_running = false;
 		for (int i = 0; i < mcs_predecessor[mc_idx].mcs.size(); i++)
 		{
 			int pred = mcs_predecessor[mc_idx].mcs[i];
 			for (int r_mc : running)
-				if (r_mc == pred) { is_succ_run = true; break; }
-			if (is_succ_run) break;
+				if (r_mc == pred) { prede_is_running = true; break; }
+			if (prede_is_running) break;
 		}
 		bool high_pressure = live_reg_cnt >= reg_limit - 1;
 		bool mid_pressure = live_reg_cnt >= reg_limit - 2;
 		if (!running.empty())
 		{
-			if (mid_pressure && !is_succ_run)
+			if (mid_pressure && !prede_is_running)
 				return -1;
 
 			const X64mc &mc = x64mc[mc_idx];
@@ -238,8 +267,11 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 				(reamining_use_cnt(scp, mc, mc.s1) == 1)
 				- (reamining_use_cnt(scp, mc, mc.s2) == 1);
 
-			if (high_pressure && (pressure_delta > 0 || !is_succ_run))
+			if (high_pressure && (pressure_delta > 0 || !prede_is_running))
+			{
+				ERR();
 				return -1;
+			}
 		}
 		goto end;
 	}
@@ -257,8 +289,11 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		if (!ready[i].can_use_alu || max_critical_path <= 0)
 			continue;
 
-		float critical_path_score = ((float) ready[i].critical_path / max_critical_path);
-		ready[i].score += critical_path_score;
+		float rate = ((float) ready[i].critical_path / max_critical_path);
+		ready[i].score += rate * critical_path_score_rate;
+
+		if(ready[i].critical_path == max_critical_path)
+			ready[i].score += critical_path_score;
 	}
 
 	for (auto &r : ready)
@@ -290,8 +325,6 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 				succ_pending_preds = mcs_predecessor[succ].edges;
 			}
 		}
-		r.is_bottleneck = is_bottleneck;
-		r.succ_pending_preds = succ_pending_preds;
 
 		if (!is_succ_run && !running.empty())
 			r.score -= 3.0f;
@@ -301,25 +334,11 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		int s1 = mc.s1;
 		int s2 = mc.s2;
 
-		float last_use_score = 2.0;
-		float lu_mult = is_bottleneck ? 0.5f : 1.0f;
-		r.score += last_use_score * (reamining_use_cnt(scp, mc, s1) == 1) * lu_mult;
-		r.score += last_use_score * (reamining_use_cnt(scp, mc, s2) == 1) * lu_mult;
-		if(mc_stamp == MC_ASSIGN)
+		r.score += last_use_score * (reamining_use_cnt(scp, mc, s1) == 1);
+		r.score += last_use_score * (reamining_use_cnt(scp, mc, s2) == 1);
+		if(mc.dst != -1)
 			r.score -= last_use_score;
 
-		r.score += 0.1f * consumed_ratio_score(scp, s1);
-		r.score += 0.1f * consumed_ratio_score(scp, s2);
-
-		float single_line_score = 0.3f;
-		if (mcs_successor[mc_idx].edges == 1)
-		{
-			int succ = mcs_successor[mc_idx].mcs[0];
-			if (mcs_predecessor[succ].edges == 1)
-				r.score += single_line_score;
-		}
-
-		float bottleneck_score = 0.5f;
 		if (is_bottleneck)
 		{
 			bool other_pred_ready = false;
@@ -329,6 +348,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 				for (auto &rr : ready)
 					if (rr.idx_in_mc_list == pred) { other_pred_ready = true; break; }
 				if (other_pred_ready) break;
+
 				for (int r_mc : running)
 					if (r_mc == pred) { other_pred_ready = true; break; }
 				if (other_pred_ready) break;
@@ -343,7 +363,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 			(reamining_use_cnt(scp, mc, s1) == 1)
 			- (reamining_use_cnt(scp, mc, s2) == 1);
 		if (pressure_delta > 0 && !running.empty())
-			r.score -= 5.0f;
+			r.score -= pressure_score;
 
 		if (s1 >= 0 && scp->use_cnt_in_bb[s1] <= 0 && scp->reference_cnt_in_bb[s1] <= 0)
 			print_mc_err("select1", scp, mc, mc_idx);
@@ -594,6 +614,7 @@ static void _mc_schedule(Scope *scp)
 }
 void mc_schedule()
 {
+	read_config();
 	clear_all_vr_consume_cnt(&file_scp);
 
 	_mc_schedule(&file_scp);
