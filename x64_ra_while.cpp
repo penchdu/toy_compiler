@@ -113,7 +113,7 @@ void while__pre_work(Scope *scp)
 			continue;
 		Ast *p = declare_record.ast[vr];
 		Symbol *symb = p->symb;
-		ssa_use_cnt[vr] += cnt;
+		vr_use_cnt[vr] += cnt;
 	}
 }
 void while__end_work(Scope *scp)
@@ -125,7 +125,7 @@ void while__end_work(Scope *scp)
 			continue;
 		Ast *p = declare_record.ast[vr];
 		Symbol *symb = p->symb;
-		ssa_use_cnt[vr] -= cnt;
+		vr_use_cnt[vr] -= cnt;
 	}
 
 	Scope *tail = scp->clds[2];

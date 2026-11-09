@@ -111,7 +111,7 @@ static void dump_scope(Scope *s, int depth)
 	for (auto p : s->symb_table)
 	{
 		print_blank(depth);
-		printf("symbol: %s %s\n", p->unique_name.c_str(), p->unique_name.c_str());
+		printf("symbol: %s %%%d\n", p->unique_name.c_str(), p->ssa[0]);
 	}
 
 	for (auto ast : s->asts)

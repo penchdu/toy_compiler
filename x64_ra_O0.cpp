@@ -116,7 +116,7 @@ void spill_vr(
 	if (method == O0 ||
 	    (/*p->sem_stamp != SEM_CONST_NUM &&*/
 	    method == O1 && dirty
-	        && ssa_consume_cnt[vr] < ssa_use_cnt[vr]))
+	        && vr_consume_cnt[vr] < vr_use_cnt[vr]))
 	{
 		X64mc mc(MC_ST, vr);
 		mc.pr1 = (int) pr;

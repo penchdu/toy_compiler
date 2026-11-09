@@ -9,9 +9,9 @@
 #include "x64_back_end.h"
 #include "basic_block.h"
 
-vector<int> ssa_use_cnt;
-vector<int> ssa_consume_cnt;
-vector<int> ssa_reference_cnt;
+vector<int> vr_use_cnt;
+vector<int> vr_consume_cnt;
+vector<int> vr_reference_cnt;
 
 struct ScopeUsedOuterSymb {
 	Scope *while_scp;
@@ -25,7 +25,8 @@ void reset_scope_symb_consume_cnt(Scope *scp, int value)
 	for (int i = 0; i < bb->mc_schedu.size(); i++)
 	{
 		const X64mc &mc = bb->mc_schedu[i];
-		update_mc_consume_cnt(scp, mc, value);
+		update_vr_consume_cnt(scp, mc.s1, value);
+		update_vr_consume_cnt(scp, mc.s2, value);
 		check_pr_vr_consistency();
 	}
 
@@ -34,7 +35,7 @@ void reset_scope_symb_consume_cnt(Scope *scp, int value)
 }
 void clear_all_vr_consume_cnt(Scope *scp)
 {
-	ssa_consume_cnt.assign(vr_size, 0);
+	vr_consume_cnt.assign(vr_size, 0);
 
 //	for (Symbol *p : scp->symb_table_ptr)
 //		p->consume_cnt = 0;
@@ -44,12 +45,12 @@ void clear_all_vr_consume_cnt(Scope *scp)
 }
 void check_vr_consume_cnt(Scope *scp)
 {
-	assert(ssa_use_cnt.size() == ssa_consume_cnt.size());
+	assert(vr_use_cnt.size() == vr_consume_cnt.size());
 
-	for(int i = 0; i < ssa_use_cnt.size(); i++)
+	for(int i = 0; i < vr_use_cnt.size(); i++)
 	{
-		if(ssa_use_cnt[i] != ssa_consume_cnt[i])
-			ERR("%s %%%d %d %d", vr_name(i), i, ssa_use_cnt[i], ssa_consume_cnt[i]);
+		if(vr_use_cnt[i] != vr_consume_cnt[i])
+			ERR("%s %%%d %d %d", vr_name(i), i, vr_use_cnt[i], vr_consume_cnt[i]);
 	}
 //	for (Symbol *p : scp->symb_table_ptr)
 //	{
@@ -85,6 +86,8 @@ bool is_private_symb(Scope *scp, int vr)
 }
 void update_vr_consume_cnt(Scope *scp, int vr, int update_value)
 {
+	if(vr < 0)
+		return;
 //	assert(usage & VR_USAGE_READ);
 	Ast *declare_at = declare_record.ast[vr];
 	Scope *scp_declare_at = declare_at->scope;
@@ -94,56 +97,11 @@ void update_vr_consume_cnt(Scope *scp, int vr, int update_value)
 	Symbol *symb = declare_at->symb;
 	bool is_private = is_private_symb(scp, vr);
 
-	ssa_consume_cnt[vr] += update_value;
+	vr_consume_cnt[vr] += update_value;
 	scp->consume_cnt_in_bb[vr] += update_value;
 
 	if (!is_private)
 		assert(symb->stamp != SYMB_PRIVATE_transient);
-}
-void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value)
-{
-	switch (mc.stamp)
-	{
-	case MC_LD:
-		ERR();
-		break;
-
-	case MC_ST:
-		ERR();
-		update_vr_consume_cnt(scp, mc.s1, update_value);
-		break;
-
-	case MC_ASSIGN:
-		update_vr_consume_cnt(scp, mc.s1, update_value);
-		break;
-
-	case MC_ADD:
-		case MC_SUB:
-		case MC_IMUL:
-		case MC_DIV:
-		update_vr_consume_cnt(scp, mc.s1, update_value);
-		update_vr_consume_cnt(scp, mc.s2, update_value);
-		break;
-
-	case MC_CMP_E:
-		case MC_CMP_NE:
-		case MC_CMP_L:
-		case MC_CMP_LE:
-		case MC_CMP_G:
-		case MC_CMP_GE:
-		update_vr_consume_cnt(scp, mc.s1, update_value);
-		update_vr_consume_cnt(scp, mc.s2, update_value);
-		break;
-
-	case MC_TEST:
-		case MC_SAVE_RET:
-		update_vr_consume_cnt(scp, mc.s1, update_value);
-		break;
-
-	default:
-		ERR("%d \n", mc.stamp);
-		break;
-	}
 }
 
 static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
@@ -161,12 +119,12 @@ static void gen_vr_use_cnt(Scope *scp, int vr, int usage)
 	if (usage & VR_USAGE_READ)
 	{
 //		symb->use_cnt++;
-		ssa_use_cnt[vr]++;
+		vr_use_cnt[vr]++;
 		scp->use_cnt_in_bb[vr]++;
 	}
 
 //	symb->reference_cnt++;
-	ssa_reference_cnt[vr]++;
+	vr_reference_cnt[vr]++;
 	scp->reference_cnt_in_bb[vr]++;
 }
 
@@ -411,8 +369,8 @@ void dump_while_used_outer_symb(Scope *scp)
 
 void gen_use_cnt()
 {
-	ssa_use_cnt.assign(vr_size, 0);
-	ssa_reference_cnt.assign(vr_size, 0);
+	vr_use_cnt.assign(vr_size, 0);
+	vr_reference_cnt.assign(vr_size, 0);
 
 	_gen_use_cnt(&file_scp);
 

@@ -268,7 +268,6 @@ void gen_schdu_chain_latency(vector<X64mc> &x64mc);
 
 bool is_private_symb(Scope *scp, int vr);
 void update_vr_consume_cnt(Scope *scp, int vr, int update_value = 1);
-void update_mc_consume_cnt(Scope *scp, const X64mc &mc, int update_value = 1);
 void reset_scope_symb_consume_cnt(Scope *scp, int value);
 void clear_all_vr_consume_cnt(Scope *scp);
 void check_vr_consume_cnt(Scope *scp);

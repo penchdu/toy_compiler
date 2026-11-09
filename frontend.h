@@ -471,9 +471,9 @@ extern VrDeclareRecord declare_record;
 //	return vr_declare_manager.declare_at[vr]->symb->unique_name.c_str();
 //}
 
-extern vector<int> ssa_use_cnt;
-extern vector<int> ssa_consume_cnt;
-extern vector<int> ssa_reference_cnt;
+extern vector<int> vr_use_cnt;
+extern vector<int> vr_consume_cnt;
+extern vector<int> vr_reference_cnt;
 
 extern bool in_func_define;
 

@@ -19,7 +19,7 @@ static void then_pre_work(Scope *else_branch)
 		if (cnt == 0)
 			continue;
 		Symbol *symb = (declare_record.ast[vr])->symb;
-		ssa_use_cnt[vr] -= cnt;
+		vr_use_cnt[vr] -= cnt;
 	}
 }
 static void then_end_work(Scope *else_branch)
@@ -30,7 +30,7 @@ static void then_end_work(Scope *else_branch)
 		if (cnt == 0)
 			continue;
 		Symbol *symb = (declare_record.ast[vr])->symb;
-		ssa_use_cnt[vr] += cnt;
+		vr_use_cnt[vr] += cnt;
 	}
 }
 void ra_wave_if(Scope *if_scp)

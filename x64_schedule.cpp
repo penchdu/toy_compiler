@@ -169,19 +169,16 @@ void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx)
 	    s1 >= 0 ? vr_tk_src(s1) : "", s1,
 	    s2 >= 0 ? vr_tk_src(s2) : "", s2);
 }
-static int last_use(Scope *scp, int vr)
+static int reamining_use_cnt(Scope *scp, const X64mc &mc, int vr)
 {
 	if (vr < 0 || scp->use_cnt_in_bb[vr] == 0)
-		return 0;
+		return -1;
 
 	Ast *ast = vr_ast(vr);
-	if (ast->symb_stamp & SYMB_IMMEDIATE)
-		return 0;
+	if (vr == mc.s2 && (ast->symb_stamp & SYMB_IMMEDIATE))
+		return -1;
 
-	if(scp->use_cnt_in_bb[vr] - scp->consume_cnt_in_bb[vr] == 1)
-		return 1;
-
-	return false;
+	return scp->use_cnt_in_bb[vr] - scp->consume_cnt_in_bb[vr];
 }
 static float consumed_ratio_score(Scope *scp, int vr)
 {
@@ -220,9 +217,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 	if (can_emit_cnt == 1)
 	{
 		int mc_idx = ready[idx_emit].idx_in_mc_list;
-		int s1 = x64mc[mc_idx].s1;
-		int s2 = x64mc[mc_idx].s2;
-		int pressure_delta = 1 - last_use(scp, s1) - last_use(scp, s2);
+
 		bool is_succ_run = false;
 		for (int i = 0; i < mcs_predecessor[mc_idx].mcs.size(); i++)
 		{
@@ -237,6 +232,12 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		{
 			if (mid_pressure && !is_succ_run)
 				return -1;
+
+			const X64mc &mc = x64mc[mc_idx];
+			int pressure_delta = 1 -
+				(reamining_use_cnt(scp, mc, mc.s1) == 1)
+				- (reamining_use_cnt(scp, mc, mc.s2) == 1);
+
 			if (high_pressure && (pressure_delta > 0 || !is_succ_run))
 				return -1;
 		}
@@ -295,14 +296,15 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		if (!is_succ_run && !running.empty())
 			r.score -= 3.0f;
 
-		MachineCodeStamp mc_stamp = x64mc[mc_idx].stamp;
-		int s1 = x64mc[mc_idx].s1;
-		int s2 = x64mc[mc_idx].s2;
+		const X64mc &mc = x64mc[mc_idx];
+		MachineCodeStamp mc_stamp = mc.stamp;
+		int s1 = mc.s1;
+		int s2 = mc.s2;
 
 		float last_use_score = 2.0;
 		float lu_mult = is_bottleneck ? 0.5f : 1.0f;
-		r.score += last_use_score * last_use(scp, s1) * lu_mult;
-		r.score += last_use_score * last_use(scp, s2) * lu_mult;
+		r.score += last_use_score * (reamining_use_cnt(scp, mc, s1) == 1) * lu_mult;
+		r.score += last_use_score * (reamining_use_cnt(scp, mc, s2) == 1) * lu_mult;
 		if(mc_stamp == MC_ASSIGN)
 			r.score -= last_use_score;
 
@@ -337,14 +339,16 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 				r.score -= bottleneck_score;
 		}
 
-		int pressure_delta = 1 - last_use(scp, s1) - last_use(scp, s2);
+		int pressure_delta = 1 -
+			(reamining_use_cnt(scp, mc, s1) == 1)
+			- (reamining_use_cnt(scp, mc, s2) == 1);
 		if (pressure_delta > 0 && !running.empty())
 			r.score -= 5.0f;
 
 		if (s1 >= 0 && scp->use_cnt_in_bb[s1] <= 0 && scp->reference_cnt_in_bb[s1] <= 0)
-			print_mc_err("select1", scp, x64mc[mc_idx], mc_idx);
+			print_mc_err("select1", scp, mc, mc_idx);
 		if (s2 >= 0 && scp->use_cnt_in_bb[s2] <= 0 && scp->reference_cnt_in_bb[s2] <= 0)
-			print_mc_err("select1", scp, x64mc[mc_idx], mc_idx);
+			print_mc_err("select1", scp, mc, mc_idx);
 	}
 
 	float mx_score;
@@ -442,6 +446,12 @@ void finish_mc__update_ready_queue2(Scope *scp, vector<X64mc> &x64mc, int mc_fin
 	}
 }
 
+static void update_mc_consume_cnt(Scope *scp, const X64mc &mc)
+{
+	update_vr_consume_cnt(scp, mc.s1);
+	update_vr_consume_cnt(scp, mc.s2);
+}
+
 static void mc_schdu(Scope *scp)
 {
 	/*
@@ -467,22 +477,22 @@ static void mc_schdu(Scope *scp)
 
 //	LOG("scp %s", scp->name.c_str());
 	BasicBlock *bb = scp->bb;
-	vector<X64mc> &x64mc = bb->mcO1;
-	vector<X64mc> &x64mc_schedu = bb->mc_schedu;
+	vector<X64mc> &mcs = bb->mcO1;
+	vector<X64mc> &mcs_schedu = bb->mc_schedu;
 
 	scp->consume_cnt_in_bb.clear();
 	scp->consume_cnt_in_bb.resize(vr_size);
 
 	live_reg_cnt = 0;
 	int cycle = 0;
-	init_ready_queue(x64mc);
+	init_ready_queue(mcs);
 
 	if (ready.size() == 0)
 	{
 		if (bb->is_entry_label)
 			LOG("bb %s == 0", scp->name.c_str());
-		if (x64mc.size() || scp->bb->tacO1.size())
-			ERR("%lu, %lu", x64mc.size(), scp->bb->tacO1.size());
+		if (mcs.size() || scp->bb->tacO1.size())
+			ERR("%lu, %lu", mcs.size(), scp->bb->tacO1.size());
 	}
 
 	while (!running.empty() || !ready.empty())
@@ -490,16 +500,22 @@ static void mc_schdu(Scope *scp)
 		for (auto it = running.begin(); it != running.end();)
 		{
 			int mc_idx = *it;
-			auto stamp = x64mc[mc_idx].stamp;
-			assert(x64mc[mc_idx].start_cycle >= 0);
+			X64mc &mc = mcs[mc_idx];
+			auto stamp = mc.stamp;
+			assert(mc.start_cycle >= 0);
 			assert(mc_info[stamp].latency > 0);
 
-			if (cycle >= x64mc[mc_idx].start_cycle + mc_info[stamp].latency)
+			if (cycle >= mc.start_cycle + mc_info[stamp].latency)
 			{
-				free_function_unit(x64mc[mc_idx].stamp);
-				finish_mc__update_ready_queue2(scp, x64mc, mc_idx);
+				free_function_unit(mc.stamp);
+				finish_mc__update_ready_queue2(scp, mcs, mc_idx);
 
 				it = running.erase(it);
+				update_mc_consume_cnt(scp, mc);
+				live_reg_cnt += 1;
+				live_reg_cnt -= (reamining_use_cnt(scp, mc, mc.s1) == 0);
+				live_reg_cnt -= (reamining_use_cnt(scp, mc, mc.s2) == 0);
+				LOG("live_reg_cnt=%d", live_reg_cnt);
 				continue;
 			}
 			it++;
@@ -508,39 +524,31 @@ static void mc_schdu(Scope *scp)
 		// select from ready[]
 		while (1)
 		{
-			int mc = mc_select(scp, x64mc);
-			if (mc < 0)
+			int mc_idx = mc_select(scp, mcs);
+			if (mc_idx < 0)
 				break;
 
-			int s1 = x64mc[mc].s1;
-			int s2 = x64mc[mc].s2;
-			live_reg_cnt += 1 - last_use(scp, s1) - last_use(scp, s2);
+			X64mc &mc = mcs[mc_idx];
+			mc.start_cycle = cycle;
+			mcs_schedu.push_back(mc);
+			running.push_back(mc_idx);
 
-			x64mc[mc].start_cycle = cycle;
-			x64mc_schedu.push_back(x64mc[mc]);
-			running.push_back(mc);
-			update_mc_consume_cnt(scp, x64mc[mc]);
-
-			for (int vr : x64mc[mc].vr_list)
+			for (int vr : mc.vr_list)
 			{
 				if (vr >= 0)
 					bb->vr_unique.push_back(vr);
 			}
 
-			assert(x64mc[mc].start_cycle >= 0);
+			assert(mc.start_cycle >= 0);
 
-			auto stamp = x64mc[mc].stamp;
-			if (mc_info[stamp].latency <= 0)
-			{
-				auto stamp = x64mc[mc].stamp;
-				ERR("%d, %s", x64mc[mc].stamp, mc_info[stamp].mc_code);
-			}
+			if (mc_info[mc.stamp].latency <= 0)
+				ERR("%d, %s", mc.stamp, mc_info[mc.stamp].mc_code);
 		}
 		cycle++;
 	}
 
-	if (x64mc_schedu.size() != x64mc.size())
-		ERR("%lu %lu", x64mc.size(), x64mc_schedu.size());
+	if (mcs_schedu.size() != mcs.size())
+		ERR("%lu %lu", mcs.size(), mcs_schedu.size());
 
 	for (int i = 0; i < vr_size; i++)
 	{

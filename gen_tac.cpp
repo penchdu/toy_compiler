@@ -10,13 +10,13 @@
 
 extern Scope file_scp;
 
-static int trace_ast_down_up_gen_3_address_code(vector<Tac> &tacs, Ast *p)
+static int trace_ast_down_up_gen_tac(vector<Tac> &tacs, Ast *p)
 {
 	if (!p || p->sem_stamp == SEM_VAR_DECLARE)
 		return -1;
 
-	int b = trace_ast_down_up_gen_3_address_code(tacs, p->right);
-	int a = trace_ast_down_up_gen_3_address_code(tacs, p->left);
+	int b = trace_ast_down_up_gen_tac(tacs, p->right);
+	int a = trace_ast_down_up_gen_tac(tacs, p->left);
 	Tac t;
 
 	switch (p->sem_stamp)
@@ -143,7 +143,7 @@ static bool gen_tac_O0(Scope *scp)
 	}
 
 	for (auto *p : scp->asts)
-		trace_ast_down_up_gen_3_address_code(scp->bb->tacO0, p);
+		trace_ast_down_up_gen_tac(scp->bb->tacO0, p);
 
 	bool bb_terminated = 0;
 	for (Scope *p : scp->clds)
@@ -174,7 +174,11 @@ static bool gen_tac_O0(Scope *scp)
 
 static int _tac_len = 0;
 #define PRINT_TAC(fmt, ...) _tac_len = printf(fmt, ##__VA_ARGS__)
-#define PRINT_TAC_SEM(...) do { printf("%*s", (28 - _tac_len) > 1 ? (28 - _tac_len) : 2, ""); printf(__VA_ARGS__); } while (0)
+#define PRINT_TAC_SEM(...) \
+	do { \
+	printf("%*s", (28 - _tac_len) > 1 ? (28 - _tac_len) : 2, ""); \
+	printf(__VA_ARGS__); \
+	} while (0)
 
 static void dump_tac(Scope *scp, Optimize_level level)
 {
@@ -393,7 +397,7 @@ static void union_transient_vr(Scope *scp)
 		VR_FIND(t.s2);
 	}
 
-	for (int i = 0; i < (int) tac.size();)
+	for (int i = 0; i < tac.size();)
 	{
 		Tac &t = tac[i];
 		if ((t.op == OP_ASSIGN || t.op == OP_COPY_SSA) && t.dst == t.s1)
@@ -500,7 +504,7 @@ static void rm_dead_code(Scope *scp)
 	for (int i = tacs.size() - 1; i >= 0; i--)
 	{
 		auto &tac = tacs[i];
-		if (tac.dst < 0 || ssa_use_cnt[tac.dst] > 0)
+		if (tac.dst < 0 || vr_use_cnt[tac.dst] > 0)
 			continue;
 
 		Operator op = tacs[i].op;
@@ -518,13 +522,13 @@ static void rm_dead_code(Scope *scp)
 		if (tac.s1 >= 0)
 		{
 //			declare_record.ast[mc.s1]->symb->use_cnt--;
-			ssa_use_cnt[tac.s1]--;
+			vr_use_cnt[tac.s1]--;
 			scp->use_cnt_in_bb[tac.s1]--;
 		}
 		if (tac.s2 >= 0)
 		{
 //			declare_record.ast[mc.s2]->symb->use_cnt--;
-			ssa_use_cnt[tac.s2]--;
+			vr_use_cnt[tac.s2]--;
 			scp->use_cnt_in_bb[tac.s2]--;
 		}
 
@@ -549,12 +553,12 @@ static void collect_add_operands(vector<Tac> &tacs, vector<int> &def_idx, int vr
 	}
 	idxs.push_back(di);
 
-	if (ssa_use_cnt[t.s1] == 1 && vr_symb(t.s1)->stamp == SYMB_PRIVATE_transient)
+	if (vr_use_cnt[t.s1] == 1 && vr_symb(t.s1)->stamp == SYMB_PRIVATE_transient)
 	collect_add_operands(tacs, def_idx, t.s1, ops, idxs);
 	else
 	ops.push_back(t.s1);
 
-	if (ssa_use_cnt[t.s2] == 1 && vr_symb(t.s2)->stamp == SYMB_PRIVATE_transient)
+	if (vr_use_cnt[t.s2] == 1 && vr_symb(t.s2)->stamp == SYMB_PRIVATE_transient)
 	collect_add_operands(tacs, def_idx, t.s2, ops, idxs);
 	else
 	ops.push_back(t.s2);
@@ -609,10 +613,10 @@ static void reassociate(Scope *scp)
 			{
 				int max_cnt = 0;
 				for (int o : ops)
-					max_cnt = std::max(max_cnt, ssa_use_cnt[o]);
+					max_cnt = std::max(max_cnt, vr_use_cnt[o]);
 				std::sort(ops.begin(), ops.end(), [&](int a, int b)
 				{
-					int ca = ssa_use_cnt[a], cb = ssa_use_cnt[b];
+					int ca = vr_use_cnt[a], cb = vr_use_cnt[b];
 					if (ca != cb)
 					return ca > cb;
 					bool hi = (ca == max_cnt);
