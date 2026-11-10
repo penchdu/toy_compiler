@@ -285,10 +285,10 @@ void spill_vr(
     const string &tag = "");
 
 int get_pr_O0();
-int get_pr_wave(BasicBlock *bb, int mc_idx);
+int get_pr_wave(BasicBlock *bb, int mc_idx, int expect_pr = X64PR_MAX);
 int get_pr(enum Optimize_level method,
-    vector<X64mc> &mcs,
-    BasicBlock *bb, int mc_idx,
+	int expect,
+    vector<X64mc> &mcs, BasicBlock *bb, int mc_idx,
     int vr, int u,
     bool alloc_immediate = false);
 
@@ -300,7 +300,7 @@ void x64_reg_alloc_O1();
 
 void dump_vr_state(const vector<VrState> &vp, const string &tag);
 void check_pr_vr_consistency();
-void check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr);
+int check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr);
 void init_wave(BasicBlock *bb);
 
 int get_free_pr_num(const vector<PrState> &prst, int reserved_pr = X64PR_MAX);

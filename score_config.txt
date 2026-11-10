@@ -1,5 +1,7 @@
 last_use_score=3.0
-critical_path_score=0.6
-critical_path_score_rate=0.4
 bottleneck_score=0.5
 pressure_score=5.0
+critical_path_score=0.6
+critical_path_score_rate=0.5
+
+

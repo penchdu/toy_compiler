@@ -16,7 +16,7 @@
 #define STR(x) #x
 
 #define ERR(fmt, ...) do{ \
-    printf("%s %d, error: " fmt "\n", __FUNCTION__, __LINE__ , ##__VA_ARGS__); \
+    fprintf((FILE*)stderr, "%s %d, error: " fmt "\n", __FUNCTION__, __LINE__ , ##__VA_ARGS__); \
     exit(1);	\
 }while(0)
 

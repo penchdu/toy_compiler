@@ -165,8 +165,8 @@ int get_pr_O0()
 
 //int (*func_get_pr)();
 int get_pr(enum Optimize_level method,
-    vector<X64mc> &mcs,
-    BasicBlock *bb, int mc_idx,
+	int expect,
+    vector<X64mc> &mcs, BasicBlock *bb, int mc_idx,
     int vr, int u,
     bool alloc_immediate)
 {
@@ -203,7 +203,7 @@ int get_pr(enum Optimize_level method,
 		if (method == O0)
 			pr = get_pr_O0();
 		else if (method == O1)
-			pr = get_pr_wave(bb, mc_idx);
+			pr = get_pr_wave(bb, mc_idx, expect);
 		else
 			ERR();
 
@@ -274,18 +274,18 @@ int get_pr_alloc_imm(
 {
 	Ast *p = declare_record.ast[vr];
 	if (p->sem_stamp == SEM_IMMEDIATE)
-		return get_pr(method, mcs, bb, mc_idx, vr, VR_USAGE_READ, true);
+		return get_pr(method, X64PR_MAX, mcs, bb, mc_idx, vr, VR_USAGE_READ, true);
 
-	return get_pr(method, mcs, bb, mc_idx, vr, VR_USAGE_READ);
+	return get_pr(method, X64PR_MAX, mcs, bb, mc_idx, vr, VR_USAGE_READ);
 }
 
 static int get_pr(BasicBlock *bb, int vr, int u)
 {
-	return get_pr(O0, bb->mc_alloc_O0, bb, 0, vr, u);
+	return get_pr(O0, X64PR_MAX, bb->mc_alloc_O0, bb, -1, vr, u);
 }
 static int get_pr_alloc_imm(BasicBlock *bb, int vr)
 {
-	return get_pr_alloc_imm(O0, bb->mc_alloc_O0, bb, 0, vr);
+	return get_pr_alloc_imm(O0, bb->mc_alloc_O0, bb, -1, vr);
 }
 
 static void x64_reg_alloc_o0(Scope *scp)

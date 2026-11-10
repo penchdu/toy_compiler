@@ -425,41 +425,41 @@ static void copy_coalesce(Scope *scp)
 }
 static void copy_propagation(Scope *scp)
 {
-	vector<Tac> &tac = scp->bb->tacO1;
-
-	for (int i = tac.size() - 1; i >= 0; i--)
-	{
-		Tac &t = tac[i];
-		if (t.op == OP_ASSIGN)
-		{
-			t.op = OP_ALL;
-			int s1 = t.s1;
-			int dst = t.dst;
-			for (int k = i; k < tac.size(); k++)
-			{
-
-			}
-		}
-
-	}
-
-	for (int i = 0; i < tac.size(); i++)
-	{
-		int a = tac[i].dst;
-		if (a < 0 || vr_symb(a)->stamp != SYMB_PRIVATE_transient)
-		continue;
-
-		for (int k = i + 1; k < tac.size(); k++)
-		{
-			int dst = tac[k].dst;
-			if (dst < 0)
-				continue;
-
-		}
-	}
-
-	for (Scope *p : scp->clds)
-		copy_propagation(p);
+//	vector<Tac> &tac = scp->bb->tacO1;
+//
+//	for (int i = tac.size() - 1; i >= 0; i--)
+//	{
+//		Tac &t = tac[i];
+//		if (t.op == OP_ASSIGN)
+//		{
+//			t.op = OP_ALL;
+//			int s1 = t.s1;
+//			int dst = t.dst;
+//			for (int k = i; k < tac.size(); k++)
+//			{
+//
+//			}
+//		}
+//
+//	}
+//
+//	for (int i = 0; i < tac.size(); i++)
+//	{
+//		int a = tac[i].dst;
+//		if (a < 0 || vr_symb(a)->stamp != SYMB_PRIVATE_transient)
+//		continue;
+//
+//		for (int k = i + 1; k < tac.size(); k++)
+//		{
+//			int dst = tac[k].dst;
+//			if (dst < 0)
+//				continue;
+//
+//		}
+//	}
+//
+//	for (Scope *p : scp->clds)
+//		copy_propagation(p);
 }
 static void elimicate_transient_vr(Scope *scp)
 {

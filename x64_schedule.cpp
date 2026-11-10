@@ -179,11 +179,12 @@ static int reamining_use_cnt(Scope *scp, const X64mc &mc, int vr)
 	return scp->use_cnt_in_bb[vr] - scp->consume_cnt_in_bb[vr];
 }
 
-float last_use_score = -200;
-float critical_path_score = -200;
-float critical_path_score_rate = -200;
-float bottleneck_score = -200;
-float pressure_score = -200;
+static float init_score = -100;
+static float last_use_score = init_score;
+static float critical_path_score = init_score;
+static float critical_path_score_rate = init_score;
+static float bottleneck_score = init_score;
+static float pressure_score = init_score;
 
 static void read_config()
 {
@@ -214,11 +215,11 @@ static void read_config()
 	}
 	fclose(fp);
 
-	assert(last_use_score > -100);
-	assert(critical_path_score > -100);
-	assert(critical_path_score_rate > -100);
-	assert(bottleneck_score > -100);
-	assert(pressure_score > -100);
+	assert(last_use_score != init_score);
+	assert(critical_path_score != init_score);
+	assert(critical_path_score_rate != init_score);
+	assert(bottleneck_score != init_score);
+	assert(pressure_score != init_score);
 
 	LOG("%f", last_use_score);
 }
@@ -255,13 +256,14 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 				if (r_mc == pred) { prede_is_running = true; break; }
 			if (prede_is_running) break;
 		}
-		bool high_pressure = live_reg_cnt >= reg_limit - 1;
-		bool mid_pressure = live_reg_cnt >= reg_limit - 2;
+
 		if (!running.empty())
 		{
+			bool mid_pressure = live_reg_cnt >= reg_limit - 2;
 			if (mid_pressure && !prede_is_running)
 				return -1;
 
+			bool high_pressure = live_reg_cnt >= reg_limit - 1;
 			const X64mc &mc = x64mc[mc_idx];
 			int pressure_delta = 1 -
 				(reamining_use_cnt(scp, mc, mc.s1) == 1)
@@ -334,9 +336,11 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		int s1 = mc.s1;
 		int s2 = mc.s2;
 
-		r.score += last_use_score * (reamining_use_cnt(scp, mc, s1) == 1);
-		r.score += last_use_score * (reamining_use_cnt(scp, mc, s2) == 1);
-		if(mc.dst != -1)
+		if(reamining_use_cnt(scp, mc, s1) == 1)
+			r.score += last_use_score;
+		if(reamining_use_cnt(scp, mc, s2) == 1)
+			r.score += last_use_score;
+		if(mc.dst != -1)	// && mc.dst not have pr
 			r.score -= last_use_score;
 
 		if (is_bottleneck)
