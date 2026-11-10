@@ -179,27 +179,31 @@ static int get_pr_alloc_imm(BasicBlock *bb, int mc_idx, int vr)
 	return get_pr_alloc_imm(O1, bb->mc_alloc_wave, bb, mc_idx, vr);
 }
 
-void swap_operand(X64mc &mc)
+static void swap_operand(X64mc &mc)
 {
 	std::swap(mc.s1, mc.s2);
 	std::swap(mc.pr1, mc.pr2);
-//	int s1 = mc.s1;
-//	int pr1 = mc.pr1;
-//
-//	mc.s1 = mc.s2;
-//	mc.pr1 = mc.pr2;
-//
-//	mc.s2 = s1;
-//	mc.pr2 = pr1;
 }
-
-int cmp_expect(int expect1, int expect2)
+static int update_vr_consume_cnt__check_dead_vr(Scope *scp, X64mc &mc, vector<X64mc> &mcs)
 {
+	int expect1 = X64PR_MAX;
+	int expect2 = X64PR_MAX;
+
+	if(mc.s1 >= 0)
+	{
+		update_vr_consume_cnt(scp, mc.s1);
+		expect1 = check_dead_vr(scp, mcs, mc.s1);
+	}
+	if(mc.s2 >= 0)
+	{
+		update_vr_consume_cnt(scp, mc.s2);
+		expect2 = check_dead_vr(scp, mcs, mc.s2);
+	}
+
 	if(expect1 != X64PR_MAX)
 		return expect1;
 	if(expect2 != X64PR_MAX)
 		return expect2;
-
 	return X64PR_MAX;
 }
 
@@ -218,8 +222,7 @@ void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 			break;
 
 		mc.pr1 = get_pr(expect, bb, i, mc.s1, VR_USAGE_READ);
-		update_vr_consume_cnt(scp, mc.s1);
-		expect = check_dead_vr(scp, mcs, mc.s1);
+		expect = update_vr_consume_cnt__check_dead_vr(scp, mc, mcs);
 
 		mc.pr_dst = get_pr(expect, bb, i, mc.dst, VR_USAGE_WRITE);
 		mcs.push_back(mc);
@@ -230,12 +233,7 @@ void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
 		mc.pr2 = get_pr(expect, bb, i, mc.s2, VR_USAGE_READ);
 
-		update_vr_consume_cnt(scp, mc.s1);
-		update_vr_consume_cnt(scp, mc.s2);
-		expect1 = check_dead_vr(scp, mcs, mc.s1);
-		expect2 = check_dead_vr(scp, mcs, mc.s2);
-		expect = cmp_expect(expect1, expect2);
-
+		expect = update_vr_consume_cnt__check_dead_vr(scp, mc, mcs);
 		mc.pr_dst = get_pr(expect, bb, i, mc.dst, VR_USAGE_WRITE);
 
 		if(mc.pr_dst == mc.pr2)
@@ -251,12 +249,7 @@ void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
 		mc.pr2 = get_pr(expect, bb, i, mc.s2, VR_USAGE_READ);
 
-		update_vr_consume_cnt(scp, mc.s1);
-		update_vr_consume_cnt(scp, mc.s2);
-		expect1 = check_dead_vr(scp, mcs, mc.s1);
-		expect2 = check_dead_vr(scp, mcs, mc.s2);
-		expect = cmp_expect(expect1, expect2);
-
+		expect = update_vr_consume_cnt__check_dead_vr(scp, mc, mcs);
 		mc.pr_dst = get_pr(expect, bb, i, mc.dst, VR_USAGE_WRITE);
 
 		if(mc.pr_dst == mc.pr2)
@@ -298,11 +291,7 @@ void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
 		mc.pr2 = get_pr(expect, bb, i, mc.s2, VR_USAGE_READ);
 
-		update_vr_consume_cnt(scp, mc.s1);
-		update_vr_consume_cnt(scp, mc.s2);
-		expect1 = check_dead_vr(scp, mcs, mc.s1);
-		expect2 = check_dead_vr(scp, mcs, mc.s2);
-		expect = cmp_expect(expect1, expect2);
+		expect = update_vr_consume_cnt__check_dead_vr(scp, mc, mcs);
 
 		if (vr_use_cnt[mc.dst] > 0)
 			mc.pr_dst = get_pr(expect, bb, i, mc.dst, VR_USAGE_WRITE);
@@ -314,29 +303,20 @@ void ra_wave__mc(Scope *scp, BasicBlock *bb, const X64mc &schedued, int i)
 		mc.pr1 = get_pr(expect, bb, i, mc.s1, VR_USAGE_READ);
 		mc.pr2 = get_pr_alloc_imm(bb, i, mc.s2);
 
-		update_vr_consume_cnt(scp, mc.s1);
-		update_vr_consume_cnt(scp, mc.s2);
-		expect1 = check_dead_vr(scp, mcs, mc.s1);
-		expect2 = check_dead_vr(scp, mcs, mc.s2);
-		expect = cmp_expect(expect1, expect2);
-
+		expect = update_vr_consume_cnt__check_dead_vr(scp, mc, mcs);
 		mc.pr_dst = get_pr(expect, bb, i, mc.dst, VR_USAGE_WRITE);
 		mcs.push_back(mc);
 		break;
 
 	case MC_TEST:
 		mc.pr1 = get_pr_alloc_imm(bb, i, mc.s1);
-		update_vr_consume_cnt(scp, mc.s1);
-		check_dead_vr(scp, mcs, mc.s1);
-
+		update_vr_consume_cnt__check_dead_vr(scp, mc, mcs);
 		mcs.push_back(mc);
 		break;
 
 	case MC_SAVE_RET:
 		mc.pr1 = get_pr(expect, bb, i, mc.s1, VR_USAGE_READ);
-		update_vr_consume_cnt(scp, mc.s1);
-		check_dead_vr(scp, mcs, mc.s1);
-
+		update_vr_consume_cnt__check_dead_vr(scp, mc, mcs);
 		mcs.push_back(mc);
 		break;
 
