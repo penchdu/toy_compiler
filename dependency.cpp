@@ -22,13 +22,13 @@ void create_dependcy_RAW(int a, int b)
 	if (a == b)
 		return;
 
-	auto &pred = mcs_predecessor[a].mcs;
+	auto &pred = mcs_predecessor[a].mc_idxs;
 	if (std::find(pred.begin(), pred.end(), b) != pred.end())
 		return;
 
 	// a depend on b, data flow: b -> a
-	mcs_predecessor[a].mcs.push_back(b);
-	mcs_successor[b].mcs.push_back(a);
+	mcs_predecessor[a].mc_idxs.push_back(b);
+	mcs_successor[b].mc_idxs.push_back(a);
 }
 void create_dependcy_WAW(int a, int b)
 {
@@ -165,9 +165,9 @@ void gen_use_def_chain(vector<X64mc> &x64mc, Scope *scp)
 	}
 
 	for (auto &r : mcs_predecessor)
-		r.edges = r.mcs.size();
+		r.edges = r.mc_idxs.size();
 	for (auto &r : mcs_successor)
-		r.edges = r.mcs.size();
+		r.edges = r.mc_idxs.size();
 
 }
 static void print_mc_err(int a, int b, const X64mc &mc)
@@ -188,7 +188,7 @@ void dump_chain(vector<X64mc> &x64mc)
 	printf("dep\n");
 	for (int i = 0; i < mcs_predecessor.size(); i++)
 	{
-		auto &v = mcs_predecessor[i].mcs;
+		auto &v = mcs_predecessor[i].mc_idxs;
 
 		std::sort(v.begin(), v.end());
 		auto it = std::adjacent_find(v.begin(), v.end());
@@ -202,7 +202,7 @@ void dump_chain(vector<X64mc> &x64mc)
 	printf("\nbdep\n");
 	for (int i = 0; i < mcs_successor.size(); i++)
 	{
-		auto &v = mcs_successor[i].mcs;
+		auto &v = mcs_successor[i].mc_idxs;
 
 		std::sort(v.begin(), v.end());
 		auto it = std::adjacent_find(v.begin(), v.end());
@@ -226,7 +226,7 @@ int get_mc_latency(vector<X64mc> &x64mc, int mc_id)
 	chain_latency = mc_info[stamp].latency;
 	assert(chain_latency >= 0);
 
-	auto &mcs = mcs_successor[mc_id].mcs;
+	auto &mcs = mcs_successor[mc_id].mc_idxs;
 	int mx = 0;
 	for (int i = 0; i < mcs.size(); i++)
 	{

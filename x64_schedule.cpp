@@ -15,11 +15,11 @@ extern vector<McDepend> mcs_predecessor;
 extern vector<McDepend> mcs_successor;
 
 struct ScheduleScore {
-	int idx_in_mc_list = -1;
+	int mc_idx = -1;
 	int critical_path = 0;
 
 	bool can_use_alu = 0;
-
+	int pr_increase = 0;
 //	int left_use = -1;
 	float score = 0;
 };
@@ -28,17 +28,17 @@ using std::multimap;
 vector<ScheduleScore> ready;
 vector<int> running;
 
-const int reg_limit = X64PR_MAX;
+const int pr_limit = X64PR_MAX;
 const int alu_unit = 4;
 const int imul_unit = 1;
 const int div_unit = 1;
 
-int free_reg = reg_limit;
+int free_reg = pr_limit;
 int free_alu_unit = alu_unit;
 int free_imul_unit = imul_unit;
 int free_div_unit = div_unit;
 
-static int live_reg_cnt = 0;
+static int live_pr_cnt = 0;
 
 bool has_function_unit(MachineCodeStamp stamp)
 {
@@ -212,6 +212,8 @@ static void read_config()
 				pressure_score = val;
 			else if (strcmp(key, "prede_is_running_score") == 0)
 				prede_is_running_score = val;
+			else if (strchr(line, '#'))
+				continue;
 			else
 				ERR("unknown key in score_config.txt: %s", key);
 		}
@@ -237,7 +239,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 //	vector<ScheduleScore> can_emit;
 	for (int i = 0; i < ready.size(); i++)
 	{
-		int k = ready[i].idx_in_mc_list;
+		int k = ready[i].mc_idx;
 		ready[i].can_use_alu = has_function_unit(x64mc[k].stamp);
 		if (ready[i].can_use_alu)
 		{
@@ -250,12 +252,12 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 //	LOG("can_emit_cnt=%d", can_emit_cnt);
 	if (can_emit_cnt == 1)
 	{
-		int mc_idx = ready[idx_emit].idx_in_mc_list;
+		int mc_idx = ready[idx_emit].mc_idx;
 
 		bool prede_is_running = false;
-		for (int i = 0; i < mcs_predecessor[mc_idx].mcs.size(); i++)
+		for (int i = 0; i < mcs_predecessor[mc_idx].mc_idxs.size(); i++)
 		{
-			int pred = mcs_predecessor[mc_idx].mcs[i];
+			int pred = mcs_predecessor[mc_idx].mc_idxs[i];
 			for (int r_mc : running)
 				if (r_mc == pred) { prede_is_running = true; break; }
 			if (prede_is_running) break;
@@ -263,11 +265,11 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 
 		if (!running.empty())
 		{
-			bool mid_pressure = live_reg_cnt >= reg_limit - 2;
+			bool mid_pressure = live_pr_cnt >= pr_limit - 2;
 			if (mid_pressure && !prede_is_running)
 				return -1;
 
-			bool high_pressure = live_reg_cnt >= reg_limit - 1;
+			bool high_pressure = live_pr_cnt >= pr_limit - 1;
 			const X64mc &mc = x64mc[mc_idx];
 			int pressure_delta = 1 -
 				(reamining_use_cnt(scp, mc, mc.s1) == 1)
@@ -307,7 +309,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		if (!r.can_use_alu)
 			continue;
 
-		int mc_idx = r.idx_in_mc_list;
+		int mc_idx = r.mc_idx;
 
 		const X64mc &mc = x64mc[mc_idx];
 		MachineCodeStamp mc_stamp = mc.stamp;
@@ -328,9 +330,9 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 			r.score -= pressure_score;
 
 		bool prede_is_running = false;
-		for (int i = 0; i < mcs_predecessor[mc_idx].mcs.size(); i++)
+		for (int i = 0; i < mcs_predecessor[mc_idx].mc_idxs.size(); i++)
 		{
-			int pred = mcs_predecessor[mc_idx].mcs[i];
+			int pred = mcs_predecessor[mc_idx].mc_idxs[i];
 			for (int r_mc : running)
 				if (r_mc == pred) { prede_is_running = true; break; }
 			if (prede_is_running) break;
@@ -343,7 +345,7 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		int succ_pending_preds = 0;
 		if (mcs_successor[mc_idx].edges == 1)
 		{
-			int succ = mcs_successor[mc_idx].mcs[0];
+			int succ = mcs_successor[mc_idx].mc_idxs[0];
 			if (mcs_predecessor[succ].edges > 1)
 			{
 				is_bottleneck = true;
@@ -355,11 +357,11 @@ int mc_select(Scope *scp, const vector<X64mc> &x64mc)
 		if (is_bottleneck)
 		{
 			bool other_pred_ready = false;
-			for (int pred : mcs_predecessor[bottleneck_succ].mcs)
+			for (int pred : mcs_predecessor[bottleneck_succ].mc_idxs)
 			{
 				if (pred == mc_idx) continue;
 				for (auto &rr : ready)
-					if (rr.idx_in_mc_list == pred) { other_pred_ready = true; break; }
+					if (rr.mc_idx == pred) { other_pred_ready = true; break; }
 				if (other_pred_ready) break;
 
 				for (int r_mc : running)
@@ -401,7 +403,7 @@ end:
 		return -1;
 	}
 
-	int mc_idx = ready[idx_emit].idx_in_mc_list;
+	int mc_idx = ready[idx_emit].mc_idx;
 	bool r = get_function_unit(x64mc[mc_idx].stamp);
 	assert(r);
 
@@ -409,12 +411,12 @@ end:
 	auto mc = x64mc[mc_idx];
 		printf("schedu %d: size %lu emit %d [%s %%%d %%%d %%%d] cp=%d sc=%.3f run=%lu live=%d bn=%d sp=%d |",
 		    select_pulled++, ready.size(), mc_idx, mc.ori_sem.c_str(), mc.dst, mc.s1, mc.s2,
-		    ready[idx_emit].critical_path, ready[idx_emit].score, running.size(), live_reg_cnt,
+		    ready[idx_emit].critical_path, ready[idx_emit].score, running.size(), live_pr_cnt,
 		    ready[idx_emit].is_bottleneck, ready[idx_emit].succ_pending_preds);
 	for (auto &r : ready)
 	{
 		if (!r.can_use_alu) continue;
-		printf(" %d=%.3f(cp%d)", r.idx_in_mc_list, r.score, r.critical_path);
+		printf(" %d=%.3f(cp%d)", r.mc_idx, r.score, r.critical_path);
 	}
 	printf("\n");
 #endif
@@ -423,53 +425,246 @@ end:
 	return mc_idx;
 }
 
-void init_ready_queue(vector<X64mc> &x64mc)
+static vector<bool> have_pr;
+static int get_pr_increase(Scope *scp, X64mc &mc)
+{
+	int pr_increase = 0;
+	if(mc.dst >= 0)
+		pr_increase += !have_pr[mc.dst];
+	if(mc.s1 >= 0)
+		pr_increase += !have_pr[mc.s1];
+	if(mc.s2 >= 0 && vr_ast(mc.s2)->symb_stamp != SYMB_IMMEDIATE)
+		pr_increase += !have_pr[mc.s2];
+
+	if(reamining_use_cnt(scp, mc, mc.s1) == 1)
+		pr_increase -= 1;
+	if(reamining_use_cnt(scp, mc, mc.s2) == 1)
+		pr_increase -= 1;
+
+	return pr_increase;
+}
+static void increase_pr(Scope *scp, X64mc &mc)
+{
+	if(mc.dst >= 0 && !have_pr[mc.dst])
+	{
+		have_pr[mc.dst] = true;
+		live_pr_cnt++;
+	}
+	if(mc.s1 >= 0 && !have_pr[mc.s1])
+	{
+		have_pr[mc.s1] = true;
+		live_pr_cnt++;
+	}
+	if(mc.s2 >= 0 && vr_ast(mc.s2)->symb_stamp != SYMB_IMMEDIATE && !have_pr[mc.s2])
+	{
+		have_pr[mc.s2] = true;
+		live_pr_cnt++;
+	}
+}
+static void release_dead_vr(Scope *scp, X64mc &mc)
+{
+	if(mc.dst >= 0 && reamining_use_cnt(scp, mc, mc.dst) == 0)
+	{
+		ERR();
+		assert(have_pr[mc.dst]);
+		have_pr[mc.dst] = false;
+		live_pr_cnt--;
+	}
+	if(mc.s1 >= 0 && reamining_use_cnt(scp, mc, mc.s1) == 0)
+	{
+		assert(have_pr[mc.s1]);
+		have_pr[mc.s1] = false;
+		live_pr_cnt--;
+	}
+	if(mc.s2 >= 0 && reamining_use_cnt(scp, mc, mc.s2) == 0)
+	{
+		assert(have_pr[mc.s2]);
+		have_pr[mc.s2] = false;
+		live_pr_cnt--;
+	}
+}
+static void victim_vr(X64mc mc, int victim_cnt)
+{
+	if(victim_cnt == 0)
+		return;
+
+	for(int i = 0; i < vr_size; i++)
+	{
+		if(!have_pr[i] || i == mc.s1 || i == mc.s2 || i == mc.dst)
+			continue;
+
+		have_pr[i] = 0;
+		live_pr_cnt--;
+	}
+
+
+
+	victim_vr(mc, victim_cnt - 1);
+}
+int mc_select2(Scope *scp, vector<X64mc> &mcO1)
+{
+	int max_critical_path = 0;
+	int idx_emit = -1;
+	int can_emit_cnt = 0;
+
+	for (int i = 0; i < ready.size(); i++)
+	{
+		ready[i].score = 0;
+		ready[i].pr_increase = 0;
+
+		int mc_idx = ready[i].mc_idx;
+		auto &mc = mcO1[mc_idx];
+		ready[i].can_use_alu = has_function_unit(mc.stamp);
+		if (ready[i].can_use_alu)
+		{
+			idx_emit = i;
+			can_emit_cnt++;
+			max_critical_path = std::max(max_critical_path, ready[i].critical_path);
+
+			ready[i].pr_increase = get_pr_increase(scp, mc);
+			ready[i].score += 6 - ready[i].pr_increase;
+		}
+	}
+	if (can_emit_cnt == 0)
+	{
+		if(!ready.empty() && running.empty())
+			ERR();
+//		LOG("can_emit_cnt == 0");
+		return -1;
+	}
+
+//	LOG("can_emit_cnt=%d", can_emit_cnt);
+	assert(max_critical_path > 0);
+
+	for (auto &r : ready)
+	{
+		if (!r.can_use_alu)
+			continue;
+
+		int mc_idx = r.mc_idx;
+
+		const X64mc &mc = mcO1[mc_idx];
+		MachineCodeStamp mc_stamp = mc.stamp;
+		int s1 = mc.s1;
+		int s2 = mc.s2;
+
+		for (int succ_idx : mcs_successor[mc_idx].mc_idxs)
+		{
+			auto &mc_succ = mcO1[succ_idx];
+			if(mc_succ.s1 >= 0 && have_pr[mc_succ.s1])
+				r.score++;
+			if(mc_succ.s2 >= 0 && have_pr[mc_succ.s2])
+				r.score++;
+		}
+
+
+		if(r.critical_path == max_critical_path)
+			r.score += critical_path_score;
+//		if(reamining_use_cnt(scp, mc, s1) == 1)
+//			r.score += last_use_score;
+//		if(reamining_use_cnt(scp, mc, s2) == 1)
+//			r.score += last_use_score;
+//		if(mc.dst != -1)	// && mc.dst not have pr
+//			r.score -= last_use_score;
+
+		if (s1 >= 0 && scp->use_cnt_in_bb[s1] <= 0 && scp->reference_cnt_in_bb[s1] <= 0)
+			print_mc_err("select1", scp, mc, mc_idx);
+		if (s2 >= 0 && scp->use_cnt_in_bb[s2] <= 0 && scp->reference_cnt_in_bb[s2] <= 0)
+			print_mc_err("select1", scp, mc, mc_idx);
+	}
+
+	float mx_score = -1e9f;
+	idx_emit = -1;
+	for (int i = 0; i < ready.size(); i++)
+	{
+		if (!ready[i].can_use_alu)
+			continue;
+
+		if (mx_score < ready[i].score)
+		{
+			mx_score = ready[i].score;
+			idx_emit = i;
+		}
+	}
+	if (idx_emit == -1)
+	{
+//		LOG("idx_emit=%d", idx_emit);
+		return -1;
+	}
+
+	int mc_idx = ready[idx_emit].mc_idx;
+	auto &mc = mcO1[mc_idx];
+
+	int over_cnt = ready[idx_emit].pr_increase + live_pr_cnt - pr_limit;
+
+	if (over_cnt > 0)
+	{
+		if(!running.empty())
+			return -1;
+
+		victim_vr(mc, over_cnt);
+	}
+
+	bool r = get_function_unit(mc.stamp);
+	assert(r);
+	increase_pr(scp, mc);
+
+#if 1
+	printf("schedu %d: size %lu emit %d "
+		"[%s %%%d %%%d %%%d] "
+		"score=%.3f running=%lu live_pr_cnt=%d |",
+	    select_pulled++, ready.size(), mc_idx,
+	    mc.ori_sem.c_str(), mc.dst, mc.s1, mc.s2,
+	    ready[idx_emit].score, running.size(), live_pr_cnt);
+	for (auto &r : ready)
+	{
+		if (!r.can_use_alu)
+			continue;
+		printf(" %d=%.1f", r.mc_idx, r.score);
+	}
+	printf("\n");
+#endif
+
+	ready.erase(ready.begin() + idx_emit);
+	return mc_idx;
+}
+
+void move_to_ready(vector<X64mc> &mcO1, int i)
+{
+	ready.push_back({i, mcO1[i].chain_latency});
+	mcO1[i].emited = true;
+}
+void init_ready_queue(vector<X64mc> &mcO1)
 {
 	for (int i = 0; i < mcs_predecessor.size(); i++)
 	{
 		if (mcs_predecessor[i].edges == 0)
-			ready.push_back(
-			    {i, x64mc[i].chain_latency});
+			move_to_ready(mcO1, i);
 	}
 }
-//void finish_mc__update_ready_queue(Scope *scp, vector<X64mc> &x64mc, int mc_finished)
-//{
-//	auto &mcs = mcs_successor[mc_finished].mcs;
-//	for (int mc : mcs)
-//	{
-//		mcs_predecessor[mc].edges--;
-//
-//		if (mcs_predecessor[mc].edges < 0)
-//			print_mc_err("update_ready_queue", scp, x64mc[mc], mc);
-//
-//		if (mcs_predecessor[mc].edges == 0)
-//			ready.push_back({mc, x64mc[mc].chain_latency});
-//	}
-//}
-void finish_mc__update_ready_queue2(Scope *scp, vector<X64mc> &x64mc, int mc_finished)
+void finish_mc__update_ready_queue(Scope *scp, vector<X64mc> &mcO1, int mc_finished)
 {
-	auto &mcs = mcs_successor[mc_finished].mcs;
-	for (int mc_succ : mcs)
+	for (int mc_succ : mcs_successor[mc_finished].mc_idxs)
 	{
-		auto &pred = mcs_predecessor[mc_succ].mcs;
-		if (std::find(pred.begin(), pred.end(), mc_finished) == pred.end())
+		McDepend &pred = mcs_predecessor[mc_succ];
+		auto it = std::find(pred.mc_idxs.begin(), pred.mc_idxs.end(), mc_finished);
+		if (it == pred.mc_idxs.end())
 			ERR();
+		pred.mc_idxs.erase(it);
+		pred.edges--;
 
-		int &edges = mcs_predecessor[mc_succ].edges;
-		edges--;
-
-		if (edges < 0)
+		if (pred.edges < 0)
 		{
-			auto &v = mcs_predecessor[mc_succ].mcs;
-			printf("v %lu \n", v.size());
-			for (auto i : v)
+			printf("v %lu \n", pred.mc_idxs.size());
+			for (auto i : pred.mc_idxs)
 				printf("%d ", i);
 			printf("\n");
 
-			print_mc_err("update_ready_queue2", scp, x64mc[mc_succ], mc_succ);
+			print_mc_err("update_ready_queue", scp, mcO1[mc_succ], mc_succ);
 		}
-		if (edges == 0)
-			ready.push_back({mc_succ, x64mc[mc_succ].chain_latency});
+
+		if (pred.edges == 0)
+			move_to_ready(mcO1, mc_succ);
 	}
 }
 
@@ -504,30 +699,34 @@ static void mc_schdu(Scope *scp)
 
 //	LOG("scp %s", scp->name.c_str());
 	BasicBlock *bb = scp->bb;
-	vector<X64mc> &mcs = bb->mcO1;
+	vector<X64mc> &mcO1 = bb->mcO1;
+	int mcO1_size = mcO1.size();
 	vector<X64mc> &mcs_schedu = bb->mc_schedu;
 
 	scp->consume_cnt_in_bb.clear();
 	scp->consume_cnt_in_bb.resize(vr_size);
 
-	live_reg_cnt = 0;
-	int cycle = 0;
-	init_ready_queue(mcs);
+	live_pr_cnt = 0;
+	int cycle = -1;
+	init_ready_queue(mcO1);
 
 	if (ready.size() == 0)
 	{
 		if (bb->is_entry_label)
 			LOG("bb %s == 0", scp->name.c_str());
-		if (mcs.size() || scp->bb->tacO1.size())
-			ERR("%lu, %lu", mcs.size(), scp->bb->tacO1.size());
+		if (mcO1.size() || scp->bb->tacO1.size())
+			ERR("%lu, %lu", mcO1.size(), scp->bb->tacO1.size());
 	}
+
+#define use_mc_select2 0
 
 	while (!running.empty() || !ready.empty())
 	{
+		cycle++;
 		for (auto it = running.begin(); it != running.end();)
 		{
 			int mc_idx = *it;
-			X64mc &mc = mcs[mc_idx];
+			X64mc &mc = mcO1[mc_idx];
 			auto stamp = mc.stamp;
 			assert(mc.start_cycle >= 0);
 			assert(mc_info[stamp].latency > 0);
@@ -535,59 +734,60 @@ static void mc_schdu(Scope *scp)
 			if (cycle >= mc.start_cycle + mc_info[stamp].latency)
 			{
 				free_function_unit(mc.stamp);
-				finish_mc__update_ready_queue2(scp, mcs, mc_idx);
+				finish_mc__update_ready_queue(scp, mcO1, mc_idx);
 
 				it = running.erase(it);
 				update_mc_consume_cnt(scp, mc);
-				live_reg_cnt += 1;
-				live_reg_cnt -= (reamining_use_cnt(scp, mc, mc.s1) == 0);
-				live_reg_cnt -= (reamining_use_cnt(scp, mc, mc.s2) == 0);
-				LOG("live_reg_cnt=%d", live_reg_cnt);
+
+#if use_mc_select2
+				release_dead_vr(scp, mc);
+#else
+			live_pr_cnt += 1;
+			live_pr_cnt -= (reamining_use_cnt(scp, mc, mc.s1) == 0);
+			live_pr_cnt -= (reamining_use_cnt(scp, mc, mc.s2) == 0);
+#endif
+				LOG("live_pr_cnt=%d", live_pr_cnt);
 				continue;
 			}
 			it++;
 		}
 
 		// select from ready[]
-		while (1)
+#if use_mc_select2
+			int mc_idx = mc_select2(scp, mcO1);
+#else
+			int mc_idx = mc_select(scp, mcO1);
+#endif
+
+		if (mc_idx < 0)
+			continue;
+
+		X64mc &mc = mcO1[mc_idx];
+		mc.start_cycle = cycle;
+		mcs_schedu.push_back(mc);
+		running.push_back(mc_idx);
+
+		for (int vr : mc.vr_list)
 		{
-			int mc_idx = mc_select(scp, mcs);
-			if (mc_idx < 0)
-				break;
-
-			X64mc &mc = mcs[mc_idx];
-			mc.start_cycle = cycle;
-			mcs_schedu.push_back(mc);
-			running.push_back(mc_idx);
-
-			for (int vr : mc.vr_list)
-			{
-				if (vr >= 0)
-					bb->vr_unique.push_back(vr);
-			}
-
-			assert(mc.start_cycle >= 0);
-
-			if (mc_info[mc.stamp].latency <= 0)
-				ERR("%d, %s", mc.stamp, mc_info[mc.stamp].mc_code);
+			if (vr >= 0)
+				bb->vr_unique.push_back(vr);
 		}
-		cycle++;
+
+		assert(mc.start_cycle >= 0);
+
+		if (mc_info[mc.stamp].latency <= 0)
+			ERR("%d, %s", mc.stamp, mc_info[mc.stamp].mc_code);
 	}
 
-	if (mcs_schedu.size() != mcs.size())
-		ERR("%lu %lu", mcs.size(), mcs_schedu.size());
+	if (mcs_schedu.size() != mcO1_size)
+		ERR("%d %lu", mcO1_size, mcs_schedu.size());
 
 	for (int i = 0; i < vr_size; i++)
 	{
 		int use = scp->use_cnt_in_bb[i];
 		int consume = scp->consume_cnt_in_bb[i];
 		if (use != consume)
-		{
-			Ast *ast = declare_record.ast[i];
-			LOG("MISMATCH vr=%d use=%d consume=%d scp=%s",
-				i, use, consume, scp->name.c_str());
-			ERR("%%%d, %d %d", i, use, consume);
-		}
+			ERR("scp:%s, MISMATCH %s=%%%d %d!=%d", scp->name.c_str(), vr_name(i), i, use, consume);
 	}
 
 //	printf("max cycle: %d \n", cycle);
@@ -623,6 +823,8 @@ void mc_schedule()
 {
 	read_config();
 	clear_all_vr_consume_cnt(&file_scp);
+	have_pr.clear();
+	have_pr.resize(vr_size, 0);
 
 	_mc_schedule(&file_scp);
 

@@ -203,7 +203,7 @@ int get_pr(enum Optimize_level method,
 		if (method == O0)
 			pr = get_pr_O0();
 		else if (method == O1)
-			pr = get_pr_wave(bb, mc_idx, expect);
+			pr = get_pr_max_next_use(bb, mc_idx, expect);
 		else
 			ERR();
 
@@ -288,7 +288,7 @@ static int get_pr_alloc_imm(BasicBlock *bb, int vr)
 	return get_pr_alloc_imm(O0, bb->mc_alloc_O0, bb, -1, vr);
 }
 
-static void x64_reg_alloc_o0(Scope *scp)
+static void _x64_ra_O0(Scope *scp)
 {
 	X64mc inst;
 
@@ -378,7 +378,7 @@ static void x64_reg_alloc_o0(Scope *scp)
 	}
 
 	for (Scope *p : scp->clds)
-		x64_reg_alloc_o0(p);
+		_x64_ra_O0(p);
 }
 
 int align16(int &n)
@@ -627,11 +627,11 @@ void dump_asm(const string &asm_file)
 #undef PRINT_ASM_HEAD
 #undef PRINT_ASM
 
-void x64_reg_alloc_O0()
+void x64_ra_O0()
 {
 	vr_state.clear();
 	vr_state.resize(vr_size);
 
-	x64_reg_alloc_o0(&file_scp);
+	_x64_ra_O0(&file_scp);
 	dump_asm("a0.s");
 }

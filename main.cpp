@@ -25,14 +25,14 @@ int main(int argc, char **argv)
 	lexer(fp);
 	parser();
 	sem_analysis();
-	gen_three_address_code_O0();
-	gen_machine_code_O0();
-	x64_reg_alloc_O0();		// create a.s in current location
+	gen_tac_O0();
+	gen_mc_O0();
+	x64_ra_O0();		// create a.s in current location
 
-	gen_three_address_code_O1();
-	gen_machine_code_O1();
+	gen_tac_O1();
+	gen_mc_O1();
 	mc_schedule();
-	x64_reg_alloc_O1();
+	x64_ra_O1();
 
 	if (argc == 1)
 	{

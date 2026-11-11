@@ -406,14 +406,14 @@ void dump_mc(Scope *scp, string mc_list_name)
 		dump_mc(p, mc_list_name);
 }
 
-void gen_machine_code_O0()
+void gen_mc_O0()
 {
 	gen_mc(&file_scp, O0);
 
 //	PRINT_ASM_HEAD("\n========== mc O0 ==========");
 //	dump_mc(&file_scp, "O0");
 }
-void gen_machine_code_O1()
+void gen_mc_O1()
 {
 	gen_mc(&file_scp, O1);
 

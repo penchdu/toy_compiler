@@ -94,7 +94,7 @@ struct PrState
 extern vector<PrState> pr_state;
 
 struct McDepend {
-	vector<int> mcs;
+	vector<int> mc_idxs;
 	int edges = 0;
 };
 
@@ -220,6 +220,7 @@ struct X64mc {
 	int chain_latency = -1;
 	int start_cycle = -1;
 	int idx = -1;
+	bool emited = false;
 };
 
 struct BasicBlock {
@@ -258,8 +259,8 @@ void dump_wave_gnuplot(Wave &w, int vr);
 //void spill_pr(vector<X64mc> &x64mc_alloced, int vr);
 //void spill_pr(vector<X64mc> &x64mc_alloced, int vr1, int vr2);
 
-void gen_machine_code_O0();
-void gen_machine_code_O1();
+void gen_mc_O0();
+void gen_mc_O1();
 void print_mc_err(const char *prefix, Scope *scp, const X64mc &mc, int idx);
 
 void gen_use_def_chain(vector<X64mc> &x64mc, Scope *scp);
@@ -286,6 +287,7 @@ void spill_vr(
 
 int get_pr_O0();
 int get_pr_wave(BasicBlock *bb, int mc_idx, int expect_pr = X64PR_MAX);
+int get_pr_max_next_use(BasicBlock *bb, int mc_idx, int expect_pr = X64PR_MAX);
 int get_pr(enum Optimize_level method,
 	int expect,
     vector<X64mc> &mcs, BasicBlock *bb, int mc_idx,
@@ -295,8 +297,8 @@ int get_pr(enum Optimize_level method,
 int get_pr_alloc_imm(enum Optimize_level method, vector<X64mc> &mcs, BasicBlock *bb, int mc_idx, int vr);
 
 void dump_asm(const string &asm_file);
-void x64_reg_alloc_O0();
-void x64_reg_alloc_O1();
+void x64_ra_O0();
+void x64_ra_O1();
 
 void dump_vr_state(const vector<VrState> &vp, const string &tag);
 void check_pr_vr_consistency();

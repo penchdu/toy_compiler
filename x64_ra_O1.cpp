@@ -79,6 +79,59 @@ int get_pr_wave(BasicBlock *bb, int mc_idx, int expect_pr)
 	return pr;
 }
 
+int get_pr_max_next_use(BasicBlock *bb, int mc_idx, int expect_pr)
+{
+	X64mc &mc = bb->mc_schedu[mc_idx];
+
+	if (expect_pr != X64PR_MAX && pr_state[expect_pr].vr == INVALID_VR)
+		return expect_pr;
+
+	for (int pr = 0; pr < X64PR_MAX; pr++)
+	{
+		if (pr_state[pr].vr == INVALID_VR)
+			return pr;
+	}
+
+	int total = bb->mc_schedu.size();
+	int victim_pr = -1;
+	int victim_dist = -1;
+
+	for (int pr = 0; pr < X64PR_MAX; pr++)
+	{
+		int vr = pr_state[pr].vr;
+		if (vr == INVALID_VR
+		    || vr == mc.dst
+		    || vr == mc.s1
+		    || vr == mc.s2)
+			continue;
+
+		int dist = total;
+		for (int j = mc_idx + 1; j < total; j++)
+		{
+			const X64mc &m = bb->mc_schedu[j];
+			if (m.dst == vr || m.s1 == vr || m.s2 == vr)
+			{
+				dist = j;
+				break;
+			}
+		}
+
+		if (dist > victim_dist
+		    || (dist == victim_dist && victim_pr >= 0
+		        && !vr_state[vr].dirty && vr_state[pr_state[victim_pr].vr].dirty))
+		{
+			victim_dist = dist;
+			victim_pr = pr;
+		}
+	}
+
+	assert(victim_pr != -1);
+
+	int vr = pr_state[victim_pr].vr;
+	spill_vr(vr, bb->mc_alloc_wave);
+	return victim_pr;
+}
+
 int check_dead_vr(Scope *scp, vector<X64mc> &mcs, int vr)
 {
 	if (vr < 0)
@@ -408,7 +461,7 @@ static void elimicate_copy(Scope *scp)
 		elimicate_copy(p);
 }
 
-void x64_reg_alloc_O1()
+void x64_ra_O1()
 {
 	find_while_used_outer_symb(&file_scp);
 

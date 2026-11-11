@@ -129,7 +129,7 @@ static void insert_copy_ssa(Scope *scp, Scope *tail)
 	}
 }
 
-static bool gen_tac_O0(Scope *scp)
+static bool _gen_tac_O0(Scope *scp)
 {
 	assert(scp->bb);
 
@@ -148,7 +148,7 @@ static bool gen_tac_O0(Scope *scp)
 	bool bb_terminated = 0;
 	for (Scope *p : scp->clds)
 	{
-		bb_terminated = gen_tac_O0(p);
+		bb_terminated = _gen_tac_O0(p);
 		if (bb_terminated)
 			break;
 	}
@@ -296,13 +296,13 @@ static void u(int a, int b)
 		target_vr_unioned[b]++;
 	}
 }
-static void gen_tac_O1(Scope *scp)
+static void _gen_tac_O1(Scope *scp)
 {
 	BasicBlock *bb = scp->bb;
 	bb->tacO1 = bb->tacO0;
 
 	for (Scope *p : scp->clds)
-		gen_tac_O1(p);
+		_gen_tac_O1(p);
 }
 static void union_transient_vr(Scope *scp)
 {
@@ -648,16 +648,16 @@ static void reassociate(Scope *scp)
 		reassociate(p);
 }
 
-void gen_three_address_code_O0()
+void gen_tac_O0()
 {
-	gen_tac_O0(&file_scp);
+	_gen_tac_O0(&file_scp);
 
 	printf("\n========== tac O0 ==========\n");
 	dump_tac(&file_scp, O0);
 }
-void gen_three_address_code_O1()
+void gen_tac_O1()
 {
-	gen_tac_O1(&file_scp);
+	_gen_tac_O1(&file_scp);
 //	union_transient_vr(&file_scp);
 
 	elimicate_transient_vr(&file_scp);
